@@ -1,16 +1,10 @@
 {
-  "name": "earlybird-sdk",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "pnpm -r build",
-    "dev": "pnpm -r dev",
-    "test": "pnpm -r test",
-    "lint": "pnpm -r lint",
-    "clean": "pnpm -r clean"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0"
-  }
+    "name": "earlybird-sdk",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ]
 }

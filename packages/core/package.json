@@ -1,37 +1,11 @@
 {
-  "name": "@earlybird-sdk/core",
-  "version": "0.1.0",
-  "description": "Core library for Earlybird SDK",
+  "name": "core",
+  "module": "index.ts",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "clean": "rm -rf dist",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "echo \"Error: no lint specified\" && exit 1"
-  },
-  "keywords": [
-    "earlybird",
-    "sdk",
-    "typescript"
-  ],
-  "author": "",
-  "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "@types/bun": "latest"
   },
-  "publishConfig": {
-    "access": "public"
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }
