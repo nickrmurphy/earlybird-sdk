@@ -2,7 +2,17 @@
 
 ## Current Issues Status
 
-### Created Issues (All in Milestone: "Phase 1: Storage Foundation")
+### Epic Issues (High-Level Phase Tracking)
+
+| Issue # | Title | Labels | Status | Dependencies | Assignee |
+|---------|-------|---------|--------|-------------|----------|
+| #1 | Phase 1: Storage Foundation | `phase-1`, `epic` | Open | Sub-issues #6-#10 | - |
+| #2 | Phase 2: CRDT Store Core | - | Open | Phase 1 completion | - |
+| #3 | Phase 3: Schema Integration | - | Open | Phase 2 completion | - |
+| #4 | Phase 4: Conflict Resolution | - | Open | Phase 3 completion | - |
+| #5 | Phase 5: Sync Operations | - | Open | Phase 4 completion | - |
+
+### Phase 1 Implementation Issues (All in Milestone: "Phase 1: Storage Foundation")
 
 | Issue # | Title | Labels | Status | Dependencies | Assignee |
 |---------|-------|---------|--------|-------------|----------|
@@ -19,7 +29,8 @@
 - **Due Date**: 2024-12-27T23:59:59Z
 - **Description**: Week 1: Implement minimal StorageAdapter interface, CapacitorStorageAdapter and InMemoryStorageAdapter implementations, basic file operations and testing
 - **URL**: https://github.com/nickrmurphy/earlybird-sdk/milestone/1
-- **Progress**: 0/5 issues completed
+- **Progress**: 0/5 implementation issues completed
+- **Epic Issue**: #1 tracks overall Phase 1 progress with links to sub-issues
 
 ## Created Labels
 
@@ -36,6 +47,7 @@
 | `validation` | Validation and compliance testing | #bcbd22 | Compliance testing |
 | `integration` | Integration testing and final steps | #17becf | Integration work |
 | `examples` | Example code and demos | #c5b0d5 | Documentation examples |
+| `epic` | High-level epic tracking multiple issues | #0052cc | Epic/phase tracking |
 
 Note: `documentation` label already existed in repo
 
@@ -104,6 +116,7 @@ Based on planned structure in `packages/core/`:
 ## Current Status Summary
 
 - **Phase**: Planning Complete, Implementation Not Started
+- **Epic Structure**: Issue #1 tracks overall progress, Issues #6-#10 are implementation tasks
 - **Next Action**: Begin Issue #6 (Setup Storage Foundation & Interface)
 - **Blockers**: None
 - **Parallel Work Available**: After #6, can start #7 and #8 simultaneously
@@ -116,9 +129,11 @@ Based on planned structure in `packages/core/`:
 
 ## Notes for Future Sessions
 
-- All issues created via CLI script at `scripts/create-phase1-issues.sh`
+- Epic structure: Issue #1 (phase overview) → Issues #6-#10 (detailed tasks)
+- All detailed issues created via CLI script at `scripts/create-phase1-issues.sh`
+- Issue #1 has comment linking to all sub-issues for easy navigation
 - Monorepo structure with packages/core as target
-- Labels system established for future phases
+- Labels system established for future phases (including `epic` label)
 - Dependencies clearly mapped for parallel development
 - Milestone tracking set up for progress monitoring
 
