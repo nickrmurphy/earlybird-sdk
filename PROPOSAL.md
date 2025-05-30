@@ -435,39 +435,39 @@ This approach provides 90% of relationship functionality with 10% of the complex
 
 ## Implementation Plan
 
-### Phase 1: Core Infrastructure (Week 1)
+### Phase 1: Storage Foundation (Week 1)
 - [ ] Implement minimal `StorageAdapter` interface
 - [ ] Create `CapacitorStorageAdapter` and `InMemoryStorageAdapter` implementations
-- [ ] Build basic CRDT document structure
-- [ ] Implement Hybrid Logical Clock utilities
-- [ ] Add comprehensive tests with in-memory adapter
+- [ ] Basic file operations and testing
+- [ ] Comprehensive test suite with in-memory adapter
 
-### Phase 2: CRDT System (Week 2)
-- [ ] Implement state-based CRDT store
-- [ ] Add field-level update operations
-- [ ] Build conflict-free merge operations
-- [ ] Test concurrent update scenarios
-- [ ] Create HLC ordering and comparison utilities
+### Phase 2: CRDT Store Core (Week 2)
+- [ ] Implement Hybrid Logical Clock utilities
+- [ ] Build CRDT document structure (fields with metadata)
+- [ ] Create `CRDTStore` class with basic CRUD operations
+- [ ] Add field-level updates with HLC timestamps
+- [ ] Basic conflict-free data operations
 
 ### Phase 3: Schema Integration (Week 3)
-- [ ] Integrate Zod validation with CRDT operations
-- [ ] Implement migration system for CRDT documents
-- [ ] Add metadata handling (_version, timestamps, HLC)
-- [ ] Create schema versioning utilities
-- [ ] Test schema evolution scenarios
+- [ ] Integrate Zod validation into `CRDTStore`
+- [ ] Implement collection definitions
+- [ ] Add type-safe operations and TypeScript exports
+- [ ] Create migration system for CRDT documents
+- [ ] Schema versioning and evolution support
 
-### Phase 4: Sync & Developer Experience (Week 4)
-- [ ] Build high-level database API with sync operations
-- [ ] Add sync delta extraction and merge utilities
-- [ ] Create TypeScript types and exports
-- [ ] Write documentation and examples
-- [ ] Add encryption support for sync transmission
+### Phase 4: Conflict Resolution (Week 4)
+- [ ] Implement `mergeDocument()` for conflict resolution
+- [ ] Handle concurrent update scenarios
+- [ ] Test multi-device conflict resolution
+- [ ] Optimize HLC ordering and comparison operations
+- [ ] Comprehensive conflict resolution testing
 
-### Phase 5: Advanced Features (Week 5)
-- [ ] Implement backup/restore functionality
-- [ ] Create development tools (CRDT state inspector, conflict visualizer)
+### Phase 5: Sync Operations (Week 5)
+- [ ] Build sync delta extraction utilities
+- [ ] Create high-level sync API and helpers
+- [ ] Add support for incremental synchronization
+- [ ] Write documentation and usage examples
 - [ ] Performance optimization and benchmarking
-- [ ] Add sync protocol helpers for network transmission
 
 ## Future Considerations
 
