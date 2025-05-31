@@ -1,4 +1,4 @@
-import type { Result } from "../../core/src/result.js";
+import type { Result } from "@earlybird-sdk/core";
 
 /**
  * Error codes for storage operations

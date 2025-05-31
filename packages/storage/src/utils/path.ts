@@ -5,9 +5,9 @@
  * that can be shared across different storage adapter implementations.
  */
 
-import type { Result } from "../../../core/src/result.js";
-import { ok, err } from "../../../core/src/result.js";
-import { StorageErrorCode } from "../storageAdapter.js";
+import type { Result } from "@earlybird-sdk/core";
+import { ok, err } from "@earlybird-sdk/core";
+import { StorageErrorCode } from "../storageAdapter";
 
 /**
  * Normalizes a file path for consistent storage operations.

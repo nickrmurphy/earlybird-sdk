@@ -1,7 +1,7 @@
 import { validateAndNormalizePath } from "../utils/path.js";
 import type { StorageAdapter } from "../storageAdapter.js";
-import type { Result } from "../../../core/src/result.js";
-import { ok, err } from "../../../core/src/result.js";
+import type { Result } from "@earlybird-sdk/core";
+import { ok, err } from "@earlybird-sdk/core";
 import { StorageErrorCode } from "../storageAdapter.js";
 
 /**

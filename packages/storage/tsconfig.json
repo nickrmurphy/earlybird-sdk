@@ -9,7 +9,8 @@
 		// Path mapping for cleaner imports
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@earlybird-sdk/core": ["../core/src"]
 		},
 		
 		"strict": true,

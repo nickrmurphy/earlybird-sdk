@@ -20,15 +20,9 @@ importers:
 
   packages/core:
     devDependencies:
-      '@vitest/coverage-v8':
-        specifier: ^3.1.4
-        version: 3.1.4(vitest@3.1.4)
       typescript:
         specifier: ^5.0.0
         version: 5.8.3
-      vitest:
-        specifier: ^3.1.4
-        version: 3.1.4(@vitest/ui@3.1.4)
 
   packages/storage:
     dependencies:

@@ -14,8 +14,8 @@ export type { StorageAdapter } from "./storageAdapter.js";
 export { StorageErrorCode } from "./storageAdapter.js";
 
 // Result type
-export type { Result } from "../../core/src/result.js";
-export { ok, err } from "../../core/src/result.js";
+export type { Result } from "@earlybird-sdk/core";
+export { ok, err } from "@earlybird-sdk/core";
 
 // Adapter implementations
 export { createInMemoryStorageAdapter } from "./adapters/createInMemoryStorageAdapter.js";
