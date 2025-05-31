@@ -1,50 +1,49 @@
-# Earlybird SDK Storage Solution Proposal
+# Earlybird SDK Storage Solution
 
-## Executive Summary
+## Overview
 
-This proposal outlines a CRDT-enabled, schema-based storage solution for the Earlybird SDK that prioritizes minimal dependencies, simplicity, and web-first design. The solution uses `@capacitor/filesystem` for persistence, Zod for schema validation, and efficient state-based CRDTs with Hybrid Logical Clocks for conflict-free synchronization, providing type-safe operations and sync-ready architecture without the complexity overhead of traditional databases.
+A simple, type-safe storage solution for local-first apps that works identically on web and native platforms. Built on CRDTs for conflict-free sync with minimal dependencies.
 
-## Problem Statement
+**Key Benefits:**
+- 🌐 Works everywhere (web/native via Capacitor)
+- 🔄 Automatic conflict resolution across devices
+- 📝 Full TypeScript support with Standard Schema validation
+- 🪶 Minimal dependencies (just Capacitor + schema library)
+- 🧪 Easy testing with in-memory adapter
+- 📁 Human-readable file storage
 
-Building local-first and end-to-end encrypted applications requires a storage solution that:
+## The Problem
 
-- Works identically on web and native platforms
-- Provides type safety and schema validation
-- Supports data migrations as schemas evolve
-- Enables conflict-free data synchronization across devices
-- Maintains causal consistency with offline-first capabilities
-- Maintains minimal dependencies
-- Offers simple mental models over complex abstractions
-- Enables easy debugging and data inspection
+Local-first apps need storage that:
+- Syncs across devices without conflicts
+- Works on web without SQLite complexity  
+- Provides type safety and schema evolution
+- Maintains simple mental models
 
-Traditional solutions like SQLite add significant complexity for web deployment, while NoSQL solutions often lack type safety or require heavy dependencies that conflict with our philosophy.
+## The Solution
 
-## Proposed Solution
+### Architecture
 
-### Core Architecture
+Four simple layers:
 
-A CRDT-enabled document-based storage system built on four key components:
+1. **Storage Adapter** - Filesystem abstraction (enables testing)
+2. **CRDT Store** - Document store with conflict-free field updates
+3. **Schema System** - Standard Schema-compliant validation with automatic migrations
+4. **Database API** - High-level operations and sync coordination
 
-1. **Storage Adapter**: Minimal abstraction over `@capacitor/filesystem` (essential for testing)
-2. **CRDT Store**: State-based CRDT document store with Hybrid Logical Clock ordering
-3. **Schema Validation**: Zod-powered validation and migrations
-4. **Database Layer**: High-level API for application usage and synchronization
+### Core Concepts
 
-### Key Design Principles
-
-- **Documents over Relations**: Each entity is a self-contained CRDT document
-- **Collections over Tables**: Logical grouping through directory structure
-- **State over Operations**: Efficient field-level CRDT metadata instead of operation logs
-- **Validation over Constraints**: Zod runtime validation with compile-time types
-- **Migration over Breaking Changes**: Automatic schema evolution
-- **Sync over Complexity**: Conflict-free synchronization with simple mental models
-- **Simplicity over Performance**: Optimize for developer experience first
+- **Documents not tables** - Each entity is a self-contained JSON file
+- **Collections not relations** - Logical grouping via directories
+- **Field-level CRDTs** - Conflict resolution per field, not per document
+- **Hybrid Logical Clocks** - Ordering updates across devices
+- **State-based sync** - Efficient field metadata instead of operation logs
 
 ## Technical Design
 
-### Storage Adapter Interface
+### 1. Storage Adapter
 
-A minimal abstraction over filesystem operations that enables testing and future flexibility:
+Minimal filesystem abstraction that enables testing:
 
 ```typescript
 interface StorageAdapter {
@@ -53,59 +52,21 @@ interface StorageAdapter {
   list(directory: string): Promise<string[]>;
   delete(path: string): Promise<void>;
 }
-
-// Capacitor implementation
-class CapacitorStorageAdapter implements StorageAdapter {
-  async read(path: string): Promise<string | null> {
-    try {
-      const result = await Filesystem.readFile({
-        path,
-        directory: Directory.Data,
-        encoding: Encoding.UTF8
-      });
-      return result.data as string;
-    } catch {
-      return null;
-    }
-  }
-
-  async write(path: string, data: string): Promise<void> {
-    await Filesystem.writeFile({
-      path,
-      data,
-      directory: Directory.Data,
-      encoding: Encoding.UTF8
-    });
-  }
-
-  // ... other methods
-}
-
-// In-memory implementation for testing
-class InMemoryStorageAdapter implements StorageAdapter {
-  private files = new Map<string, string>();
-
-  async read(path: string): Promise<string | null> {
-    return this.files.get(path) || null;
-  }
-
-  async write(path: string, data: string): Promise<void> {
-    this.files.set(path, data);
-  }
-
-  // ... other methods
-}
 ```
 
-### CRDT Store Implementation
+Two implementations:
+- **CapacitorStorageAdapter** → Production (uses `@capacitor/filesystem`)
+- **InMemoryStorageAdapter** → Testing (uses `Map<string, string>`)
+
+### 2. CRDT Store
+
+Each document is a JSON file with field-level conflict resolution:
 
 ```typescript
-import { z } from 'zod';
-
 interface HybridLogicalClock {
-  logical: number;
-  physical: number;
-  nonce: string; // Random string for uniqueness
+  logical: number;    // Logical counter
+  physical: number;   // Wall clock time
+  nonce: string;      // Random tie-breaker
 }
 
 interface CRDTFieldMetadata {
@@ -121,104 +82,39 @@ interface CRDTDocument {
   _updatedAt: number;
 }
 
-interface Migration {
-  from: number;
-  to: number;
-  migrate: (data: any) => any;
-}
-
-interface Collection {
-  name: string;
-  version: number;
-  migrations?: Migration[];
-}
-
 class CRDTStore<T> {
-  constructor(
-    adapter: StorageAdapter,
-    collection: Collection,
-    schema: z.ZodSchema<T>
-  ) {}
-
   async insert(id: string, data: Partial<T>): Promise<T>
-  async update(documentId: string, field: string, value: any): Promise<T>
-  async merge(documentId: string, fields: Record<string, CRDTFieldMetadata>): Promise<T>
+  async update(docId: string, field: string, value: any): Promise<T>
+  async merge(docId: string, fields: Record<string, CRDTFieldMetadata>): Promise<T>
   async get(id: string): Promise<T | null>
   async all(): Promise<T[]>
-  async query(predicate: (item: T) => boolean): Promise<T[]>
   async delete(id: string): Promise<void>
 }
 ```
 
-Each store manages a single document type with:
-- **State-based CRDT**: Efficient field-level conflict resolution using Hybrid Logical Clocks
-- **Conflict-free merging**: Automatic resolution of concurrent updates across devices
-- **Runtime validation**: Zod schema validation with full TypeScript inference
-- **Automatic migration handling**: Schema evolution support
-- **Type-safe operations**: Full TypeScript inference for all operations
-- **Bounded storage**: Fixed size per document regardless of update history
+**Key Features:**
+- Field-level conflict resolution using Hybrid Logical Clocks
+- Automatic merging of concurrent updates from different devices
+- Bounded storage (no operation logs)
+- Type-safe with Standard Schema-compliant validation
 
-### File Structure
+### 3. File Structure
 
-The storage system maps each collection to a directory, and each document to a JSON file within that directory:
+Simple directory-per-collection mapping:
 
 ```
 data/
 ├── users/
 │   ├── alice-123.json
-│   ├── bob-456.json
-│   └── charlie-789.json
+│   └── bob-456.json
 ├── posts/
 │   ├── post-abc.json
-│   ├── post-def.json
-│   └── post-ghi.json
+│   └── post-def.json
 └── settings/
     └── app-config.json
 ```
 
-#### Operation to Filesystem Mapping
-
-Here's how common operations translate to filesystem calls:
-
-**Update Field Operation:**
-```typescript
-// Code: userStore.updateField('alice-123', 'email', 'alice@newcompany.com')
-// Filesystem: Read 'users/alice-123.json', update field with HLC, write back
-```
-
-**Find by ID:**
-```typescript
-// Code: userStore.findById('alice-123')
-// Filesystem: Read from 'users/alice-123.json'
-```
-
-**Find All:**
-```typescript
-// Code: userStore.findAll()
-// Filesystem:
-//   1. List files in 'users/' directory
-//   2. Read each .json file
-//   3. Parse and validate each document
-```
-
-**Query with Predicate:**
-```typescript
-// Code: userStore.find(user => user.email.endsWith('@example.com'))
-// Filesystem:
-//   1. List files in 'users/' directory
-//   2. Read each .json file
-//   3. Parse, validate, and filter each document
-```
-
-**Delete:**
-```typescript
-// Code: userStore.delete('alice-123')
-// Filesystem: Delete 'users/alice-123.json'
-```
-
-#### Example File Contents
-
-**users/alice-123.json:**
+**Example Document** (`users/alice-123.json`):
 ```json
 {
   "id": "alice-123",
@@ -228,16 +124,8 @@ Here's how common operations translate to filesystem calls:
       "hlc": { "logical": 5, "physical": 1704528600000, "nonce": "abc123" }
     },
     "email": {
-      "value": "alice@newcompany.com",
+      "value": "alice@newcompany.com", 
       "hlc": { "logical": 8, "physical": 1704528700000, "nonce": "def456" }
-    },
-    "avatar": {
-      "value": "https://example.com/alice.jpg",
-      "hlc": { "logical": 3, "physical": 1704528500000, "nonce": "ghi789" }
-    },
-    "lastLogin": {
-      "value": "2024-01-15T10:30:00.000Z",
-      "hlc": { "logical": 12, "physical": 1704529000000, "nonce": "jkl012" }
     }
   },
   "_version": 2,
@@ -246,54 +134,19 @@ Here's how common operations translate to filesystem calls:
 }
 ```
 
-**posts/post-abc.json:**
-```json
-{
-  "id": "post-abc",
-  "fields": {
-    "title": {
-      "value": "Hello World - Updated!",
-      "hlc": { "logical": 15, "physical": 1704542500000, "nonce": "xyz789" }
-    },
-    "content": {
-      "value": "This is my first post, now with more content!",
-      "hlc": { "logical": 16, "physical": 1704542600000, "nonce": "abc123" }
-    },
-    "authorId": {
-      "value": "alice-123",
-      "hlc": { "logical": 10, "physical": 1704542400000, "nonce": "def456" }
-    },
-    "tags": {
-      "value": ["introduction", "hello", "updated"],
-      "hlc": { "logical": 17, "physical": 1704542700000, "nonce": "ghi789" }
-    }
-  },
-  "_version": 1,
-  "_createdAt": 1704542400000,
-  "_updatedAt": 1704542700000
-}
-```
+**Performance:**
+- Single document: O(1) direct file access
+- Collection queries: O(n) scan all documents
+- Conflict resolution: O(fields) compare HLC per field
 
-#### Performance Characteristics
+### 4. Schema & Migrations
 
-- **Single Document Access**: O(1) - Direct file read by ID
-- **Collection Queries**: O(n) - Must read all documents in collection
-- **Cross-Collection Queries**: Multiple O(n) operations
-- **Conflict Resolution**: O(fields) - Compare HLC per field during merge
-- **Storage Overhead**: Bounded - Each field stores value + HLC metadata
-- **Sync Efficiency**: High - Only transmit changed fields with metadata
-- **Debuggability**: High - Human-readable files, clear conflict resolution data
-
-## Schema and Migration System
-
-### Schema Definition
-
-The system uses Zod for schema validation and TypeScript inference:
+Type-safe schemas with automatic evolution using [Standard Schema](https://github.com/standard-schema/standard-schema):
 
 ```typescript
+// Example using Zod (Standard Schema compliant)
 import { z } from 'zod';
 
-// User schema with validation
 const UserSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -302,27 +155,20 @@ const UserSchema = z.object({
   lastLogin: z.date().optional()
 });
 
-// Post schema
-const PostSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  content: z.string(),
-  authorId: z.string(),
-  tags: z.array(z.string()).default([]),
-  createdAt: z.date().default(() => new Date())
-});
-
-// TypeScript types automatically inferred
 type User = z.infer<typeof UserSchema>;
-type Post = z.infer<typeof PostSchema>;
-```
 
-### Migration Configuration
+// Works with any Standard Schema-compliant library:
+// - Zod (our reference implementation)
+// - Valibot  
+// - ArkType
+// - Yup (with adapter)
+// - Joi (with adapter)
+// - Custom schemas implementing Standard Schema interface
 
-```typescript
+// Collection with migrations
 const userCollection = {
   name: 'users',
-  schema: UserSchema,
+  schema: UserSchema,  // Any Standard Schema-compliant validator
   version: 2,
   migrations: [
     {
@@ -330,7 +176,7 @@ const userCollection = {
       to: 2,
       migrate: (data: any) => ({
         ...data,
-        avatar: undefined,
+        avatar: undefined,  // Add new optional field
         lastLogin: undefined
       })
     }
@@ -338,180 +184,196 @@ const userCollection = {
 };
 ```
 
-Migrations run automatically when documents are accessed, ensuring gradual schema evolution without breaking existing data.
+**Standard Schema Interface:**
+The system expects schemas that implement the [Standard Schema specification](https://github.com/standard-schema/standard-schema):
+- `~standard` property identifying schema type
+- `~validate()` method for parsing/validation
+- TypeScript type inference support
+- Consistent error handling
 
-### Handling References and Synchronization
+Migrations run automatically when documents are accessed, ensuring gradual schema evolution.
 
-Instead of formal relationships, use simple string references with CRDT-aware helper methods:
+## Synchronization
+
+### Basic Usage
+
+Simple string references between documents with CRDT-aware operations:
 
 ```typescript
-import { z } from 'zod';
-
-// Define schemas
-const UserSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string().email(),
-  avatar: z.string().url().optional(),
-  lastLogin: z.date().optional()
-});
-
-const PostSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  content: z.string(),
-  authorId: z.string(),
-  tags: z.array(z.string()).default([])
-});
-
-type User = z.infer<typeof UserSchema>;
-type Post = z.infer<typeof PostSchema>;
-
-// Create CRDT stores
-const adapter = new CapacitorStorageAdapter();
+// Create stores
 const userStore = new CRDTStore(adapter, { name: 'users', version: 1 }, UserSchema);
 const postStore = new CRDTStore(adapter, { name: 'posts', version: 1 }, PostSchema);
 
-// Create new documents
-const newUser = await userStore.create('alice-123', {
+// Create documents
+const user = await userStore.insert('alice-123', {
   name: 'Alice Smith',
   email: 'alice@example.com'
 });
 
-const newPost = await postStore.create('post-abc', {
+const post = await postStore.insert('post-abc', {
   title: 'Hello World',
-  content: 'This is my first post',
-  authorId: 'alice-123',
-  tags: ['introduction']
+  content: 'My first post',
+  authorId: 'alice-123'  // Simple string reference
 });
 
-// Update existing documents
-await userStore.updateField('alice-123', 'email', 'alice@newcompany.com');
-await postStore.updateField('post-abc', 'title', 'Updated Post Title');
+// Update with automatic conflict resolution
+await userStore.update('alice-123', 'email', 'alice@newcompany.com');
+await postStore.update('post-abc', 'title', 'Updated Title');
 
-// Helper methods work with CRDT state
+// Query relationships
 async function getUserPosts(userId: string) {
-  const user = await userStore.findById(userId);
-  const posts = await postStore.find(post => post.authorId === userId);
+  const user = await userStore.get(userId);
+  const posts = await postStore.query(post => post.authorId === userId);
   return { user, posts };
-}
-
-// Sync operations for multi-device support
-async function syncUserFromDevice(userId: string, remoteFields: Record<string, CRDTFieldMetadata>) {
-  return userStore.mergeDocument(userId, remoteFields);
-}
-
-// Extract sync deltas for transmission
-async function getUserSyncData(userId: string, sinceHLC?: HybridLogicalClock) {
-  const doc = await userStore.getDocument(userId);
-  return filterFieldsSince(doc.fields, sinceHLC);
 }
 ```
 
-This approach provides 90% of relationship functionality with 10% of the complexity, plus conflict-free synchronization across devices.
+### Whole Dataset Sync
 
-## Benefits
+Comprehensive sync system for discovering and syncing entire datasets:
 
-### Alignment with Philosophy
+```typescript
+// Sync manifests for collection comparison
+interface SyncManifest {
+  collections: Record<string, CollectionSyncMetadata>;
+  generatedAt: HybridLogicalClock;
+}
 
-- **Minimal Dependencies**: Only `@capacitor/filesystem` + `zod` (~13kb total)
-- **Simplicity**: Clear mental model, predictable CRDT behavior
-- **Web-First**: Identical API across web and native platforms
-- **Client-First**: All data operations happen locally, sync-ready by design
-- **Unapologetically Local-First**: Offline-capable with conflict-free synchronization
+interface CollectionSyncMetadata {
+  collectionName: string;
+  documentCount: number;
+  lastModified: HybridLogicalClock;
+  documentSummaries: Record<string, DocumentSyncSummary>;
+}
 
-### Developer Experience
+// Database-wide sync coordination
+class EarlybirdDatabase {
+  async generateSyncManifest(): Promise<SyncManifest>
+  async compareManifests(local: SyncManifest, remote: SyncManifest): Promise<SyncPlan>
+  async performIncrementalSync(remotePlan: SyncPlan): Promise<SyncResult>
+  async getAllChangesSince(sinceHLC: HybridLogicalClock): Promise<CollectionDeltas>
+}
 
-- **Type Safety**: Full TypeScript support with runtime validation
-- **Schema Evolution**: Automatic migrations prevent breaking changes
-- **Conflict-Free**: Automatic resolution of concurrent updates
-- **Sync-Ready**: Built-in support for multi-device synchronization
-- **Debuggability**: Human-readable JSON files with clear conflict resolution metadata
-- **Testability**: Easy to mock and test with in-memory adapter
-- **Encryption Ready**: Simple to add encryption layer before sync transmission
+// Usage
+const db = new EarlybirdDatabase();
+db.registerStore('users', userStore);
+db.registerStore('posts', postStore);
 
-### Testing and Development
+// Generate manifest for discovery
+const manifest = await db.generateSyncManifest();
 
-- **Easy Testing**: In-memory adapter enables fast, isolated unit tests
-- **No Mocking Required**: Clean interface instead of mocking Capacitor filesystem
-- **Deterministic Tests**: Controlled storage state for reproducible test scenarios
-- **Fast Test Execution**: In-memory operations eliminate filesystem I/O during testing
-- **Test Data Setup**: Simple programmatic creation of test documents and scenarios
-- **CI/CD Friendly**: Tests run without requiring Capacitor or mobile device simulation
+// Compare with remote and sync differences
+const syncPlan = await db.compareManifests(localManifest, remoteManifest);
+const result = await db.performIncrementalSync(syncPlan);
+```
 
-### Performance Characteristics
+**Key Features:**
+- **Document discovery** → Find which documents need syncing
+- **Field-level deltas** → Only sync changed fields with metadata  
+- **Conflict-free merging** → Automatic resolution using HLC ordering
+- **Persistent sync state** → Track sync progress across sessions
+- **Collection manifests** → Efficient whole-dataset comparison
 
-- **Lazy Loading**: Only read documents when needed
-- **Small Memory Footprint**: No database engine overhead
-- **Fast Startup**: No database initialization required
-- **Bounded Storage**: Document size is O(fields) not O(operations)
-- **Efficient Sync**: Only transmit changed fields with HLC metadata
-- **Fast Conflict Resolution**: O(fields) merge operations
-- **Predictable Performance**: File operations with deterministic CRDT merging
+## Implementation Roadmap
 
-## Implementation Plan
+### Phase 1: Foundation (Week 1-2)
+- [ ] **Storage Adapter** → Interface + Capacitor/InMemory implementations
+- [ ] **HLC Utilities** → Generate, compare, increment operations
+- [ ] **Basic CRDT Store** → Insert, update, get, delete operations
+- [ ] **Testing Framework** → Unit tests with InMemoryAdapter
 
-### Phase 1: Storage Foundation (Week 1)
-- [ ] Implement minimal `StorageAdapter` interface
-- [ ] Create `CapacitorStorageAdapter` and `InMemoryStorageAdapter` implementations
-- [ ] Basic file operations and testing
-- [ ] Comprehensive test suite with in-memory adapter
+### Phase 2: Schema System (Week 3)
+- [ ] **Standard Schema Interface** → Generic validation interface following Standard Schema spec
+- [ ] **Zod Implementation** → Primary implementation for development and testing
+- [ ] **Migration Engine** → Automatic schema evolution
+- [ ] **Collection Management** → Directory-based organization
 
-### Phase 2: CRDT Store Core (Week 2)
-- [ ] Implement Hybrid Logical Clock utilities
-- [ ] Build CRDT document structure (fields with metadata)
-- [ ] Create `CRDTStore` class with basic CRUD operations
-- [ ] Add field-level updates with HLC timestamps
-- [ ] Basic conflict-free data operations
+### Phase 3: Sync Core (Week 4-5)
+- [ ] **Document Merging** → Field-level conflict resolution
+- [ ] **Manifest Generation** → Collection metadata and summaries
+- [ ] **Delta Extraction** → Incremental change detection
+- [ ] **Database Coordination** → Multi-collection sync operations
 
-### Phase 3: Schema Integration (Week 3)
-- [ ] Integrate Zod validation into `CRDTStore`
-- [ ] Implement collection definitions
-- [ ] Add type-safe operations and TypeScript exports
-- [ ] Create migration system for CRDT documents
-- [ ] Schema versioning and evolution support
+### Phase 4: Testing & Polish (Week 6)
+- [ ] **Integration Tests** → End-to-end sync scenarios
+- [ ] **Performance Testing** → Large dataset benchmarks
+- [ ] **Documentation** → API docs and usage examples
+- [ ] **Error Handling** → Robust failure recovery
 
-### Phase 4: Conflict Resolution (Week 4)
-- [ ] Implement `mergeDocument()` for conflict resolution
-- [ ] Handle concurrent update scenarios
-- [ ] Test multi-device conflict resolution
-- [ ] Optimize HLC ordering and comparison operations
-- [ ] Comprehensive conflict resolution testing
+### Phase 5: Network Sync (Future)
+- [ ] **Transport Layer** → WebRTC/WebSocket/HTTP adapters
+- [ ] **Peer Discovery** → Device pairing and authentication
+- [ ] **Sync Protocols** → Efficient network synchronization
+- [ ] **Conflict Strategies** → Advanced resolution policies
 
-### Phase 5: Sync Operations (Week 5)
-- [ ] Build sync delta extraction utilities
-- [ ] Create high-level sync API and helpers
-- [ ] Add support for incremental synchronization
-- [ ] Write documentation and usage examples
-- [ ] Performance optimization and benchmarking
+## Deployment Strategy
 
-## Future Considerations
+### Package Structure
+```
+@earlybird/storage-core     # Core CRDT store and adapters
+@earlybird/storage-web      # Web-specific utilities
+@earlybird/storage-native   # Native-specific utilities  
+@earlybird/storage-sync     # Network sync (future)
+```
 
-### Potential Extensions
+### Dependencies
+- **Required**: `@capacitor/filesystem`
+- **Peer**: `@capacitor/core` (runtime), `typescript` (dev)
+- **Dev/Test**: `zod` (our Standard Schema reference implementation), `vitest`, `@types/node`
+- **User Choice**: Any [Standard Schema](https://github.com/standard-schema/standard-schema)-compliant library
+- **Dev**: `vitest`, `@types/node`
 
-1. **Indexing**: Add optional index files for common queries
-2. **Compression**: Compress large CRDT documents automatically
-3. **Advanced Sync Protocols**: WebRTC, WebSocket, or HTTP-based sync implementations
-4. **Query Language**: Simple query DSL for complex operations
-5. **Transactions**: Coordinated multi-document CRDT operations
-6. **Vector Clocks**: Upgrade to vector clocks for more complex causal tracking
-7. **Compaction**: Periodic snapshots to reduce CRDT metadata overhead
-8. **Alternative Schema Libraries**: Optional support for other validation libraries if needed
-9. **Runtime Schema Generation**: Dynamic schema creation from TypeScript types
-10. **Sync Conflict UI**: Visual conflict resolution for complex merge scenarios
+### Bundle Size Target
+- Core package: <15KB gzipped
+- Web utilities: <5KB gzipped  
+- Zero required runtime dependencies beyond Capacitor
+- Schema library is user's choice (follows Standard Schema)
 
-### Migration Path
+## Trade-offs & Considerations
 
-If relationships become necessary:
-1. Current design supports adding formal relationship tracking
-2. Helper methods can evolve into query builders
-3. File structure can accommodate foreign key indices
-4. Migration to full database solutions remains straightforward
+### Performance
+- **O(n) collection queries** → Acceptable for local-first apps
+- **Field-level metadata** → ~2x storage overhead vs raw JSON
+- **No indexes** → Keep simple, add later if needed
 
-## Conclusion
+### Limitations
+- **No complex queries** → Use simple filtering functions
+- **No transactions** → Document-level atomicity only
+- **No referential integrity** → Manual relationship management
 
-This proposal delivers a CRDT-enabled storage solution that perfectly aligns with Earlybird SDK's philosophy while providing conflict-free synchronization capabilities essential for local-first applications. The efficient state-based CRDT approach offers developer productivity, type safety, automatic conflict resolution, and platform consistency without the complexity tax of traditional database solutions or operation-based CRDTs.
+### Future Extensions
+- **Query indexes** → B-tree files for common queries
+- **Compression** → Field-level compression for large values
+- **Encryption** → Field-level E2E encryption support
+- **Reactive queries** → Observable result sets
 
-The design enables rapid development today with built-in sync readiness, while maintaining flexibility for future requirements. This ensures the SDK remains true to its core principles of simplicity and minimalism while delivering the distributed, offline-first capabilities needed for modern local-first applications.
+## Why This Approach
 
-By leveraging Zod validation and efficient CRDTs with Hybrid Logical Clocks, developers get a powerful foundation for building applications that work seamlessly across devices with automatic conflict resolution, all while maintaining the simple mental model of document-based storage.
+### ✅ Simplicity First
+- Human-readable files for debugging
+- Minimal abstraction layers
+- Clear mental models
+
+### ✅ Web-Native  
+- No SQLite compilation complexity
+- Works in all browsers immediately
+- Identical behavior across platforms
+
+### ✅ Type Safety
+- Full TypeScript inference
+- Runtime validation with Standard Schema-compliant libraries
+- Schema evolution without breaking changes
+
+### ✅ Sync-Ready
+- Built-in conflict resolution
+- Efficient field-level deltas
+- Whole dataset discovery
+
+### ✅ Testing-Friendly
+- InMemory adapter for unit tests
+- Deterministic conflict resolution
+- No hidden state or side effects
+
+---
+
+**Next Steps**: Start with Phase 1 implementation, focusing on the storage adapter interface and basic CRDT operations. The layered approach allows incremental development while maintaining a clear separation of concerns.
