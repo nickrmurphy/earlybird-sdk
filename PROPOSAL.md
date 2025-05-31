@@ -105,13 +105,12 @@ import { z } from 'zod';
 interface HybridLogicalClock {
   logical: number;
   physical: number;
-  nodeId: string;
+  nonce: string; // Random string for uniqueness
 }
 
 interface CRDTFieldMetadata {
   value: any;
   hlc: HybridLogicalClock;
-  actorId: string;
 }
 
 interface CRDTDocument {
@@ -126,8 +125,7 @@ class CRDTStore<T> {
   constructor(
     adapter: StorageAdapter,
     collection: Collection<T>,
-    schema: z.ZodSchema<T>,
-    nodeId: string
+    schema: z.ZodSchema<T>
   ) {}
 
   async updateField(documentId: string, field: string, value: any): Promise<T>
@@ -214,23 +212,19 @@ Here's how common operations translate to filesystem calls:
   "fields": {
     "name": {
       "value": "Alice Smith",
-      "hlc": { "logical": 5, "physical": 1704528600000, "nodeId": "device-1" },
-      "actorId": "device-1"
+      "hlc": { "logical": 5, "physical": 1704528600000, "nonce": "abc123" }
     },
     "email": {
       "value": "alice@newcompany.com",
-      "hlc": { "logical": 8, "physical": 1704528700000, "nodeId": "device-2" },
-      "actorId": "device-2"
+      "hlc": { "logical": 8, "physical": 1704528700000, "nonce": "def456" }
     },
     "avatar": {
       "value": "https://example.com/alice.jpg",
-      "hlc": { "logical": 3, "physical": 1704528500000, "nodeId": "device-1" },
-      "actorId": "device-1"
+      "hlc": { "logical": 3, "physical": 1704528500000, "nonce": "ghi789" }
     },
     "lastLogin": {
       "value": "2024-01-15T10:30:00.000Z",
-      "hlc": { "logical": 12, "physical": 1704529000000, "nodeId": "device-2" },
-      "actorId": "device-2"
+      "hlc": { "logical": 12, "physical": 1704529000000, "nonce": "jkl012" }
     }
   },
   "_version": 2,
@@ -246,23 +240,19 @@ Here's how common operations translate to filesystem calls:
   "fields": {
     "title": {
       "value": "Hello World - Updated!",
-      "hlc": { "logical": 15, "physical": 1704542500000, "nodeId": "device-1" },
-      "actorId": "device-1"
+      "hlc": { "logical": 15, "physical": 1704542500000, "nonce": "xyz789" }
     },
     "content": {
       "value": "This is my first post, now with more content!",
-      "hlc": { "logical": 16, "physical": 1704542600000, "nodeId": "device-1" },
-      "actorId": "device-1"
+      "hlc": { "logical": 16, "physical": 1704542600000, "nonce": "abc123" }
     },
     "authorId": {
       "value": "alice-123",
-      "hlc": { "logical": 10, "physical": 1704542400000, "nodeId": "device-1" },
-      "actorId": "device-1"
+      "hlc": { "logical": 10, "physical": 1704542400000, "nonce": "def456" }
     },
     "tags": {
       "value": ["introduction", "hello", "updated"],
-      "hlc": { "logical": 17, "physical": 1704542700000, "nodeId": "device-2" },
-      "actorId": "device-2"
+      "hlc": { "logical": 17, "physical": 1704542700000, "nonce": "ghi789" }
     }
   },
   "_version": 1,
@@ -366,8 +356,8 @@ type Post = z.infer<typeof PostSchema>;
 
 // Create CRDT stores
 const adapter = new CapacitorStorageAdapter();
-const userStore = new CRDTStore(adapter, { name: 'users', version: 1 }, UserSchema, 'device-1');
-const postStore = new CRDTStore(adapter, { name: 'posts', version: 1 }, PostSchema, 'device-1');
+const userStore = new CRDTStore(adapter, { name: 'users', version: 1 }, UserSchema);
+const postStore = new CRDTStore(adapter, { name: 'posts', version: 1 }, PostSchema);
 
 // CRDT operations replace simple save operations
 await userStore.updateField('alice-123', 'email', 'alice@newcompany.com');
