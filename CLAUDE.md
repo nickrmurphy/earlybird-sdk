@@ -4,26 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-### Core Package (`packages/core/`)
+### Storage Package (`packages/storage/`)
 ```bash
 # Run tests with type checking and coverage
-bun run test
+pnpm run test
 
 # Watch mode for tests during development  
-bun run test:watch
+pnpm run test:watch
 
 # Generate test coverage reports
-bun run test:coverage
-bun run test:coverage:verbose
+pnpm run test:coverage
+pnpm run test:coverage:verbose
 
 # Type checking only
-bun run typecheck
+pnpm run typecheck
 ```
 
 ### Build and Quality
 ```bash
 # Type check the entire workspace
-bun run typecheck
+pnpm run typecheck
 
 # Lint (command not yet configured - check package.json for future updates)
 ```
@@ -31,13 +31,12 @@ bun run typecheck
 ## Project Architecture
 
 ### Monorepo Structure
-- **Root**: Bun workspace with minimal dependencies philosophy
-- **packages/core**: Main SDK package containing storage abstractions
-- **apps/demo**: Demo application for testing implementations
+- **Root**: PNPM workspace with minimal dependencies philosophy
+- **packages/storage**: Storage adapters and filesystem abstraction
 - **plans/**: Detailed implementation plans and GitHub issue templates
 
 ### Storage Foundation (Phase 1)
-The project is currently implementing a foundational storage layer in `packages/core/src/storage/`:
+The project is currently implementing a foundational storage layer in `packages/storage/src/`:
 
 **Core Interface**: `StorageAdapter` provides unified async API for file operations:
 - `read(path: string): Promise<string | null>`
@@ -68,12 +67,12 @@ Based on phase planning, the storage foundation will support:
 ## Testing Strategy
 
 ### Test Organization
-- **Unit tests**: `packages/core/tests/` with coverage reports
+- **Unit tests**: `packages/storage/` with coverage reports
 - **Shared test suites**: Validate StorageAdapter compliance across implementations
 - **Integration tests**: Cross-adapter compatibility testing
 
 ### Running Tests
-Always run `bun run test` which includes type checking before test execution. Coverage reports help track completeness of storage interface implementations.
+Always run `pnpm run test` which includes type checking before test execution. Coverage reports help track completeness of storage interface implementations.
 
 ## Key Implementation Notes
 
@@ -86,9 +85,9 @@ When implementing new storage adapters:
 5. Use shared test suite to validate interface compliance
 
 ### Development Workflow
-1. Run `bun run typecheck` to ensure TypeScript compliance
-2. Use `bun run test:watch` during development
-3. Verify coverage with `bun run test:coverage` before commits
+1. Run `pnpm run typecheck` to ensure TypeScript compliance
+2. Use `pnpm run test:watch` during development
+3. Verify coverage with `pnpm run test:coverage` before commits
 4. Check `plans/` directory for detailed implementation guidance
 
 ### Package Structure
