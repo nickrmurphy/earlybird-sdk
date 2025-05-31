@@ -22,6 +22,7 @@ export interface HybridLogicalClock {
  */
 export interface CRDTFieldMetadata {
 	/** The actual field value */
+	// biome-ignore lint/suspicious/noExplicitAny: Using any for flexibility in CRDT values
 	value: any;
 	/** Hybrid logical clock for conflict resolution */
 	hlc: HybridLogicalClock;

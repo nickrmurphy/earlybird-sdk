@@ -121,18 +121,31 @@ interface CRDTDocument {
   _updatedAt: number;
 }
 
+interface Migration {
+  from: number;
+  to: number;
+  migrate: (data: any) => any;
+}
+
+interface Collection {
+  name: string;
+  version: number;
+  migrations?: Migration[];
+}
+
 class CRDTStore<T> {
   constructor(
     adapter: StorageAdapter,
-    collection: Collection<T>,
+    collection: Collection,
     schema: z.ZodSchema<T>
   ) {}
 
-  async updateField(documentId: string, field: string, value: any): Promise<T>
-  async mergeDocument(documentId: string, fields: Record<string, CRDTFieldMetadata>): Promise<T>
-  async findById(id: string): Promise<T | null>
-  async findAll(): Promise<T[]>
-  async find(predicate: (item: T) => boolean): Promise<T[]>
+  async insert(id: string, data: Partial<T>): Promise<T>
+  async update(documentId: string, field: string, value: any): Promise<T>
+  async merge(documentId: string, fields: Record<string, CRDTFieldMetadata>): Promise<T>
+  async get(id: string): Promise<T | null>
+  async all(): Promise<T[]>
+  async query(predicate: (item: T) => boolean): Promise<T[]>
   async delete(id: string): Promise<void>
 }
 ```
@@ -359,7 +372,20 @@ const adapter = new CapacitorStorageAdapter();
 const userStore = new CRDTStore(adapter, { name: 'users', version: 1 }, UserSchema);
 const postStore = new CRDTStore(adapter, { name: 'posts', version: 1 }, PostSchema);
 
-// CRDT operations replace simple save operations
+// Create new documents
+const newUser = await userStore.create('alice-123', {
+  name: 'Alice Smith',
+  email: 'alice@example.com'
+});
+
+const newPost = await postStore.create('post-abc', {
+  title: 'Hello World',
+  content: 'This is my first post',
+  authorId: 'alice-123',
+  tags: ['introduction']
+});
+
+// Update existing documents
 await userStore.updateField('alice-123', 'email', 'alice@newcompany.com');
 await postStore.updateField('post-abc', 'title', 'Updated Post Title');
 
