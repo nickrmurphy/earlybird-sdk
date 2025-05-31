@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "vitest";
 import type { StorageAdapter } from "./storageAdapter.js";
 import { StorageError, StorageErrorCode } from "./errors.js";
 
@@ -98,10 +98,10 @@ export function createStorageAdapterTests(
 				});
 
 				test("throws error when deleting non-existent file", async () => {
-					expect(adapter.delete("nonexistent.txt")).rejects.toThrow(
+					await expect(adapter.delete("nonexistent.txt")).rejects.toThrow(
 						StorageError,
 					);
-					expect(adapter.delete("nonexistent.txt")).rejects.toThrow(
+					await expect(adapter.delete("nonexistent.txt")).rejects.toThrow(
 						"File not found",
 					);
 				});
@@ -180,33 +180,33 @@ export function createStorageAdapterTests(
 			});
 
 			test("rejects invalid paths with path traversal", async () => {
-				expect(adapter.write("../file.txt", "content")).rejects.toThrow(
+				await expect(adapter.write("../file.txt", "content")).rejects.toThrow(
 					StorageError,
 				);
-				expect(adapter.read("../../etc/passwd")).rejects.toThrow(
+				await expect(adapter.read("../../etc/passwd")).rejects.toThrow(
 					StorageError,
 				);
-				expect(adapter.delete("data/../file.txt")).rejects.toThrow(
+				await expect(adapter.delete("data/../file.txt")).rejects.toThrow(
 					StorageError,
 				);
-				expect(adapter.exists("data\\\\..\\\\file.txt")).rejects.toThrow(
+				await expect(adapter.exists("data\\\\..\\\\file.txt")).rejects.toThrow(
 					StorageError,
 				);
-				expect(adapter.list("../")).rejects.toThrow(StorageError);
+				await expect(adapter.list("../")).rejects.toThrow(StorageError);
 			});
 
 			test("rejects paths with null bytes", async () => {
-				expect(adapter.write("file\x00.txt", "content")).rejects.toThrow(
+				await expect(adapter.write("file\x00.txt", "content")).rejects.toThrow(
 					StorageError,
 				);
-				expect(adapter.read("data/file\x00name.txt")).rejects.toThrow(
+				await expect(adapter.read("data/file\x00name.txt")).rejects.toThrow(
 					StorageError,
 				);
 			});
 
 			test("rejects writing to root directory", async () => {
-				expect(adapter.write("", "content")).rejects.toThrow(StorageError);
-				expect(adapter.write(".", "content")).rejects.toThrow(StorageError);
+				await expect(adapter.write("", "content")).rejects.toThrow(StorageError);
+				await expect(adapter.write(".", "content")).rejects.toThrow(StorageError);
 			});
 		});
 

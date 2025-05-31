@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { createInMemoryStorageAdapter } from "./createInMemoryStorageAdapter.js";
 import { createStorageAdapterTests } from "../storageAdapter.test.js";
 
