@@ -16,7 +16,7 @@ import {
 	mock,
 	test,
 } from "bun:test";
-import { StorageError, StorageErrorCode } from "@/storage/errors.js";
+import { StorageError, StorageErrorCode } from "../../src/errors.js";
 
 // Store original module to restore later
 // biome-ignore lint/suspicious/noExplicitAny: Use of any to mock originalModule
@@ -74,7 +74,7 @@ describe("CapacitorStorageAdapter", () => {
 
 		// Import the adapter after mocking
 		const { CapacitorStorageAdapter } = await import(
-			"@/storage/adapters/CapacitorStorageAdapter.js"
+			"../../src/adapters/CapacitorStorageAdapter.js"
 		);
 		adapter = new CapacitorStorageAdapter();
 	});

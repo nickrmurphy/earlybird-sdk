@@ -1,11 +1,13 @@
 /**
- * Earlybird SDK Core Package
+ * @earlybird-sdk/core
  *
- * A collection of utilities for building local-first and end-to-end
+ * Core utilities for building local-first and end-to-end
  * encrypted applications.
+ *
+ * Note: Storage functionality has been moved to @earlybird-sdk/storage
  *
  * @see https://github.com/nickrmurphy/earlybird-sdk
  */
 
-// Storage abstractions
-export * from "./storage/index.js";
+// Core utilities will be added here in future phases
+// For storage functionality, use: import { ... } from "@earlybird-sdk/storage"

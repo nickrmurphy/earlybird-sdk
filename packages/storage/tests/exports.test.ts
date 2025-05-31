@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { StorageAdapter } from "@/storage/index.js";
-import { StorageError, StorageErrorCode } from "@/storage/index.js";
+import type { StorageAdapter } from "../src/index.js";
+import { StorageError, StorageErrorCode } from "../src/index.js";
 
 describe("Storage Module", () => {
 	describe("Exports", () => {
@@ -15,7 +15,7 @@ describe("Storage Module", () => {
 
 		test("exports are available from main package", async () => {
 			// Test main package exports
-			const mainExports = await import("../../index.js");
+			const mainExports = await import("../src/index.js");
 			expect(mainExports.StorageError).toBeDefined();
 			expect(mainExports.StorageErrorCode).toBeDefined();
 		});
