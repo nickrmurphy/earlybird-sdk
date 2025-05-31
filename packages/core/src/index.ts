@@ -1,5 +1,5 @@
 /**
- * Earlybird SDK Core Package - Main Entry Point
+ * Earlybird SDK Core Package
  *
  * A collection of utilities for building local-first and end-to-end
  * encrypted applications.
@@ -7,4 +7,5 @@
  * @see https://github.com/nickrmurphy/earlybird-sdk
  */
 
-export * from "./src/index.js";
+// Storage abstractions
+export * from "./storage/index.js";
