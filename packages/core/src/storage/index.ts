@@ -19,9 +19,9 @@ export { InMemoryStorageAdapter } from "./adapters/index.js";
 
 // Path utilities (for advanced usage)
 export {
-  normalizePath,
-  isValidPath,
-  getDirectory,
-  getFilename,
-  joinPath,
+	normalizePath,
+	isValidPath,
+	getDirectory,
+	getFilename,
+	joinPath,
 } from "./utils/path.js";

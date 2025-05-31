@@ -1,19 +1,19 @@
 {
-  "name": "core",
-  "module": "index.ts",
-  "type": "module",
-  "scripts": {
-    "test": "bun run typecheck && bun test --coverage",
-    "test:watch": "bun test --watch",
-    "test:coverage": "bun test --coverage",
-    "test:coverage:verbose": "bun test --coverage --reporter=verbose",
-    "typecheck": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5",
-    "@capacitor/filesystem": "^7.1.1"
-  }
+	"name": "core",
+	"module": "index.ts",
+	"type": "module",
+	"scripts": {
+		"test": "bun run typecheck && bun test --coverage",
+		"test:watch": "bun test --watch",
+		"test:coverage": "bun test --coverage",
+		"test:coverage:verbose": "bun test --coverage --reporter=verbose",
+		"typecheck": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5",
+		"@capacitor/filesystem": "^7.1.1"
+	}
 }
