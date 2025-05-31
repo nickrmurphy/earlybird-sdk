@@ -4,5 +4,4 @@
  * This module exports all available storage adapter implementations.
  */
 
-export { InMemoryStorageAdapter } from "./InMemoryStorageAdapter.js";
-export { CapacitorStorageAdapter } from "./CapacitorStorageAdapter.js";
+export { createInMemoryStorageAdapter } from "./createInMemoryStorageAdapter.js";

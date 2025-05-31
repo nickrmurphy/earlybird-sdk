@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { InMemoryStorageAdapter } from "../../src/adapters/InMemoryStorageAdapter.js";
-import { StorageError, StorageErrorCode } from "../../src/errors.js";
+import { createInMemoryStorageAdapter } from "./createInMemoryStorageAdapter.js";
+import type { StorageAdapter } from "../storageAdapter.js";
+import { StorageError, StorageErrorCode } from "../errors.js";
 
-describe("InMemoryStorageAdapter", () => {
-	let adapter: InMemoryStorageAdapter;
+describe("createInMemoryStorageAdapter", () => {
+	let adapter: StorageAdapter;
 
 	beforeEach(() => {
-		adapter = new InMemoryStorageAdapter();
+		adapter = createInMemoryStorageAdapter();
 	});
 
 	describe("Core StorageAdapter Interface", () => {
@@ -314,8 +315,8 @@ describe("InMemoryStorageAdapter", () => {
 		});
 
 		test("memory isolation between instances", async () => {
-			const adapter1 = new InMemoryStorageAdapter();
-			const adapter2 = new InMemoryStorageAdapter();
+			const adapter1 = createInMemoryStorageAdapter();
+			const adapter2 = createInMemoryStorageAdapter();
 
 			await adapter1.write("test.txt", "content1");
 			await adapter2.write("test.txt", "content2");

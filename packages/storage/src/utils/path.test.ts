@@ -5,7 +5,7 @@ import {
 	isValidPath,
 	joinPath,
 	normalizePath,
-} from "../../src/utils/path.js";
+} from "./path.js";
 
 describe("Path Utilities", () => {
 	describe("normalizePath", () => {

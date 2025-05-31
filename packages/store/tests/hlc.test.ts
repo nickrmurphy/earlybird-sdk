@@ -2,21 +2,21 @@
  * Tests for Hybrid Logical Clock implementation
  */
 
-import { test, expect, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
-	generateHLC,
-	updateHLC,
-	compareHLC,
-	isNewerHLC,
-	isConcurrentHLC,
-	createFieldMetadata,
-	mergeFieldMetadata,
-	mergeDocumentFields,
-	createCRDTDocument,
-	extractPlainObject,
-	getFieldsSince,
-	type HybridLogicalClock,
 	type CRDTFieldMetadata,
+	type HybridLogicalClock,
+	compareHLC,
+	createCRDTDocument,
+	createFieldMetadata,
+	extractPlainObject,
+	generateHLC,
+	getFieldsSince,
+	isConcurrentHLC,
+	isNewerHLC,
+	mergeDocumentFields,
+	mergeFieldMetadata,
+	updateHLC,
 } from "../src/hlc.ts";
 
 describe("HLC Generation", () => {

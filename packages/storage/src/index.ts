@@ -10,13 +10,13 @@
  */
 
 // Core interface
-export type { StorageAdapter } from "./StorageAdapter.js";
+export type { StorageAdapter } from "./storageAdapter.js";
 
 // Error types and utilities
 export { StorageError, StorageErrorCode } from "./errors.js";
 
 // Adapter implementations
-export { InMemoryStorageAdapter } from "./adapters/InMemoryStorageAdapter.js";
+export { createInMemoryStorageAdapter } from "./adapters/createInMemoryStorageAdapter.js";
 
 // Path utilities
 export {
@@ -25,4 +25,5 @@ export {
 	getDirectory,
 	getFilename,
 	joinPath,
+	validateAndNormalizePath,
 } from "./utils/path.js";

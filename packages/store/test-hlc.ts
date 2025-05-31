@@ -1,15 +1,15 @@
 import {
-	generateHLC,
+	type CRDTFieldMetadata,
+	type HybridLogicalClock,
 	compareHLC,
 	createCRDTDocument,
 	extractPlainObject,
-	mergeFieldMetadata,
-	mergeDocumentFields,
-	isNewerHLC,
-	isConcurrentHLC,
+	generateHLC,
 	getFieldsSince,
-	type HybridLogicalClock,
-	type CRDTFieldMetadata,
+	isConcurrentHLC,
+	isNewerHLC,
+	mergeDocumentFields,
+	mergeFieldMetadata,
 } from "./hlc";
 
 console.log("🧪 Testing HLC implementation...\n");
