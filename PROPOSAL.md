@@ -24,12 +24,11 @@ Local-first apps need storage that:
 
 ### Architecture
 
-Four simple layers:
+Three simple layers:
 
 1. **Storage Adapter** - Filesystem abstraction (enables testing)
-2. **CRDT Store** - Document store with conflict-free field updates
-3. **Schema System** - Standard Schema-compliant validation with automatic migrations
-4. **Database API** - High-level operations and sync coordination
+2. **CRDT Store + Schema System** - Document store with conflict-free field updates and validation
+3. **Database API** - High-level operations and sync coordination
 
 ### Core Concepts
 
@@ -310,10 +309,9 @@ const result = await db.performIncrementalSync(syncPlan);
 
 ### Package Structure
 ```
-@earlybird/storage-core     # Core CRDT store and adapters
-@earlybird/storage-web      # Web-specific utilities
-@earlybird/storage-native   # Native-specific utilities  
-@earlybird/storage-sync     # Network sync (future)
+@earlybird-sdk/storage      # Storage adapters and filesystem abstraction
+@earlybird-sdk/store        # CRDT store with schema system and conflict resolution
+@earlybird-sdk/sync         # Database API and multi-collection sync coordination
 ```
 
 ### Dependencies
