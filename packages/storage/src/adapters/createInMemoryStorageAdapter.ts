@@ -1,4 +1,4 @@
-import { StorageError, StorageErrorCode } from "../errors.js";
+import { StorageError } from "../errors.js";
 import { validateAndNormalizePath } from "../utils/path.js";
 import type { StorageAdapter } from "@/storageAdapter.js";
 

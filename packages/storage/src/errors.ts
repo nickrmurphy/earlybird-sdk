@@ -20,7 +20,7 @@ export class StorageError extends Error {
 	/**
 	 * The original error that caused this storage error, if any
 	 */
-	public readonly cause?: Error;
+	public override readonly cause?: Error;
 
 	/**
 	 * Creates a new StorageError
@@ -32,7 +32,9 @@ export class StorageError extends Error {
 		super(message);
 		this.name = "StorageError";
 		this.code = code;
-		this.cause = cause;
+		if (cause !== undefined) {
+			this.cause = cause;
+		}
 
 		// Maintains proper stack trace for where our error was thrown (only available on V8)
 		if (Error.captureStackTrace) {
