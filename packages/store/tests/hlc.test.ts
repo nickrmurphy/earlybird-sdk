@@ -17,7 +17,7 @@ import {
 	getFieldsSince,
 	type HybridLogicalClock,
 	type CRDTFieldMetadata,
-} from "./hlc.ts";
+} from "../src/hlc.ts";
 
 describe("HLC Generation", () => {
 	test("generateHLC creates valid timestamps", () => {
