@@ -12,7 +12,7 @@ export type { StorageAdapter } from "./StorageAdapter.js";
 export { StorageError, StorageErrorCode } from "./errors.js";
 
 // Adapter implementations
-export { InMemoryStorageAdapter } from "./adapters/index.js";
+export { InMemoryStorageAdapter, CapacitorStorageAdapter } from "./adapters/index.js";
 
 // Path utilities (for advanced usage)
 export {

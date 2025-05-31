@@ -25,6 +25,24 @@ export class InMemoryStorageAdapter implements StorageAdapter {
   private readonly files = new Map<string, string>();
 
   /**
+   * Validates and normalizes a path for storage operations.
+   * 
+   * @param path - The path to validate and normalize
+   * @param pathType - Description of the path type for error messages (e.g., "path", "directory path")
+   * @returns The normalized path
+   * @throws {StorageError} When the path is invalid
+   */
+  private validateAndNormalizePath(path: string, pathType: string = 'path'): string {
+    const normalizedPath = normalizePath(path);
+
+    if (!isValidPath(normalizedPath)) {
+      throw StorageError.operationFailed(`Invalid ${pathType}: ${path}`);
+    }
+
+    return normalizedPath;
+  }
+
+  /**
    * Reads the content of a file at the specified path.
    * 
    * @param path - The file path to read from
@@ -32,11 +50,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
    * @throws {StorageError} When the path is invalid
    */
   async read(path: string): Promise<string | null> {
-    const normalizedPath = normalizePath(path);
-    
-    if (!isValidPath(normalizedPath)) {
-      throw StorageError.operationFailed(`Invalid path: ${path}`);
-    }
+    const normalizedPath = this.validateAndNormalizePath(path);
 
     return this.files.get(normalizedPath) ?? null;
   }
@@ -51,11 +65,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
    * @throws {StorageError} When the path is invalid
    */
   async write(path: string, content: string): Promise<void> {
-    const normalizedPath = normalizePath(path);
-    
-    if (!isValidPath(normalizedPath)) {
-      throw StorageError.operationFailed(`Invalid path: ${path}`);
-    }
+    const normalizedPath = this.validateAndNormalizePath(path);
 
     if (!normalizedPath) {
       throw StorageError.operationFailed('Cannot write to root directory');
@@ -72,11 +82,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
    * @throws {StorageError} When the file doesn't exist or path is invalid
    */
   async delete(path: string): Promise<void> {
-    const normalizedPath = normalizePath(path);
-    
-    if (!isValidPath(normalizedPath)) {
-      throw StorageError.operationFailed(`Invalid path: ${path}`);
-    }
+    const normalizedPath = this.validateAndNormalizePath(path);
 
     if (!this.files.has(normalizedPath)) {
       throw StorageError.notFound(path);
@@ -93,11 +99,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
    * @throws {StorageError} When the path is invalid
    */
   async exists(path: string): Promise<boolean> {
-    const normalizedPath = normalizePath(path);
-    
-    if (!isValidPath(normalizedPath)) {
-      throw StorageError.operationFailed(`Invalid path: ${path}`);
-    }
+    const normalizedPath = this.validateAndNormalizePath(path);
 
     return this.files.has(normalizedPath);
   }
@@ -110,11 +112,7 @@ export class InMemoryStorageAdapter implements StorageAdapter {
    * @throws {StorageError} When the path is invalid
    */
   async list(directory: string): Promise<string[]> {
-    const normalizedDir = normalizePath(directory);
-    
-    if (!isValidPath(normalizedDir)) {
-      throw StorageError.operationFailed(`Invalid directory path: ${directory}`);
-    }
+    const normalizedDir = this.validateAndNormalizePath(directory, 'directory path');
 
     const prefix = normalizedDir ? `${normalizedDir}/` : '';
     const results: string[] = [];
@@ -152,57 +150,5 @@ export class InMemoryStorageAdapter implements StorageAdapter {
     }
 
     return results.sort();
-  }
-
-  /**
-   * Clears all stored files from memory.
-   * This is useful for testing and cleanup scenarios.
-   * 
-   * @example
-   * ```typescript
-   * const adapter = new InMemoryStorageAdapter();
-   * await adapter.write('test.txt', 'content');
-   * adapter.clear();
-   * console.log(await adapter.exists('test.txt')); // false
-   * ```
-   */
-  clear(): void {
-    this.files.clear();
-  }
-
-  /**
-   * Gets the current number of files stored in memory.
-   * This is useful for testing and monitoring memory usage.
-   * 
-   * @returns The number of files currently stored
-   * 
-   * @example
-   * ```typescript
-   * const adapter = new InMemoryStorageAdapter();
-   * console.log(adapter.size()); // 0
-   * await adapter.write('test.txt', 'content');
-   * console.log(adapter.size()); // 1
-   * ```
-   */
-  size(): number {
-    return this.files.size;
-  }
-
-  /**
-   * Gets all file paths currently stored in memory.
-   * This is useful for debugging and testing scenarios.
-   * 
-   * @returns Array of all file paths
-   * 
-   * @example
-   * ```typescript
-   * const adapter = new InMemoryStorageAdapter();
-   * await adapter.write('a.txt', 'content');
-   * await adapter.write('dir/b.txt', 'content');
-   * console.log(adapter.getAllPaths()); // ['a.txt', 'dir/b.txt']
-   * ```
-   */
-  getAllPaths(): string[] {
-    return Array.from(this.files.keys()).sort();
   }
 }

@@ -89,7 +89,7 @@ describe('InMemoryStorageAdapter', () => {
         await adapter.write('file1.txt', 'content1');
         await adapter.write('file2.txt', 'content2');
         await adapter.write('data/nested.txt', 'content3');
-        
+
         const files = await adapter.list('');
         expect(files).toEqual(['data', 'file1.txt', 'file2.txt']);
       });
@@ -98,7 +98,7 @@ describe('InMemoryStorageAdapter', () => {
         await adapter.write('data/file1.txt', 'content1');
         await adapter.write('data/file2.txt', 'content2');
         await adapter.write('data/subdir/file3.txt', 'content3');
-        
+
         const files = await adapter.list('data');
         expect(files).toEqual(['file1.txt', 'file2.txt', 'subdir']);
       });
@@ -123,7 +123,7 @@ describe('InMemoryStorageAdapter', () => {
       test('lists files with special characters', async () => {
         await adapter.write('file with spaces.txt', 'content');
         await adapter.write('file-with_special@chars.txt', 'content');
-        
+
         const files = await adapter.list('');
         expect(files).toContain('file with spaces.txt');
         expect(files).toContain('file-with_special@chars.txt');
@@ -189,51 +189,16 @@ describe('InMemoryStorageAdapter', () => {
     });
   });
 
-  describe('Memory Management Utilities', () => {
-    test('clear() removes all files', async () => {
-      await adapter.write('file1.txt', 'content1');
-      await adapter.write('data/file2.txt', 'content2');
-      
-      expect(adapter.size()).toBe(2);
-      adapter.clear();
-      expect(adapter.size()).toBe(0);
-      expect(await adapter.exists('file1.txt')).toBe(false);
-      expect(await adapter.exists('data/file2.txt')).toBe(false);
-    });
-
-    test('size() returns correct count', async () => {
-      expect(adapter.size()).toBe(0);
-      
-      await adapter.write('file1.txt', 'content');
-      expect(adapter.size()).toBe(1);
-      
-      await adapter.write('file2.txt', 'content');
-      expect(adapter.size()).toBe(2);
-      
-      await adapter.delete('file1.txt');
-      expect(adapter.size()).toBe(1);
-    });
-
-    test('getAllPaths() returns sorted paths', async () => {
-      await adapter.write('zebra.txt', 'content');
-      await adapter.write('alpha.txt', 'content');
-      await adapter.write('data/beta.txt', 'content');
-      
-      const paths = adapter.getAllPaths();
-      expect(paths).toEqual(['alpha.txt', 'data/beta.txt', 'zebra.txt']);
-    });
-  });
-
   describe('Concurrent Operations', () => {
     test('handles concurrent reads', async () => {
       await adapter.write('test.txt', 'content');
-      
+
       const reads = await Promise.all([
         adapter.read('test.txt'),
         adapter.read('test.txt'),
         adapter.read('test.txt'),
       ]);
-      
+
       expect(reads).toEqual(['content', 'content', 'content']);
     });
 
@@ -243,7 +208,7 @@ describe('InMemoryStorageAdapter', () => {
         adapter.write('file2.txt', 'content2'),
         adapter.write('file3.txt', 'content3'),
       ]);
-      
+
       expect(await adapter.read('file1.txt')).toBe('content1');
       expect(await adapter.read('file2.txt')).toBe('content2');
       expect(await adapter.read('file3.txt')).toBe('content3');
@@ -256,7 +221,7 @@ describe('InMemoryStorageAdapter', () => {
         adapter.write('test.txt', 'second'),
         adapter.write('test.txt', 'third'),
       ]);
-      
+
       // Content will be one of the writes (behavior is deterministic in this case)
       const content = await adapter.read('test.txt');
       expect(['first', 'second', 'third']).toContain(content);
@@ -267,37 +232,41 @@ describe('InMemoryStorageAdapter', () => {
     test('read operations complete quickly', async () => {
       const smallContent = 'x'.repeat(1000); // 1KB
       await adapter.write('test.txt', smallContent);
-      
+
       const start = performance.now();
       await adapter.read('test.txt');
       const duration = performance.now() - start;
-      
+
       expect(duration).toBeLessThan(1); // <1ms for small files
     });
 
     test('write operations complete quickly', async () => {
       const smallContent = 'x'.repeat(1000); // 1KB
-      
+
       const start = performance.now();
       await adapter.write('test.txt', smallContent);
       const duration = performance.now() - start;
-      
+
       expect(duration).toBeLessThan(1); // <1ms for small files
     });
 
     test('handles large number of files efficiently', async () => {
       const start = performance.now();
-      
+
       // Write 1000 small files
       const writes = [];
       for (let i = 0; i < 1000; i++) {
         writes.push(adapter.write(`file${i}.txt`, `content${i}`));
       }
       await Promise.all(writes);
-      
+
       const duration = performance.now() - start;
       expect(duration).toBeLessThan(100); // Should complete in reasonable time
-      expect(adapter.size()).toBe(1000);
+
+      // Verify files were written by checking a few
+      expect(await adapter.exists('file0.txt')).toBe(true);
+      expect(await adapter.exists('file999.txt')).toBe(true);
+      expect(await adapter.read('file0.txt')).toBe('content0');
     });
   });
 
@@ -307,33 +276,38 @@ describe('InMemoryStorageAdapter', () => {
       await adapter.write('config.json', '{"theme": "dark"}');
       await adapter.write('data/users.json', '[{"id": 1}]');
       await adapter.write('data/posts/1.json', '{"title": "test"}');
-      
+
       // Verify structure
       expect(await adapter.list('')).toEqual(['config.json', 'data']);
       expect(await adapter.list('data')).toEqual(['posts', 'users.json']);
       expect(await adapter.list('data/posts')).toEqual(['1.json']);
-      
+
       // Modify and verify
       await adapter.write('config.json', '{"theme": "light"}');
       expect(await adapter.read('config.json')).toBe('{"theme": "light"}');
-      
+
       // Cleanup
       await adapter.delete('data/posts/1.json');
       expect(await adapter.list('data/posts')).toEqual([]);
-      expect(adapter.size()).toBe(2);
+
+      // Verify remaining files
+      expect(await adapter.exists('config.json')).toBe(true);
+      expect(await adapter.exists('data/users.json')).toBe(true);
     });
 
-    test('memory isolation between instances', () => {
+    test('memory isolation between instances', async () => {
       const adapter1 = new InMemoryStorageAdapter();
       const adapter2 = new InMemoryStorageAdapter();
-      
-      adapter1.write('test.txt', 'content1');
-      adapter2.write('test.txt', 'content2');
-      
-      expect(adapter1.read('test.txt')).resolves.toBe('content1');
-      expect(adapter2.read('test.txt')).resolves.toBe('content2');
-      expect(adapter1.size()).toBe(1);
-      expect(adapter2.size()).toBe(1);
+
+      await adapter1.write('test.txt', 'content1');
+      await adapter2.write('test.txt', 'content2');
+
+      expect(await adapter1.read('test.txt')).toBe('content1');
+      expect(await adapter2.read('test.txt')).toBe('content2');
+
+      // Verify isolation by checking that each adapter only has its own file
+      expect(await adapter1.exists('test.txt')).toBe(true);
+      expect(await adapter2.exists('test.txt')).toBe(true);
     });
   });
 });

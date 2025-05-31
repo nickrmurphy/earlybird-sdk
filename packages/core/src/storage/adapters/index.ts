@@ -6,3 +6,4 @@
  */
 
 export { InMemoryStorageAdapter } from './InMemoryStorageAdapter.js';
+export { CapacitorStorageAdapter } from './CapacitorStorageAdapter.js';
