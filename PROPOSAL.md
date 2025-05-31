@@ -5,10 +5,10 @@
 A simple, type-safe storage solution for local-first apps that works identically on web and native platforms. Built on CRDTs for conflict-free sync with minimal dependencies.
 
 **Key Benefits:**
-- 🌐 Works everywhere (web/native via Capacitor)
+- 🌐 Unapologetically web-first with IndexedDB persistence
 - 🔄 Automatic conflict resolution across devices
 - 📝 Full TypeScript support with Standard Schema validation
-- 🪶 Minimal dependencies (just Capacitor + schema library)
+- 🪶 Zero external dependencies for core functionality
 - 🧪 Easy testing with in-memory adapter
 - 📁 Human-readable file storage
 
@@ -16,7 +16,7 @@ A simple, type-safe storage solution for local-first apps that works identically
 
 Local-first apps need storage that:
 - Syncs across devices without conflicts
-- Works on web without SQLite complexity  
+- Works natively in browsers without complexity
 - Provides type safety and schema evolution
 - Maintains simple mental models
 
@@ -54,7 +54,7 @@ interface StorageAdapter {
 ```
 
 Two implementations:
-- **CapacitorStorageAdapter** → Production (uses `@capacitor/filesystem`)
+- **IndexedDBStorageAdapter** → Production (uses browser IndexedDB)
 - **InMemoryStorageAdapter** → Testing (uses `Map<string, string>`)
 
 ### 2. CRDT Store
@@ -276,7 +276,7 @@ const result = await db.performIncrementalSync(syncPlan);
 ## Implementation Roadmap
 
 ### Phase 1: Foundation ✅ MOSTLY COMPLETE
-- [x] **Storage Adapter** → Interface + Capacitor/InMemory implementations
+- [x] **Storage Adapter** → Interface + IndexedDB/InMemory implementations
 - [x] **HLC Utilities** → Generate, compare, increment operations  
 - [ ] **Basic CRDT Store** → Insert, update, get, delete operations
 - [x] **Comprehensive Testing** → Unit tests with InMemoryAdapter, HLC validation
@@ -312,16 +312,14 @@ const result = await db.performIncrementalSync(syncPlan);
 ```
 
 ### Dependencies
-- **Required**: `@capacitor/filesystem`
-- **Peer**: `@capacitor/core` (runtime), `typescript` (dev)
+- **Required**: None (uses browser IndexedDB)
 - **Dev/Test**: `zod` (our Standard Schema reference implementation), `vitest`, `@types/node`
 - **User Choice**: Any [Standard Schema](https://github.com/standard-schema/standard-schema)-compliant library
-- **Dev**: `vitest`, `@types/node`
 
 ### Bundle Size Target
 - Core package: <15KB gzipped
 - Web utilities: <5KB gzipped  
-- Zero required runtime dependencies beyond Capacitor
+- Zero required runtime dependencies
 - Schema library is user's choice (follows Standard Schema)
 
 ## Trade-offs & Considerations
@@ -350,9 +348,9 @@ const result = await db.performIncrementalSync(syncPlan);
 - Clear mental models
 
 ### ✅ Web-Native  
-- No SQLite compilation complexity
-- Works in all browsers immediately
-- Identical behavior across platforms
+- No compilation complexity - pure browser APIs
+- Works in all modern browsers immediately
+- IndexedDB provides reliable persistence
 
 ### ✅ Type Safety
 - Full TypeScript inference

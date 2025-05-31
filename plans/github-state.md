@@ -18,7 +18,7 @@
 |---------|-------|---------|--------|-------------|----------|
 | #6 | 🏗️ Setup Storage Foundation & Interface | `phase-1`, `storage`, `foundation`, `interface` | **CLOSED** ✅ | None (foundational) | - |
 | #7 | 💾 Implement InMemoryStorageAdapter | `phase-1`, `storage`, `adapter`, `testing` | **CLOSED** ✅ | Issue #6 | - |
-| #8 | 📱 Implement CapacitorStorageAdapter | `phase-1`, `storage`, `adapter`, `capacitor`, `mobile` | **CLOSED** ✅ | Issue #6 | - |
+| #8 | 🌐 Implement IndexedDBStorageAdapter | `phase-1`, `storage`, `adapter`, `web`, `indexeddb` | **CLOSED** ✅ | Issue #6 | - |
 | #9 | 🧪 Create Shared Test Suite & Validation | `phase-1`, `storage`, `testing`, `validation` | **CLOSED** ✅ | Issue #7, preferably #8 | - |
 | #10 | 🔗 Integration Tests & Final Polish | `phase-1`, `storage`, `integration`, `documentation`, `examples` | **OPEN** | Issues #7, #8, #9 | - |
 
@@ -27,7 +27,7 @@
 - **Name**: Phase 1: Storage Foundation
 - **ID**: 1
 - **Due Date**: 2024-12-27T23:59:59Z
-- **Description**: Week 1: Implement minimal StorageAdapter interface, CapacitorStorageAdapter and InMemoryStorageAdapter implementations, basic file operations and testing
+- **Description**: Week 1: Implement minimal StorageAdapter interface, IndexedDBStorageAdapter and InMemoryStorageAdapter implementations, basic file operations and testing
 - **URL**: https://github.com/nickrmurphy/earlybird-sdk/milestone/1
 - **Progress**: 4/5 implementation issues completed (80% complete)
 - **Epic Issue**: #1 tracks overall Phase 1 progress with links to sub-issues
@@ -42,8 +42,8 @@
 | `interface` | Interface/API definition work | #d62728 | Interface definitions |
 | `adapter` | Storage adapter implementation | #9467bd | Adapter implementations |
 | `testing` | Testing and validation | #8c564b | Test-focused work |
-| `capacitor` | Capacitor/mobile related | #e377c2 | Capacitor integration |
-| `mobile` | Mobile platform specific | #7f7f7f | Mobile-specific work |
+| `web` | Web platform specific | #1f77b4 | Web-specific work |
+| `indexeddb` | IndexedDB storage implementation | #2ca02c | IndexedDB integration |
 | `validation` | Validation and compliance testing | #bcbd22 | Compliance testing |
 | `integration` | Integration testing and final steps | #17becf | Integration work |
 | `examples` | Example code and demos | #c5b0d5 | Documentation examples |
@@ -58,7 +58,7 @@ Issue #6 (Foundation) ← CRITICAL PATH START
     ↓
 ┌─ Issue #7 (InMemory) ──┐
 │                        ↓
-└─ Issue #8 (Capacitor) ─→ Issue #9 (Shared Tests)
+└─ Issue #8 (IndexedDB) ─→ Issue #9 (Shared Tests)
                               ↓
                          Issue #10 (Integration) ← CRITICAL PATH END
 ```
@@ -72,7 +72,7 @@ Issue #6 (Foundation) ← CRITICAL PATH START
 - **Repo**: earlybird-sdk
 - **Branch**: main (assumed)
 - **Structure**: Monorepo with `packages/` and `apps/`
-- **Target Package**: `packages/core/`
+- **Target Package**: `packages/storage/`
 
 ## CLI Commands for State Management
 
@@ -97,21 +97,22 @@ gh api repos/nickrmurphy/earlybird-sdk/milestones/1  # Get milestone progress
 
 ## File Locations for Implementation
 
-Based on planned structure in `packages/core/`:
+Based on implemented structure in `packages/storage/`:
 
 ### Source Files
-- `src/storage/interfaces/StorageAdapter.ts` (Issue #6)
-- `src/storage/adapters/InMemoryStorageAdapter.ts` (Issue #7)
-- `src/storage/adapters/CapacitorStorageAdapter.ts` (Issue #8)
-- `src/storage/adapters/index.ts` (Issues #7, #8)
-- `src/storage/index.ts` (Issue #6)
+- `src/StorageAdapter.ts` (Issue #6) ✅
+- `src/adapters/InMemoryStorageAdapter.ts` (Issue #7) ✅
+- `src/adapters/IndexedDBStorageAdapter.ts` (Issue #8) ✅
+- `src/index.ts` (Issues #6, #7, #8) ✅
+- `src/errors.ts` (Issue #6) ✅
+- `src/utils/path.ts` (Issue #6) ✅
 
 ### Test Files
-- `tests/storage/adapters/InMemoryStorageAdapter.test.ts` (Issue #7)
-- `tests/storage/adapters/CapacitorStorageAdapter.test.ts` (Issue #8)
-- `tests/storage/adapters/StorageAdapter.shared.test.ts` (Issue #9)
-- `tests/storage/integration/storage-operations.test.ts` (Issue #10)
-- `tests/storage/utils/test-helpers.ts` (Issue #9)
+- `tests/adapters/InMemoryStorageAdapter.test.ts` (Issue #7) ✅
+- `tests/adapters/IndexedDBStorageAdapter.test.ts` (Issue #8) - PENDING
+- `tests/adapters/StorageAdapter.shared.test.ts` (Issue #9) - TBD
+- `tests/integration/storage-operations.test.ts` (Issue #10) - TBD
+- `tests/utils/test-helpers.ts` (Issue #9) - TBD
 
 ## Current Status Summary
 

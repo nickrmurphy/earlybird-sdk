@@ -17,7 +17,6 @@ export { StorageError, StorageErrorCode } from "./errors.js";
 
 // Adapter implementations
 export { InMemoryStorageAdapter } from "./adapters/InMemoryStorageAdapter.js";
-export { CapacitorStorageAdapter } from "./adapters/CapacitorStorageAdapter.js";
 
 // Path utilities
 export {
