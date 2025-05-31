@@ -1,4 +1,4 @@
-import type { Result } from "./utils/result.js";
+import type { Result } from "../../core/src/result.js";
 
 /**
  * Error codes for storage operations

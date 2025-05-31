@@ -5,8 +5,8 @@
  * that can be shared across different storage adapter implementations.
  */
 
-import type { Result } from "./result.js";
-import { ok, err } from "./result.js";
+import type { Result } from "../../../core/src/result.js";
+import { ok, err } from "../../../core/src/result.js";
 import { StorageErrorCode } from "../storageAdapter.js";
 
 /**

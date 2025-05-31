@@ -4,6 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
+### Core Package (`packages/core/`)
+```bash
+# Build core utilities (required for other packages)
+pnpm run build
+
+# Type checking only
+pnpm run typecheck
+```
+
 ### Storage Package (`packages/storage/`)
 ```bash
 # Run tests with type checking and coverage
@@ -22,8 +31,11 @@ pnpm run typecheck
 
 ### Build and Quality
 ```bash
+# Build all packages in workspace order
+pnpm run --recursive build
+
 # Type check the entire workspace
-pnpm run typecheck
+pnpm run --recursive typecheck
 
 # Lint (command not yet configured - check package.json for future updates)
 ```
@@ -32,6 +44,7 @@ pnpm run typecheck
 
 ### Monorepo Structure
 - **Root**: PNPM workspace with minimal dependencies philosophy
+- **packages/core**: Core utilities and foundational types shared across packages
 - **packages/storage**: Storage adapters and filesystem abstraction
 - **plans/**: Detailed implementation plans and GitHub issue templates
 
@@ -45,7 +58,7 @@ The project is currently implementing a foundational storage layer in `packages/
 - `exists(path: string): Promise<boolean>`
 - `list(directory: string): Promise<string[]>`
 
-**Error Handling**: Custom `StorageError` class with specific error codes (`NOT_FOUND`, `OPERATION_FAILED`)
+**Error Handling**: Result type pattern from `@earlybird-sdk/core` with specific error codes (`NOT_FOUND`, `OPERATION_FAILED`, `INVALID_PATH`)
 
 **Current Implementations**:
 - Storage interface and error types are complete
