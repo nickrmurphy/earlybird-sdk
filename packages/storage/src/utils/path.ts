@@ -5,7 +5,7 @@
  * that can be shared across different storage adapter implementations.
  */
 
-import { StorageError } from "../errors.js";
+import { StorageError } from "@/errors.js";
 
 /**
  * Normalizes a file path for consistent storage operations.
