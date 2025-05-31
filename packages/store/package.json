@@ -1,11 +1,11 @@
 {
-	"name": "@earlybird-sdk/core",
+	"name": "@earlybird-sdk/store",
 	"version": "0.1.0",
-	"description": "Core utilities for the Earlybird SDK",
-	"module": "src/index.ts",
+	"description": "CRDT-enabled document store with Hybrid Logical Clock synchronization",
+	"module": "index.ts",
 	"type": "module",
 	"exports": {
-		".": "./src/index.ts"
+		".": "./index.ts"
 	},
 	"scripts": {
 		"test": "bun run typecheck && bun test --coverage",
@@ -20,5 +20,12 @@
 	"peerDependencies": {
 		"typescript": "^5"
 	},
-	"keywords": ["local-first", "end-to-end-encryption", "sdk"]
+	"keywords": [
+		"crdt",
+		"store",
+		"hlc",
+		"hybrid-logical-clock",
+		"local-first",
+		"conflict-resolution"
+	]
 }

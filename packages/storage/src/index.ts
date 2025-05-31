@@ -2,7 +2,7 @@
  * @earlybird-sdk/storage
  *
  * Storage abstractions and adapters for building local-first applications.
- * 
+ *
  * This package provides a unified interface for file storage operations
  * across different platforms (web, mobile, Node.js).
  *

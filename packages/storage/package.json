@@ -21,11 +21,5 @@
 		"typescript": "^5",
 		"@capacitor/filesystem": "^7.1.1"
 	},
-	"keywords": [
-		"storage",
-		"local-first",
-		"capacitor",
-		"filesystem",
-		"adapters"
-	]
+	"keywords": ["storage", "local-first", "capacitor", "filesystem", "adapters"]
 }
