@@ -5,7 +5,7 @@ import {
   getDirectory,
   getFilename,
   joinPath,
-} from '../../../src/storage/utils/path.js';
+} from '@/storage/utils/path.js';
 
 describe('Path Utilities', () => {
   describe('normalizePath', () => {

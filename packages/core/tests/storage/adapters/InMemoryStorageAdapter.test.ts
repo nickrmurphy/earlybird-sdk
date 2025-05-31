@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
-import { InMemoryStorageAdapter } from '../../../src/storage/adapters/InMemoryStorageAdapter.js';
-import { StorageError, StorageErrorCode } from '../../../src/storage/errors.js';
+import { InMemoryStorageAdapter } from '@/storage/adapters/InMemoryStorageAdapter.js';
+import { StorageError, StorageErrorCode } from '@/storage/errors.js';
 
 describe('InMemoryStorageAdapter', () => {
   let adapter: InMemoryStorageAdapter;

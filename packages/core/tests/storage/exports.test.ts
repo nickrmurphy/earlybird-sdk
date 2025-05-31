@@ -1,6 +1,6 @@
 import { expect, test, describe } from "bun:test";
-import type { StorageAdapter } from "../../src/storage/index.js";
-import { StorageError, StorageErrorCode } from "../../src/storage/index.js";
+import type { StorageAdapter } from "@/storage/index.js";
+import { StorageError, StorageErrorCode } from "@/storage/index.js";
 
 describe("Storage Module", () => {
   describe("Exports", () => {

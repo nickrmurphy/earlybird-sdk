@@ -8,7 +8,7 @@
  */
 
 import { describe, test, expect, beforeEach, mock, beforeAll, afterAll } from 'bun:test';
-import { StorageError, StorageErrorCode } from '../../../src/storage/errors.js';
+import { StorageError, StorageErrorCode } from '@/storage/errors.js';
 
 // Store original module to restore later
 let originalModule: any;
@@ -61,7 +61,7 @@ describe('CapacitorStorageAdapter', () => {
         mockFilesystem.readdir.mockClear();
 
         // Import the adapter after mocking
-        const { CapacitorStorageAdapter } = await import('../../../src/storage/adapters/CapacitorStorageAdapter.js');
+        const { CapacitorStorageAdapter } = await import('@/storage/adapters/CapacitorStorageAdapter.js');
         adapter = new CapacitorStorageAdapter();
     });
 
