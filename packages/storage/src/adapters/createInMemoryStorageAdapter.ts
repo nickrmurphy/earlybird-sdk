@@ -1,6 +1,8 @@
-import { StorageError } from "../errors.js";
 import { validateAndNormalizePath } from "../utils/path.js";
-import type { StorageAdapter } from "@/storageAdapter.js";
+import type { StorageAdapter } from "../storageAdapter.js";
+import type { Result } from "../utils/result.js";
+import { ok, err } from "../utils/result.js";
+import { StorageErrorCode } from "../storageAdapter.js";
 
 /**
  * Creates an in-memory implementation of the StorageAdapter interface.
@@ -28,12 +30,16 @@ export function createInMemoryStorageAdapter(): StorageAdapter {
 		 * Reads the content of a file at the specified path.
 		 *
 		 * @param path - The file path to read from
-		 * @returns Promise that resolves to the file content as a string, or null if file doesn't exist
-		 * @throws {StorageError} When the path is invalid
+		 * @returns Promise that resolves to Result containing file content or null if file doesn't exist
 		 */
-		async read(path: string): Promise<string | null> {
-			const normalizedPath = validateAndNormalizePath(path);
-			return files.get(normalizedPath) ?? null;
+		async read(path: string): Promise<Result<string | null, StorageErrorCode>> {
+			const pathResult = validateAndNormalizePath(path);
+			if (!pathResult.success) {
+				return err(pathResult.error);
+			}
+			
+			const content = files.get(pathResult.value) ?? null;
+			return ok(content);
 		},
 
 		/**
@@ -42,60 +48,71 @@ export function createInMemoryStorageAdapter(): StorageAdapter {
 		 *
 		 * @param path - The file path to write to
 		 * @param content - The string content to write
-		 * @returns Promise that resolves when the write operation completes
-		 * @throws {StorageError} When the path is invalid
+		 * @returns Promise that resolves to Result indicating success or failure
 		 */
-		async write(path: string, content: string): Promise<void> {
-			const normalizedPath = validateAndNormalizePath(path);
-
-			if (!normalizedPath) {
-				throw StorageError.operationFailed("Cannot write to root directory");
+		async write(path: string, content: string): Promise<Result<void, StorageErrorCode>> {
+			const pathResult = validateAndNormalizePath(path);
+			if (!pathResult.success) {
+				return err(pathResult.error);
 			}
 
-			files.set(normalizedPath, content);
+			if (!pathResult.value) {
+				return err(StorageErrorCode.OPERATION_FAILED);
+			}
+
+			files.set(pathResult.value, content);
+			return ok(undefined);
 		},
 
 		/**
 		 * Deletes the file at the specified path.
 		 *
 		 * @param path - The file path to delete
-		 * @returns Promise that resolves when the delete operation completes
-		 * @throws {StorageError} When the file doesn't exist or path is invalid
+		 * @returns Promise that resolves to Result indicating success or failure
 		 */
-		async delete(path: string): Promise<void> {
-			const normalizedPath = validateAndNormalizePath(path);
-
-			if (!files.has(normalizedPath)) {
-				throw StorageError.notFound(path);
+		async delete(path: string): Promise<Result<void, StorageErrorCode>> {
+			const pathResult = validateAndNormalizePath(path);
+			if (!pathResult.success) {
+				return err(pathResult.error);
 			}
 
-			files.delete(normalizedPath);
+			if (!files.has(pathResult.value)) {
+				return err(StorageErrorCode.NOT_FOUND);
+			}
+
+			files.delete(pathResult.value);
+			return ok(undefined);
 		},
 
 		/**
 		 * Checks if a file exists at the specified path.
 		 *
 		 * @param path - The file path to check
-		 * @returns Promise that resolves to true if the file exists, false otherwise
-		 * @throws {StorageError} When the path is invalid
+		 * @returns Promise that resolves to Result containing boolean existence check
 		 */
-		async exists(path: string): Promise<boolean> {
-			const normalizedPath = validateAndNormalizePath(path);
-			return files.has(normalizedPath);
+		async exists(path: string): Promise<Result<boolean, StorageErrorCode>> {
+			const pathResult = validateAndNormalizePath(path);
+			if (!pathResult.success) {
+				return err(pathResult.error);
+			}
+			
+			const exists = files.has(pathResult.value);
+			return ok(exists);
 		},
 
 		/**
 		 * Lists all files in the specified directory.
 		 *
 		 * @param directory - The directory path to list (use empty string or '.' for root)
-		 * @returns Promise that resolves to an array of file paths within the directory
-		 * @throws {StorageError} When the path is invalid
+		 * @returns Promise that resolves to Result containing array of file paths
 		 */
-		async list(directory: string): Promise<string[]> {
-			const normalizedDir = validateAndNormalizePath(
-				directory,
-				"directory path",
-			);
+		async list(directory: string): Promise<Result<string[], StorageErrorCode>> {
+			const pathResult = validateAndNormalizePath(directory);
+			if (!pathResult.success) {
+				return err(pathResult.error);
+			}
+			
+			const normalizedDir = pathResult.value;
 			const prefix = normalizedDir ? `${normalizedDir}/` : "";
 			const results: string[] = [];
 
@@ -131,7 +148,7 @@ export function createInMemoryStorageAdapter(): StorageAdapter {
 				}
 			}
 
-			return results.sort();
+			return ok(results.sort());
 		},
 	};
 }

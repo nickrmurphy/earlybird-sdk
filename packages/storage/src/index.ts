@@ -9,11 +9,13 @@
  * @see https://github.com/nickrmurphy/earlybird-sdk
  */
 
-// Core interface
+// Core interface and error codes
 export type { StorageAdapter } from "./storageAdapter.js";
+export { StorageErrorCode } from "./storageAdapter.js";
 
-// Error types and utilities
-export { StorageError, StorageErrorCode } from "./errors.js";
+// Result type
+export type { Result } from "./utils/result.js";
+export { ok, err } from "./utils/result.js";
 
 // Adapter implementations
 export { createInMemoryStorageAdapter } from "./adapters/createInMemoryStorageAdapter.js";

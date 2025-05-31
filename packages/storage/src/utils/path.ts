@@ -5,7 +5,9 @@
  * that can be shared across different storage adapter implementations.
  */
 
-import { StorageError } from "@/errors.js";
+import type { Result } from "./result.js";
+import { ok, err } from "./result.js";
+import { StorageErrorCode } from "../storageAdapter.js";
 
 /**
  * Normalizes a file path for consistent storage operations.
@@ -166,19 +168,16 @@ export function joinPath(...segments: string[]): string {
  * Validates and normalizes a path for storage operations.
  *
  * @param path - The path to validate and normalize
- * @param pathType - Description of the path type for error messages (e.g., "path", "directory path")
- * @returns The normalized path
- * @throws {StorageError} When the path is invalid
+ * @returns Result containing the normalized path or an error
  */
 export function validateAndNormalizePath(
 	path: string,
-	pathType = "path",
-): string {
+): Result<string, StorageErrorCode> {
 	const normalizedPath = normalizePath(path);
 
 	if (!isValidPath(normalizedPath)) {
-		throw StorageError.operationFailed(`Invalid ${pathType}: ${path}`);
+		return err(StorageErrorCode.INVALID_PATH);
 	}
 
-	return normalizedPath;
+	return ok(normalizedPath);
 }
