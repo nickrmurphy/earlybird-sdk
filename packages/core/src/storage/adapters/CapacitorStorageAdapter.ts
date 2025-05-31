@@ -1,5 +1,5 @@
 import type { StorageAdapter } from "../StorageAdapter";
-import { Filesystem } from '@capacitor/filesystem';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { isValidPath, normalizePath } from "../utils/path";
 import { StorageError } from "../errors";
 
@@ -17,6 +17,8 @@ export class CapacitorStorageAdapter implements StorageAdapter {
 
         const result = await Filesystem.readFile({
             path: normalizedPath,
+            directory: Directory.Data,
+            encoding: Encoding.UTF8
         })
 
         if (typeof result.data === "string") {
@@ -43,6 +45,8 @@ export class CapacitorStorageAdapter implements StorageAdapter {
         await Filesystem.writeFile({
             path: normalizedPath,
             data: content,
+            directory: Directory.Data,
+            encoding: Encoding.UTF8,
             recursive: true
         });
     }
@@ -60,7 +64,8 @@ export class CapacitorStorageAdapter implements StorageAdapter {
 
         try {
             await Filesystem.deleteFile({
-                path: normalizedPath
+                path: normalizedPath,
+                directory: Directory.Data
             });
         } catch (error) {
             throw StorageError.operationFailed(`Failed to delete file at path: ${path}`);
@@ -78,7 +83,10 @@ export class CapacitorStorageAdapter implements StorageAdapter {
         const normalizedPath = this.getNormalizedPath(path);
 
         try {
-            await Filesystem.stat({ path: normalizedPath });
+            await Filesystem.stat({
+                path: normalizedPath,
+                directory: Directory.Data
+            });
             return true;
         } catch (error) {
             return false;
@@ -96,7 +104,10 @@ export class CapacitorStorageAdapter implements StorageAdapter {
         const normalizedDirectory = this.getNormalizedPath(directory);
 
         try {
-            const result = await Filesystem.readdir({ path: normalizedDirectory });
+            const result = await Filesystem.readdir({
+                path: normalizedDirectory,
+                directory: Directory.Data
+            });
             return result.files.map((file) => file.name);
         } catch (error) {
             throw StorageError.operationFailed(`Failed to list files in directory: ${directory}`);

@@ -7,9 +7,11 @@
  * Path validation and normalization are tested separately in the path utility tests.
  */
 
-import { describe, test, expect, beforeEach, mock } from 'bun:test';
-import type { StorageAdapter } from '../../../src/storage/StorageAdapter.js';
+import { describe, test, expect, beforeEach, mock, beforeAll, afterAll } from 'bun:test';
 import { StorageError, StorageErrorCode } from '../../../src/storage/errors.js';
+
+// Store original module to restore later
+let originalModule: any;
 
 // Mock the Capacitor Filesystem plugin
 const mockFilesystem = {
@@ -20,10 +22,32 @@ const mockFilesystem = {
     readdir: mock(() => Promise.resolve({ files: [] as any[] }))
 };
 
-// Mock the Capacitor import
-mock.module('@capacitor/filesystem', () => ({
-    Filesystem: mockFilesystem
-}));
+beforeAll(() => {
+    // Store original module if it exists
+    try {
+        originalModule = require('@capacitor/filesystem');
+    } catch (e) {
+        // Module doesn't exist, that's fine
+    }
+
+    // Mock the Capacitor import
+    mock.module('@capacitor/filesystem', () => ({
+        Filesystem: mockFilesystem,
+        Directory: {
+            Data: 'DATA'
+        },
+        Encoding: {
+            UTF8: 'utf8'
+        }
+    }));
+});
+
+afterAll(() => {
+    // Restore original module if needed
+    if (originalModule) {
+        mock.restore();
+    }
+});
 
 describe('CapacitorStorageAdapter', () => {
     let adapter: any;
@@ -49,7 +73,11 @@ describe('CapacitorStorageAdapter', () => {
             const content = await adapter.read('test.txt');
 
             expect(content).toBe(expectedContent);
-            expect(mockFilesystem.readFile).toHaveBeenCalledWith({ path: 'test.txt' });
+            expect(mockFilesystem.readFile).toHaveBeenCalledWith({
+                path: 'test.txt',
+                directory: 'DATA',
+                encoding: 'utf8'
+            });
         });
 
         test('reads content from nested file path', async () => {
@@ -59,7 +87,11 @@ describe('CapacitorStorageAdapter', () => {
             const content = await adapter.read('data/user/profile.json');
 
             expect(content).toBe(expectedContent);
-            expect(mockFilesystem.readFile).toHaveBeenCalledWith({ path: 'data/user/profile.json' });
+            expect(mockFilesystem.readFile).toHaveBeenCalledWith({
+                path: 'data/user/profile.json',
+                directory: 'DATA',
+                encoding: 'utf8'
+            });
         });
 
         test('converts Blob data to text', async () => {
@@ -110,6 +142,8 @@ describe('CapacitorStorageAdapter', () => {
             expect(mockFilesystem.writeFile).toHaveBeenCalledWith({
                 path: 'test.txt',
                 data: content,
+                directory: 'DATA',
+                encoding: 'utf8',
                 recursive: true
             });
         });
@@ -123,6 +157,8 @@ describe('CapacitorStorageAdapter', () => {
             expect(mockFilesystem.writeFile).toHaveBeenCalledWith({
                 path: 'data/user/profile.json',
                 data: content,
+                directory: 'DATA',
+                encoding: 'utf8',
                 recursive: true
             });
         });
@@ -135,6 +171,8 @@ describe('CapacitorStorageAdapter', () => {
             expect(mockFilesystem.writeFile).toHaveBeenCalledWith({
                 path: 'empty.txt',
                 data: '',
+                directory: 'DATA',
+                encoding: 'utf8',
                 recursive: true
             });
         });
@@ -148,6 +186,8 @@ describe('CapacitorStorageAdapter', () => {
             expect(mockFilesystem.writeFile).toHaveBeenCalledWith({
                 path: 'large.txt',
                 data: largeContent,
+                directory: 'DATA',
+                encoding: 'utf8',
                 recursive: true
             });
         });
@@ -164,7 +204,10 @@ describe('CapacitorStorageAdapter', () => {
 
             await adapter.delete('test.txt');
 
-            expect(mockFilesystem.deleteFile).toHaveBeenCalledWith({ path: 'test.txt' });
+            expect(mockFilesystem.deleteFile).toHaveBeenCalledWith({
+                path: 'test.txt',
+                directory: 'DATA'
+            });
         });
 
         test('deletes nested file', async () => {
@@ -172,7 +215,10 @@ describe('CapacitorStorageAdapter', () => {
 
             await adapter.delete('data/user/profile.json');
 
-            expect(mockFilesystem.deleteFile).toHaveBeenCalledWith({ path: 'data/user/profile.json' });
+            expect(mockFilesystem.deleteFile).toHaveBeenCalledWith({
+                path: 'data/user/profile.json',
+                directory: 'DATA'
+            });
         });
 
         test('throws StorageError when delete fails', async () => {
@@ -196,7 +242,10 @@ describe('CapacitorStorageAdapter', () => {
             const exists = await adapter.exists('test.txt');
 
             expect(exists).toBe(true);
-            expect(mockFilesystem.stat).toHaveBeenCalledWith({ path: 'test.txt' });
+            expect(mockFilesystem.stat).toHaveBeenCalledWith({
+                path: 'test.txt',
+                directory: 'DATA'
+            });
         });
 
         test('returns true for existing nested file', async () => {
@@ -205,7 +254,10 @@ describe('CapacitorStorageAdapter', () => {
             const exists = await adapter.exists('data/user/profile.json');
 
             expect(exists).toBe(true);
-            expect(mockFilesystem.stat).toHaveBeenCalledWith({ path: 'data/user/profile.json' });
+            expect(mockFilesystem.stat).toHaveBeenCalledWith({
+                path: 'data/user/profile.json',
+                directory: 'DATA'
+            });
         });
 
         test('returns false for non-existent file', async () => {
@@ -215,7 +267,10 @@ describe('CapacitorStorageAdapter', () => {
             const exists = await adapter.exists('nonexistent.txt');
 
             expect(exists).toBe(false);
-            expect(mockFilesystem.stat).toHaveBeenCalledWith({ path: 'nonexistent.txt' });
+            expect(mockFilesystem.stat).toHaveBeenCalledWith({
+                path: 'nonexistent.txt',
+                directory: 'DATA'
+            });
         });
 
         test('throws error for invalid path', async () => {
@@ -236,7 +291,10 @@ describe('CapacitorStorageAdapter', () => {
             const result = await adapter.list('data');
 
             expect(result).toEqual(['file1.txt', 'file2.txt', 'subdirectory']);
-            expect(mockFilesystem.readdir).toHaveBeenCalledWith({ path: 'data' });
+            expect(mockFilesystem.readdir).toHaveBeenCalledWith({
+                path: 'data',
+                directory: 'DATA'
+            });
         });
 
         test('lists files in root directory', async () => {
@@ -249,7 +307,10 @@ describe('CapacitorStorageAdapter', () => {
             const result = await adapter.list('');
 
             expect(result).toEqual(['config.json', 'data']);
-            expect(mockFilesystem.readdir).toHaveBeenCalledWith({ path: '' });
+            expect(mockFilesystem.readdir).toHaveBeenCalledWith({
+                path: '',
+                directory: 'DATA'
+            });
         });
 
         test('returns empty array for empty directory', async () => {
@@ -258,7 +319,10 @@ describe('CapacitorStorageAdapter', () => {
             const result = await adapter.list('empty');
 
             expect(result).toEqual([]);
-            expect(mockFilesystem.readdir).toHaveBeenCalledWith({ path: 'empty' });
+            expect(mockFilesystem.readdir).toHaveBeenCalledWith({
+                path: 'empty',
+                directory: 'DATA'
+            });
         });
 
         test('throws StorageError when listing fails', async () => {
@@ -282,7 +346,11 @@ describe('CapacitorStorageAdapter', () => {
             // Test that the adapter uses normalized paths
             await adapter.read('data\\file.txt');
 
-            expect(mockFilesystem.readFile).toHaveBeenCalledWith({ path: 'data/file.txt' });
+            expect(mockFilesystem.readFile).toHaveBeenCalledWith({
+                path: 'data/file.txt',
+                directory: 'DATA',
+                encoding: 'utf8'
+            });
         });
 
         test('handles Unicode filenames', async () => {
@@ -291,7 +359,11 @@ describe('CapacitorStorageAdapter', () => {
 
             await adapter.read(unicodePath);
 
-            expect(mockFilesystem.readFile).toHaveBeenCalledWith({ path: unicodePath });
+            expect(mockFilesystem.readFile).toHaveBeenCalledWith({
+                path: unicodePath,
+                directory: 'DATA',
+                encoding: 'utf8'
+            });
         });
 
         test('handles special characters in filenames', async () => {
@@ -300,7 +372,11 @@ describe('CapacitorStorageAdapter', () => {
 
             await adapter.read(specialPath);
 
-            expect(mockFilesystem.readFile).toHaveBeenCalledWith({ path: specialPath });
+            expect(mockFilesystem.readFile).toHaveBeenCalledWith({
+                path: specialPath,
+                directory: 'DATA',
+                encoding: 'utf8'
+            });
         });
     });
 
