@@ -1,20 +1,17 @@
 {
-	"name": "earlybird-sdk",
-	"version": "0.0.0",
-	"private": true,
-	"type": "module",
-	"workspaces": ["packages/*"],
-	"scripts": {
-		"lint": "biome lint .",
-		"lint:fix": "biome lint --write .",
-		"format": "biome format .",
-		"format:fix": "biome format --write .",
-		"check": "biome check .",
-		"check:fix": "biome check --write ."
-	},
-	"devDependencies": {
-		"@biomejs/biome": "1.9.4",
-		"@vitest/ui": "^3.1.4",
-		"vitest": "^3.1.4"
-	}
+  "name": "earlybird-sdk",
+  "version": "0.0.1",
+  "private": true,
+  "devDependencies": {
+    "@vitest/coverage-v8": "3.2.0",
+    "@vitest/ui": "^3.2.0",
+    "prettier-plugin-sort-json": "^4.1.1",
+    "vitest": "^3.2.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter demo-client --filter demo-server dev",
+    "test": "vitest",
+    "test:ui": "vitest --ui --watch --coverage",
+    "test:coverage": "vitest run --coverage"
+  }
 }

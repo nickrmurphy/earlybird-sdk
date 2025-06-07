@@ -1,0 +1,16 @@
+import type { Data, Document } from "../crdt/types";
+
+export type Store<T extends Data> = {
+  collectionName: string;
+  get: (id: string) => Promise<T | null>;
+  all: () => Promise<T[]>;
+  where: (predicate: (item: T) => boolean) => Promise<T[]>;
+  insert: (id: string, data: Omit<T, "id">) => Promise<void>;
+  update: (id: string, data: Partial<Omit<T, "id">>) => Promise<T>;
+  getHashes: () => Promise<{ root: string; buckets: BucketHashMap }>;
+  getBuckets: (indices: number[]) => Promise<Record<string, Document<T>>>;
+  mergeData: (data: Record<string, Document<T>>) => Promise<void>;
+};
+
+// <bucket number, bucket hash>
+export type BucketHashMap = Record<number, string>;

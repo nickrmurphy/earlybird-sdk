@@ -1,7 +1,11 @@
+.DS_store
 node_modules/
+coverage/
+
+**/_store/**
+
 dist/
 build/
-.DS_Store
 *.log
 .env
 .env.local

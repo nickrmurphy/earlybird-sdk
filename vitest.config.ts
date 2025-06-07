@@ -1,22 +1,19 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    // Enable test isolation (default in Vitest)
-    isolate: true,
-    
-    // Coverage configuration
+    projects: ["packages/*"],
+    watch: false,
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      include: ['src/**'],
-      exclude: ['**/*.test.ts', '**/*.d.ts']
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      exclude: [
+        "packages/**/*.test.ts",
+        "packages/**/types/**/*.ts",
+        "packages/**/*.d.ts",
+        "**/node_modules/**",
+        "**/coverage/**",
+      ],
     },
-    
-    // Test file patterns
-    include: ['src/**/*.test.ts'],
-    
-    // Environment
-    environment: 'node'
-  }
-})
+  },
+});

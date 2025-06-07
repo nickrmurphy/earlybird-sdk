@@ -4,107 +4,85 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-### Core Package (`packages/core/`)
-```bash
-# Build core utilities (required for other packages)
-pnpm run build
+### Root Level (pnpm workspace)
 
-# Type checking only
-pnpm run typecheck
-```
+- `pnpm test` - Run tests across all packages using Vitest
+- `pnpm test:ui` - Run tests with UI and coverage watching
+- `pnpm test:coverage` - Generate coverage reports
 
-### Storage Package (`packages/storage/`)
-```bash
-# Run tests with type checking and coverage
-pnpm run test
+### Demo Client (`apps/demo-client/`)
 
-# Watch mode for tests during development  
-pnpm run test:watch
+- `pnpm dev` - Start development server on port 3001
+- `pnpm build` - Build for production (runs vite build && tsc)
+- `pnpm serve` - Preview production build
+- `pnpm test` - Run tests with Vitest
 
-# Generate test coverage reports
-pnpm run test:coverage
-pnpm run test:coverage:verbose
+### Demo Server (`apps/demo-server/`)
 
-# Type checking only
-pnpm run typecheck
-```
+- `pnpm dev` - Start development server with tsx watch on port 3000
+- `pnpm build` - Compile TypeScript to dist/
+- `pnpm start` - Run compiled server from dist/
 
-### Build and Quality
-```bash
-# Build all packages in workspace order
-pnpm run --recursive build
+## Architecture Overview
 
-# Type check the entire workspace
-pnpm run --recursive typecheck
+Earlybird SDK is a local-first data synchronization framework that enables offline-capable applications with real-time
+sync. The project demonstrates CRDT (Conflict-free Replicated Data Types) based data storage with bidirectional
+client-server synchronization.
 
-# Lint (command not yet configured - check package.json for future updates)
-```
+### Core Components
 
-## Project Architecture
+**@earlybird-sdk/store** (`packages/store/`)
 
-### Monorepo Structure
-- **Root**: PNPM workspace with minimal dependencies philosophy
-- **packages/core**: Core utilities and foundational types shared across packages
-- **packages/storage**: Storage adapters and filesystem abstraction
-- **plans/**: Detailed implementation plans and GitHub issue templates
+- **CRDT Implementation**: Conflict-free replicated data types for distributed data consistency
+- **HLC (Hybrid Logical Clock)**: Vector clock implementation for ordering events in distributed systems
+- **Storage Adapters**: Multiple storage backends (Node.js filesystem, Capacitor, LibSQL)
+- **Sync Client**: Push/pull synchronization with remote servers
+- **Store Factory**: High-level API for creating typed stores with adapters
 
-### Storage Foundation (Phase 1)
-The project is currently implementing a foundational storage layer in `packages/storage/src/`:
+**Demo Applications**
 
-**Core Interface**: `StorageAdapter` provides unified async API for file operations:
-- `read(path: string): Promise<string | null>`
-- `write(path: string, content: string): Promise<void>`  
-- `delete(path: string): Promise<void>`
-- `exists(path: string): Promise<boolean>`
-- `list(directory: string): Promise<string[]>`
+- **Client**: React 19 + TanStack Router application showcasing todo management with offline sync
+- **Server**: Hono-based API server providing sync endpoints for hash comparison and bucket fetching
 
-**Error Handling**: Result type pattern from `@earlybird-sdk/core` with specific error codes (`NOT_FOUND`, `OPERATION_FAILED`, `INVALID_PATH`)
+### Data Flow Architecture
 
-**Current Implementations**:
-- Storage interface and error types are complete
-- Working toward InMemoryStorageAdapter and CapacitorStorageAdapter implementations
+1. **Local Storage**: Data persists locally using configurable adapters (filesystem, Capacitor, etc.)
+2. **CRDT Operations**: All mutations go through CRDT layer ensuring conflict-free merging
+3. **Hybrid Logical Clocks**: Events are timestamped with vector clocks for causal ordering
+4. **Hash-based Sync**: Client and server exchange merkle-tree style hashes to identify differences
+5. **Bucket Synchronization**: Only changed data buckets are transferred during sync operations
 
-### Project Philosophy
-- **Minimal dependencies**: Keep external deps to absolute minimum
-- **Web-first**: Prioritize web platform compatibility
-- **Client-first**: Design for client-side usage patterns  
-- **Type safety**: Full TypeScript with strict typing
-- **Local-first**: Supporting local-first and E2E encrypted applications
+### Key Technologies
 
-### Future Architecture
-Based on phase planning, the storage foundation will support:
-- CRDT Store implementation (Phase 2)
-- Private data synchronization
-- Cross-platform persistence (Web + Capacitor mobile)
+- **TypeScript** with strict configuration across all packages
+- **Vitest** for testing with coverage reporting and UI
+- **PNPM Workspaces** for monorepo package management
+- **Vite** for build tooling in client applications
+- **Hono** for lightweight HTTP server framework
+- **TanStack Router** for file-based routing with type safety
 
-## Testing Strategy
+### Development Patterns
 
-### Test Organization
-- **Unit tests**: `packages/storage/` with coverage reports
-- **Shared test suites**: Validate StorageAdapter compliance across implementations
-- **Integration tests**: Cross-adapter compatibility testing
+- **Workspace Dependencies**: Use `workspace:*` for internal package references
+- **Adapter Pattern**: Storage adapters provide consistent interface across platforms
+- **Factory Pattern**: Store and client creation through factory functions
+- **Type Safety**: Full TypeScript coverage with generic store types
+- **Conflict Resolution**: Automatic via CRDT, no manual merge conflict handling needed
+- **Functional Core, Imperative Shell**: Business logic separated into pure functions (functional core) with I/O operations handled by coordinating functions (imperative shell). This pattern improves testability, reasoning, and maintainability by isolating side effects from pure business logic.
 
-### Running Tests
-Always run `pnpm run test` which includes type checking before test execution. Coverage reports help track completeness of storage interface implementations.
+### Sync Protocol
 
-## Key Implementation Notes
+The sync process follows a hash-based differential algorithm:
 
-### Storage Adapters
-When implementing new storage adapters:
-1. Must implement all `StorageAdapter` interface methods
-2. Use `StorageError` class for error handling with appropriate error codes
-3. Follow async patterns - all operations return Promises
-4. Path handling should be normalized for cross-platform compatibility
-5. Use shared test suite to validate interface compliance
+1. Client requests current hashes from server (`/:collection/hashes`)
+2. Server responds with merkle-tree style hash structure
+3. Client compares local vs remote hashes to identify changed buckets
+4. Client requests specific buckets (`/:collection?buckets=[1,2,3]`)
+5. CRDT merge operations handle conflict resolution automatically
 
-### Development Workflow
-1. Run `pnpm run typecheck` to ensure TypeScript compliance
-2. Use `pnpm run test:watch` during development
-3. Verify coverage with `pnpm run test:coverage` before commits
-4. Check `plans/` directory for detailed implementation guidance
+### Testing Strategy
 
-### Package Structure
-- Export all public APIs through `src/index.ts`
-- Storage module exports through `src/storage/index.ts`  
-- Keep implementation files focused and well-documented
-- Follow existing JSDoc patterns for public APIs
+- **Unit Tests**: Comprehensive coverage for CRDT operations, HLC logic, and storage adapters
+- **Integration Tests**: Store factory and sync client integration scenarios
+- **Coverage Reporting**: V8 provider with HTML, JSON, and text output formats
+- **Test Structure**: Co-located test files with `.test.ts` suffix

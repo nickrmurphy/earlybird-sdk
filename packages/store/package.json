@@ -1,0 +1,10 @@
+{
+  "name": "@earlybird-sdk/store",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "index.js",
+  "optionalDependencies": {
+    "@capacitor/filesystem": "^7.1.1",
+    "@libsql/client": "^0.15.8"
+  }
+}
