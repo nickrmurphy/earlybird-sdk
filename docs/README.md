@@ -83,79 +83,80 @@ setInterval(async () => {
 # Milestones
 
 ## 1. Single User Database Sync
-**Status**: In Progress
+**Status**: 🔄 In Progress
 
 **Description**: Basic local-first storage with full stack synchronization
 
 **Goals**:
-- Local storage with CRDTs for conflict resolution
-- Basic HTTP sync endpoints
-- Single database per user architecture
-- Full stack implementation (client + server)
+- [x] Local storage with CRDTs for conflict resolution
+- [x] Basic HTTP sync endpoints
+- [x] Single database per user architecture
+- [x] Full stack implementation (client + server)
+- [ ] Basic Framework integrations
 
 ---
 
 ## 2. Multi-user Server Store
-**Status**: Planning
+**Status**: 📋 Planning
 
 **Description**: Scale to support multiple users on a single server instance while maintaining isolated databases.
 
 **Goals**:
-- Multi-tenant server architecture
-- User authentication and authorization
-- Database isolation per user
-- Performance optimization for multiple users
+- [ ] Multi-tenant server architecture
+- [ ] User authentication and authorization
+- [ ] Database isolation per user
+- [ ] Performance optimization for multiple users
 
 ---
 
 ## 3. End-to-End Encryption (E2EE)
-**Status**: Planning
+**Status**: 📋 Planning
 
 **Description**: Implement client-side encryption to ensure data privacy and security.
 
 **Goals**:
-- Client-side encryption before sync
-- Key management system
-- Zero-knowledge server architecture
-- Maintain CRDT functionality with encrypted data
+- [ ] Client-side encryption before sync
+- [ ] Key management system
+- [ ] Zero-knowledge server architecture
+- [ ] Maintain CRDT functionality with encrypted data
 
 ---
 
 ## 4. Real-time Updates
-**Status**: Planning
+**Status**: 📋 Planning
 
 **Description**: Real-time notifications and reactive updates using WebSocket connections.
 
 **Goals**:
-- WebSocket notification system
-- Reactive data invalidation
-- Efficient update propagation
-- Graceful fallback to polling
+- [ ] WebSocket notification system
+- [ ] Reactive data invalidation
+- [ ] Efficient update propagation
+- [ ] Graceful fallback to polling
 
 **Notes**: Implements the hybrid HTTP + WebSocket sync strategy outlined in SYNC.md
 
 ---
 
 ## 5. Schema Validation Hooks
-**Status**: Planning
+**Status**: 📋 Planning
 
 **Description**: Add runtime validation and transformation hooks for data integrity.
 
 **Goals**:
-- Standard Schema integration
-- Runtime validation hooks
-- Data transformation pipelines
-- Type-safe validation errors
+- [ ] Standard Schema integration
+- [ ] Runtime validation hooks
+- [ ] Data transformation pipelines
+- [ ] Type-safe validation errors
 
 ---
 
 ## 6. Document Sharing
-**Status**: Future
+**Status**: 🔮 Future
 
 **Description**: Enable sharing documents between users.
 
 **Goals**:
-- Cross-user document access
-- Permission management system
-- Shared document conflict resolution
+- [ ] Cross-user document access
+- [ ] Permission management system
+- [ ] Shared document conflict resolution
 ---
