@@ -122,7 +122,33 @@ setInterval(async () => {
 
 ---
 
-## 4. Real-time Updates
+## 4. Schema Validation Hooks
+**Status**: 📋 Planning
+
+**Description**: Add runtime validation and transformation hooks for data integrity.
+
+**Goals**:
+- [ ] Standard Schema integration
+- [ ] Runtime validation hooks
+- [ ] Data transformation pipelines
+- [ ] Type-safe validation errors
+
+---
+
+## 5. Schema migrations
+**Status**: 📋 Planning
+
+**Description**: Manage changes to the data schema over time.
+
+**Goals**:
+- [ ] Schema versioning
+- [ ] Data migration scripts (typescript)
+- [ ] Compatibility checks
+- [ ] Automatic schema updates
+
+---
+
+## 6. Real-time Updates
 **Status**: 📋 Planning
 
 **Description**: Real-time notifications and reactive updates using WebSocket connections.
@@ -137,20 +163,7 @@ setInterval(async () => {
 
 ---
 
-## 5. Schema Validation Hooks
-**Status**: 📋 Planning
-
-**Description**: Add runtime validation and transformation hooks for data integrity.
-
-**Goals**:
-- [ ] Standard Schema integration
-- [ ] Runtime validation hooks
-- [ ] Data transformation pipelines
-- [ ] Type-safe validation errors
-
----
-
-## 6. Document Sharing
+## 7. Document Sharing
 **Status**: 🔮 Future
 
 **Description**: Enable sharing documents between users.
