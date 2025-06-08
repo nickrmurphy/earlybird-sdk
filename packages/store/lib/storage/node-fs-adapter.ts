@@ -26,12 +26,16 @@ const writeFile = async (path: string, content: string): Promise<void> => {
 const listFiles = async (path: string): Promise<string[]> => {
   let files: string[] = [];
 
-  const data = fs.readdirSync(path, { withFileTypes: true });
+  try {
+    const data = fs.readdirSync(path, { withFileTypes: true });
 
-  for (const file of data) {
-    if (file.isFile()) {
-      files.push(file.name);
+    for (const file of data) {
+      if (file.isFile()) {
+        files.push(file.name);
+      }
     }
+  } catch (error) {
+    console.warn(`Error listing files in path ${path}: ${error}`);
   }
 
   return files;

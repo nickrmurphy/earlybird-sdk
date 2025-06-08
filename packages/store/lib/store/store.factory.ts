@@ -14,11 +14,11 @@ import {
   where,
 } from "./store";
 
-export const createStore = <T extends Data>(
+export const createStore = <T extends Data, K extends string = string>(
   adapter: StorageAdapter,
   collectionName: string,
   basePath = "_store",
-): Store<T> => {
+): Store<T, K> => {
   const hlcManager = createHLC(adapter, basePath, collectionName);
   const mutateCallbacks = new Map<string, OnMutateCallback<T>>();
 

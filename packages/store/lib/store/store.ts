@@ -3,10 +3,7 @@ import type { HLC } from "../hlc/types";
 import type { StorageAdapter } from "../storage/types";
 import type { BucketHashMap } from "./types";
 
-import {
-  computeHash,
-  readDocument,
-} from "../crdt";
+import { computeHash, readDocument } from "../crdt";
 import {
   createFilePath,
   createCollectionPath,
@@ -128,9 +125,11 @@ export const getHashes = async <T extends Data>(
   collection: string,
 ): Promise<{ root: string; buckets: BucketHashMap }> => {
   const BUCKET_SIZE = 100;
+  console.log("Starting get hashes");
   const files = await adapter.list(
     `${createCollectionPath(basePath, collection)}/`,
   );
+  console.log("Files:", files);
   let rootHash = "";
   const bucketHashes: BucketHashMap = {};
 

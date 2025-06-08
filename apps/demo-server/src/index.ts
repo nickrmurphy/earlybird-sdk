@@ -20,7 +20,7 @@ const adapter = createNodeFsAdapter();
 const store = createStore<Todo>(adapter, "todos");
 
 const app = new Hono();
-app.use("/*", cors());
+app.use("*", cors());
 
 app.get("/heartbeat", async (c) => {
   return c.json({ message: "ok" });

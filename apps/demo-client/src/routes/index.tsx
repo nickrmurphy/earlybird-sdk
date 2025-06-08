@@ -29,10 +29,15 @@ const storageAdapter = createCapacitorAdapter({
   fs: Filesystem,
 });
 
-const store = createStore<Todo>(storageAdapter, "todos");
+type Events = "push";
+const store = createStore<Todo, Events>(storageAdapter, "todos");
 
 const client = createClient(store, {
   baseUrl: "http://localhost:3000",
+});
+
+store.addOnMutate("push", async () => {
+  await Promise.all([client.pull(), client.push()]);
 });
 
 function App() {
@@ -47,6 +52,16 @@ function App() {
   const fetchCompletedTodos = useCallback(async () => {
     const completedTodos = await store.where((item) => item.completed);
     setCompletedTodos(completedTodos);
+  }, []);
+
+  useEffect(() => {
+    store.addOnMutate("todos-mutate", async () => {
+      await Promise.all([fetchTodos(), fetchCompletedTodos()]);
+    });
+
+    return () => {
+      store.removeOnMutate("todos-mutate");
+    };
   }, []);
 
   useEffect(() => {
@@ -79,13 +94,10 @@ function App() {
       meta: { author: "Anonymous", createdAt: new Date().toISOString() },
       tags: ["demo"],
     });
-    await fetchTodos();
   };
 
   const toggleTodo = async (todo: Todo) => {
     await store.update(todo.id, { completed: !todo.completed });
-    await fetchCompletedTodos();
-    await fetchTodos();
   };
 
   return (
