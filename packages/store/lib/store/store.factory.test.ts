@@ -118,38 +118,92 @@ describe("store factory", () => {
     });
   });
 
-  describe("onMutate callback", () => {
-    it("should call onMutate callback on insert operations", async () => {
-      const onMutate = vi.fn<OnMutateCallback<TestUser>>();
-      const store = createStore<TestUser>(adapter, "users", "_store", onMutate);
+  describe("keyed onMutate callbacks", () => {
+    it("should add and call keyed callbacks on insert operations", async () => {
+      const syncCallback = vi.fn<OnMutateCallback<TestUser>>();
+      const logCallback = vi.fn<OnMutateCallback<TestUser>>();
+      const store = createStore<TestUser>(adapter, "users");
+
+      store.addOnMutate("sync", syncCallback);
+      store.addOnMutate("logging", logCallback);
 
       await store.insert("user1", { name: "John", age: 30 });
 
-      expect(onMutate).toHaveBeenCalledWith(
+      expect(syncCallback).toHaveBeenCalledWith(
+        "insert",
+        "user1",
+        { id: "user1", name: "John", age: 30 }
+      );
+      expect(logCallback).toHaveBeenCalledWith(
         "insert",
         "user1",
         { id: "user1", name: "John", age: 30 }
       );
     });
 
-    it("should call onMutate callback on update operations", async () => {
-      const onMutate = vi.fn<OnMutateCallback<TestUser>>();
-      const store = createStore<TestUser>(adapter, "users", "_store", onMutate);
+    it("should add and call keyed callbacks on update operations", async () => {
+      const syncCallback = vi.fn<OnMutateCallback<TestUser>>();
+      const store = createStore<TestUser>(adapter, "users");
 
+      store.addOnMutate("sync", syncCallback);
       await store.insert("user1", { name: "John", age: 30 });
-      onMutate.mockClear();
+      syncCallback.mockClear();
 
       await new Promise((resolve) => setTimeout(resolve, 10));
       await store.update("user1", { age: 31 });
 
-      expect(onMutate).toHaveBeenCalledWith(
+      expect(syncCallback).toHaveBeenCalledWith(
         "update",
         "user1",
         expect.objectContaining({ id: "user1", name: "John", age: 31 })
       );
     });
 
-    it("should not call onMutate when callback is not provided", async () => {
+    it("should remove specific keyed callbacks", async () => {
+      const syncCallback = vi.fn<OnMutateCallback<TestUser>>();
+      const logCallback = vi.fn<OnMutateCallback<TestUser>>();
+      const store = createStore<TestUser>(adapter, "users");
+
+      store.addOnMutate("sync", syncCallback);
+      store.addOnMutate("logging", logCallback);
+      store.removeOnMutate("logging");
+
+      await store.insert("user1", { name: "John", age: 30 });
+
+      expect(syncCallback).toHaveBeenCalled();
+      expect(logCallback).not.toHaveBeenCalled();
+    });
+
+    it("should replace callbacks with same key", async () => {
+      const firstCallback = vi.fn<OnMutateCallback<TestUser>>();
+      const secondCallback = vi.fn<OnMutateCallback<TestUser>>();
+      const store = createStore<TestUser>(adapter, "users");
+
+      store.addOnMutate("sync", firstCallback);
+      store.addOnMutate("sync", secondCallback); // Replace with same key
+
+      await store.insert("user1", { name: "John", age: 30 });
+
+      expect(firstCallback).not.toHaveBeenCalled();
+      expect(secondCallback).toHaveBeenCalled();
+    });
+
+    it("should clear all callbacks", async () => {
+      const syncCallback = vi.fn<OnMutateCallback<TestUser>>();
+      const logCallback = vi.fn<OnMutateCallback<TestUser>>();
+      const store = createStore<TestUser>(adapter, "users");
+
+      store.addOnMutate("sync", syncCallback);
+      store.addOnMutate("logging", logCallback);
+      store.clearOnMutate();
+
+      await store.insert("user1", { name: "John", age: 30 });
+
+      expect(syncCallback).not.toHaveBeenCalled();
+      expect(logCallback).not.toHaveBeenCalled();
+    });
+
+    it("should not call callbacks when none are registered", async () => {
       const store = createStore<TestUser>(adapter, "users");
 
       await store.insert("user1", { name: "John", age: 30 });

@@ -18,9 +18,13 @@ export const createStore = <T extends Data>(
   adapter: StorageAdapter,
   collectionName: string,
   basePath = "_store",
-  onMutate?: OnMutateCallback<T>,
 ): Store<T> => {
   const hlcManager = createHLC(adapter, basePath, collectionName);
+  const mutateCallbacks = new Map<string, OnMutateCallback<T>>();
+
+  const callMutateCallbacks = (operation: 'insert' | 'update', id: string, data: T) => {
+    mutateCallbacks.forEach(callback => callback(operation, id, data));
+  };
 
   return {
     collectionName,
@@ -36,9 +40,7 @@ export const createStore = <T extends Data>(
     insert: async (id: string, item: Omit<T, "id">) => {
       const hlc = await hlcManager.advance();
       await insert(adapter, hlc, basePath, collectionName, id, item);
-      if (onMutate) {
-        onMutate('insert', id, { id, ...item } as T);
-      }
+      callMutateCallbacks('insert', id, { id, ...item } as T);
     },
     update: async (id: string, item: Partial<Omit<T, "id">>) => {
       const hlc = await hlcManager.advance();
@@ -50,9 +52,7 @@ export const createStore = <T extends Data>(
         id,
         item as Partial<T>,
       );
-      if (onMutate) {
-        onMutate('update', id, updatedData);
-      }
+      callMutateCallbacks('update', id, updatedData);
       return updatedData;
     },
     getHashes: async () => {
@@ -63,6 +63,15 @@ export const createStore = <T extends Data>(
     },
     getBuckets: async (indices: number[]) => {
       return getBuckets<T>(adapter, basePath, collectionName, indices);
+    },
+    addOnMutate: (key: string, callback: OnMutateCallback<T>) => {
+      mutateCallbacks.set(key, callback);
+    },
+    removeOnMutate: (key: string) => {
+      mutateCallbacks.delete(key);
+    },
+    clearOnMutate: () => {
+      mutateCallbacks.clear();
     },
   };
 };

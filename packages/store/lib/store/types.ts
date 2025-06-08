@@ -12,6 +12,9 @@ export type Store<T extends Data> = {
   getHashes: () => Promise<{ root: string; buckets: BucketHashMap }>;
   getBuckets: (indices: number[]) => Promise<Record<string, Document<T>>>;
   mergeData: (data: Record<string, Document<T>>) => Promise<void>;
+  addOnMutate: (key: string, callback: OnMutateCallback<T>) => void;
+  removeOnMutate: (key: string) => void;
+  clearOnMutate: () => void;
 };
 
 // <bucket number, bucket hash>
