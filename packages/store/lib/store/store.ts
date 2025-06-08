@@ -1,7 +1,6 @@
 import type { Data, Document } from "../crdt/types";
 import type { HLC } from "../hlc/types";
 import type { StorageAdapter } from "../storage/types";
-import type { BucketHashMap } from "./types";
 
 import { computeHash, readDocument } from "../crdt";
 import {
@@ -123,7 +122,7 @@ export const getHashes = async <T extends Data>(
   adapter: StorageAdapter,
   basePath: string,
   collection: string,
-): Promise<{ root: string; buckets: BucketHashMap }> => {
+): Promise<{ root: string; buckets: Record<number, string> }> => {
   const BUCKET_SIZE = 100;
   console.log("Starting get hashes");
   const files = await adapter.list(
@@ -131,7 +130,7 @@ export const getHashes = async <T extends Data>(
   );
   console.log("Files:", files);
   let rootHash = "";
-  const bucketHashes: BucketHashMap = {};
+  const bucketHashes: Record<number, string> = {};
 
   for (let i = 0; i < files.length; i++) {
     // Run sequentially for deterministic results
