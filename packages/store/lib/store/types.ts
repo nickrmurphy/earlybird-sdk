@@ -1,5 +1,7 @@
 import type { Data, Document } from "../crdt/types";
 
+export type OnMutateCallback<T extends Data> = (operation: 'insert' | 'update', id: string, data: T) => void;
+
 export type Store<T extends Data> = {
   collectionName: string;
   get: (id: string) => Promise<T | null>;

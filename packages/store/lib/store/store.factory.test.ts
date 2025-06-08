@@ -1,6 +1,7 @@
 import type { StorageAdapter } from "../storage/types";
+import type { OnMutateCallback } from "./types";
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createStore } from "./store.factory";
 
 // Mock storage adapter for testing
@@ -114,6 +115,48 @@ describe("store factory", () => {
       expect(
         olderUsers.find((u: TestUser) => u.name === "Jane"),
       ).toBeUndefined();
+    });
+  });
+
+  describe("onMutate callback", () => {
+    it("should call onMutate callback on insert operations", async () => {
+      const onMutate = vi.fn<OnMutateCallback<TestUser>>();
+      const store = createStore<TestUser>(adapter, "users", "_store", onMutate);
+
+      await store.insert("user1", { name: "John", age: 30 });
+
+      expect(onMutate).toHaveBeenCalledWith(
+        "insert",
+        "user1",
+        { id: "user1", name: "John", age: 30 }
+      );
+    });
+
+    it("should call onMutate callback on update operations", async () => {
+      const onMutate = vi.fn<OnMutateCallback<TestUser>>();
+      const store = createStore<TestUser>(adapter, "users", "_store", onMutate);
+
+      await store.insert("user1", { name: "John", age: 30 });
+      onMutate.mockClear();
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      await store.update("user1", { age: 31 });
+
+      expect(onMutate).toHaveBeenCalledWith(
+        "update",
+        "user1",
+        expect.objectContaining({ id: "user1", name: "John", age: 31 })
+      );
+    });
+
+    it("should not call onMutate when callback is not provided", async () => {
+      const store = createStore<TestUser>(adapter, "users");
+
+      await store.insert("user1", { name: "John", age: 30 });
+      await store.update("user1", { age: 31 });
+
+      // Should not throw any errors
+      expect(true).toBe(true);
     });
   });
 });

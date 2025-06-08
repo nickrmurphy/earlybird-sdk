@@ -1,6 +1,6 @@
 import type { Data, Document } from "../crdt/types";
 import type { StorageAdapter } from "../storage/types";
-import type { Store } from "./types";
+import type { Store, OnMutateCallback } from "./types";
 
 import { createHLC } from "../hlc";
 import {
@@ -18,6 +18,7 @@ export const createStore = <T extends Data>(
   adapter: StorageAdapter,
   collectionName: string,
   basePath = "_store",
+  onMutate?: OnMutateCallback<T>,
 ): Store<T> => {
   const hlcManager = createHLC(adapter, basePath, collectionName);
 
@@ -35,10 +36,13 @@ export const createStore = <T extends Data>(
     insert: async (id: string, item: Omit<T, "id">) => {
       const hlc = await hlcManager.advance();
       await insert(adapter, hlc, basePath, collectionName, id, item);
+      if (onMutate) {
+        onMutate('insert', id, { id, ...item } as T);
+      }
     },
     update: async (id: string, item: Partial<Omit<T, "id">>) => {
       const hlc = await hlcManager.advance();
-      return update<T>(
+      const updatedData = await update<T>(
         adapter,
         hlc,
         basePath,
@@ -46,6 +50,10 @@ export const createStore = <T extends Data>(
         id,
         item as Partial<T>,
       );
+      if (onMutate) {
+        onMutate('update', id, updatedData);
+      }
+      return updatedData;
     },
     getHashes: async () => {
       return getHashes(adapter, basePath, collectionName);
