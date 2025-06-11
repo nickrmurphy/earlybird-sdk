@@ -11,6 +11,21 @@
 			"development": "./index.ts",
 			"import": "./dist/index.js",
 			"types": "./dist/index.d.ts"
+		},
+		"./capacitor-adapter": {
+			"development": "./storage/capacitor-adapter.ts",
+			"import": "./dist/capacitor-adapter.js",
+			"types": "./dist/capacitor-adapter.d.ts"
+		},
+		"./memory-adapter": {
+			"development": "./storage/memory-adapter.ts",
+			"import": "./dist/memory-adapter.js",
+			"types": "./dist/memory-adapter.d.ts"
+		},
+		"./node-adapter": {
+			"development": "./storage/node-adapter.ts",
+			"import": "./dist/node-adapter.js",
+			"types": "./dist/node-adapter.d.ts"
 		}
 	},
 	"files": ["dist"],

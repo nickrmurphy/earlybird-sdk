@@ -5,9 +5,13 @@ import dts from 'vite-plugin-dts';
 export default defineConfig({
 	build: {
 		lib: {
-			entry: resolve(__dirname, 'index.ts'),
+			entry: {
+				index: resolve(__dirname, 'index.ts'),
+				'memory-adapter': resolve(__dirname, 'storage/memory-adapter.ts'),
+				'node-adapter': resolve(__dirname, 'storage/node-adapter.ts'),
+				'capacitor-adapter': resolve(__dirname, 'storage/capacitor-adapter.ts'),
+			},
 			formats: ['es'],
-			fileName: 'index',
 		},
 		rollupOptions: {
 			external: ['zod', 'valibot', '@capacitor/filesystem'],
