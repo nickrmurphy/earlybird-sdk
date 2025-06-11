@@ -1,0 +1,38 @@
+{
+	"name": "@byearlybird/store-react",
+	"version": "0.0.1",
+	"description": "React hooks and components for @byearlybird/store",
+	"type": "module",
+	"main": "./dist/index.js",
+	"module": "./index.ts",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"development": "./index.ts",
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": ["dist"],
+	"scripts": {
+		"build": "vite build"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"vite": "^6.3.5",
+		"vite-plugin-dts": "^4.5.4"
+	},
+	"peerDependencies": {
+		"typescript": "^5",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0",
+		"@byearlybird/store": "workspace:*"
+	},
+	"publishConfig": {
+		"peerDependencies": {
+			"@byearlybird/store": "^0.0.1"
+		}
+	},
+	"license": "MIT",
+	"keywords": ["react", "hooks", "storage", "typescript", "store"]
+}

@@ -1,10 +1,29 @@
 {
-  "name": "@earlybird-sdk/store",
-  "version": "0.0.1",
-  "type": "module",
-  "main": "index.js",
-  "optionalDependencies": {
-    "@capacitor/filesystem": "^7.1.1",
-    "@libsql/client": "^0.15.8"
-  }
+	"name": "@byearlybird/store",
+	"version": "0.0.1",
+	"description": "Local-first data storage SDK for TypeScript",
+	"type": "module",
+	"main": "./dist/index.js",
+	"module": "./index.ts",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"development": "./index.ts",
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"files": ["dist"],
+	"keywords": ["storage", "typescript", "cross-platform", "sdk"],
+	"license": "MIT",
+	"scripts": {
+		"build": "vite build",
+		"test": "vitest",
+		"bench": "vitest bench"
+	},
+	"devDependencies": {
+		"@types/node": "^24.0.0",
+		"vite": "^6.3.5",
+		"vite-plugin-dts": "^4.5.4"
+	}
 }
