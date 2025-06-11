@@ -6,13 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Development
 - `bun test` - Run tests across all packages
+- `bun run test:coverage` - Generate coverage reports for all packages
 - `bun run bench` - Run performance benchmarks across all packages
 - `bun run build` - Build all packages
 - `bun run lint` - Check code with Biome
 - `bun run lint:fix` - Auto-fix linting issues
 
 ### Package-specific (from package directories)
-- `bun test` - Run Vitest tests for specific package
+- `bun run test` - Run Vitest tests for specific package
+- `bun run test:coverage` - Generate coverage report for specific package
 - `bun run bench` - Run Vitest benchmarks for specific package
 - `bun run dev` - Start Vite dev server (demo client only)
 

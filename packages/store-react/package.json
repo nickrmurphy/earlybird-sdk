@@ -15,7 +15,8 @@
 	},
 	"files": ["dist"],
 	"scripts": {
-		"build": "vite build"
+		"build": "vite build",
+		"test:coverage": "vitest run --coverage --passWithNoTests"
 	},
 	"devDependencies": {
 		"@types/bun": "latest",
