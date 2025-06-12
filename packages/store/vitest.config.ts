@@ -9,7 +9,9 @@ export default defineConfig({
 			include: ['storage/**/*.ts', 'store/**/*.ts'],
 			exclude: [
 				'**/*.test.ts',
+				'**/*.test-utils.ts',
 				'**/*.bench.ts',
+				'**/*.bench-utils.ts',
 				'**/*.d.ts',
 				'dist/**',
 				'node_modules/**',
