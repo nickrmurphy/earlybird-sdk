@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { rmSync } from 'node:fs';
-import { createNodeFsAdapter } from '../storage/node-adapter';
+import { createNodeFsAdapter } from '../../storage/node-adapter';
 import { createStoreBenchmarks } from './store.bench-utils';
 
 const cleanupTempFiles = () => {

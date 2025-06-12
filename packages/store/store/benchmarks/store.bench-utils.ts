@@ -1,7 +1,7 @@
 import { bench, describe } from 'vitest';
 import { z } from 'zod';
-import type { StorageAdapter } from '../storage/types';
-import { createStore } from './store';
+import type { StorageAdapter } from '../../storage/types';
+import { createStore } from '.././store';
 
 const userSchema = z.object({
 	id: z.string(),
