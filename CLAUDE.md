@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ### Development
-- `bun test` - Run tests across all packages
+- `bun run test` - Run tests across all packages (preferred over `bun test`)
 - `bun run test:coverage` - Generate coverage reports for all packages
 - `bun run bench` - Run performance benchmarks across all packages
 - `bun run build` - Build all packages

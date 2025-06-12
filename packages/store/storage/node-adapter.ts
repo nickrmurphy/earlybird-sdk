@@ -9,7 +9,9 @@ import fs from 'node:fs';
 
 const read: ReadFileMethod = async (path: string): Promise<string | null> => {
 	try {
-		const content = fs.readFileSync(path).toString();
+		const content = await fs.promises.readFile(path, {
+			encoding: 'utf8',
+		});
 		return content;
 	} catch (error) {
 		console.warn(`Error reading file ${path}: ${error}`);
