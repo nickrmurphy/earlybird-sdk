@@ -11,7 +11,7 @@ function createStoreProvider<T extends StoreRegistry>() {
 	const useStore = createUseStore<T>(StoreContext);
 	const useStores = createUseStores<T>(StoreContext);
 	const useQuery = createUseQuery<T>(useStore);
-	const useDocument = createUseDocument<T>(StoreContext, useStore);
+	const useDocument = createUseDocument<T>(useStore);
 
 	return { StoreProvider, useStore, useStores, useQuery, useDocument };
 }

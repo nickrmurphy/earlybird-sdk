@@ -1,18 +1,8 @@
-import type { Store } from '@byearlybird/store';
-import type { z } from 'zod/v4';
-
-import { createCapacitorAdapter, createStore } from '@byearlybird/store';
+import { createStore } from '@byearlybird/store';
 import { createStoreProvider } from '@byearlybird/store-react';
+import { createCapacitorAdapter } from '@byearlybird/store/capacitor-adapter';
 import { Directory, Filesystem } from '@capacitor/filesystem';
-import { entrySchema } from '../schema';
-
-// Define the types from our schemas
-type Entry = z.infer<typeof entrySchema>;
-
-// Define our store registry
-type AppStores = {
-	entries: Store<Entry>;
-};
+import { ingredientSchema, recipeSchema } from '../schema';
 
 // Create storage adapter (using memory adapter for demo)
 const adapter = createCapacitorAdapter({
@@ -21,7 +11,17 @@ const adapter = createCapacitorAdapter({
 });
 
 // Create the stores
-const entriesStore = createStore('entries', { adapter, schema: entrySchema });
+const recipesStore = createStore('recipes', { adapter, schema: recipeSchema });
+const ingredientsStore = createStore('ingredients', {
+	adapter,
+	schema: ingredientSchema,
+});
+
+// Store registry
+const stores = {
+	recipes: recipesStore,
+	ingredients: ingredientsStore,
+} as const;
 
 // Create the typed provider and hooks
 const {
@@ -29,15 +29,11 @@ const {
 	useStore,
 	useStores,
 	useQuery,
-} = createStoreProvider<AppStores>();
+	useDocument,
+} = createStoreProvider<typeof stores>();
 
 // Export the hooks for use in components
-export { useStore, useStores, useQuery };
-
-// Store registry
-const stores: AppStores = {
-	entries: entriesStore,
-};
+export { useStore, useStores, useQuery, useDocument };
 
 export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
 	return <BaseStoreProvider stores={stores}>{children}</BaseStoreProvider>;

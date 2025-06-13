@@ -1,44 +1,50 @@
-import './App.css';
-import { useQuery, useStore } from './components/StoreProvider';
+import { Ingredients } from './components/Ingredients';
+import { Recipes } from './components/Recipes';
+import { useDocument, useStore } from './components/StoreProvider';
+import { useSelectedRecipe } from './hooks/useSelectedRecipe';
 
 function App() {
-	const entryStore = useStore('entries');
+	const [selectedRecipeId, setSelectedRecipeId] = useSelectedRecipe();
+	const recipeStore = useStore('recipes');
+	const { data: recipe, isLoading } = useDocument('recipes', selectedRecipeId);
 
-	const { data: entries } = useQuery('entries', {
-		sort: (a, b) => a.createdDate.localeCompare(b.createdDate),
-	});
-
-	const addEntry = async () => {
-		const id = crypto.randomUUID();
-		await entryStore.insert(id, {
-			id,
-			content: '',
-			createdDate: new Date().toISOString(),
-			isDeleted: false,
-		});
-	};
-
-	const updateEntry = async (id: string, content: string) => {
-		await entryStore.update(id, { content });
+	const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		if (!selectedRecipeId) return;
+		recipeStore.update(selectedRecipeId, { title: event.target.value });
 	};
 
 	return (
-		<main>
-			<nav>
-				<button type="button" onClick={addEntry}>
-					Add Entry
-				</button>
-			</nav>
-			<ul className="entries">
-				{entries?.map((entry) => (
-					<input
-						key={entry.id}
-						type="text"
-						value={entry.content}
-						onChange={(e) => updateEntry(entry.id, e.target.value)}
-					/>
-				))}
-			</ul>
+		<main className="grid grid-cols-3 bg-green-950 h-full gap-4 p-4">
+			<section className="col-span-1 flex flex-col gap-4">
+				<Recipes />
+				<Ingredients />
+			</section>
+			<section className="flex col-span-2 bg-white/30 shadow rounded-lg p-3 border border-white/10">
+				{!selectedRecipeId && (
+					<p className="text-white/80 m-auto font-medium">
+						Select a recipe to view its details.
+					</p>
+				)}
+				{selectedRecipeId && recipe && (
+					<header className="w-full">
+						<input
+							// biome-ignore lint/a11y/noAutofocus: <explanation>
+							autoFocus={!isLoading && !recipe.title}
+							value={recipe.title || ''}
+							onChange={handleTitleChange}
+							onBlur={() => {
+								if (!recipe.title) {
+									recipeStore.update(selectedRecipeId, { isDeleted: true });
+									setSelectedRecipeId(null);
+								}
+							}}
+							type="text"
+							placeholder="Untitled"
+							className="p-2 text-xl font-bold focus:border-b transition-all w-full border-white/10 focus:outline-none box-border"
+						/>
+					</header>
+				)}
+			</section>
 		</main>
 	);
 }
