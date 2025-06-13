@@ -2,6 +2,7 @@ import { PlusIcon } from '@heroicons/react/24/solid';
 import { useQuery, useStore } from './StoreProvider';
 
 export function Ingredients() {
+	const recipeStore = useStore('recipes');
 	const store = useStore('ingredients');
 	const { data: ingredients } = useQuery('ingredients', {
 		where: (i) => !i.isDeleted,
@@ -14,6 +15,23 @@ export function Ingredients() {
 			name: '',
 			isDeleted: false,
 		});
+	};
+
+	const handleUpdateIngredient = async (id: string, name: string) => {
+		await store.update(id, { name });
+		const toUpdate = await recipeStore.all((r) =>
+			r.ingredients.some((i) => i.id === id),
+		);
+
+		await Promise.all(
+			toUpdate.map((recipe) =>
+				recipeStore.update(recipe.id, {
+					ingredients: recipe.ingredients.map((i) =>
+						i.id === id ? { ...i, name } : i,
+					),
+				}),
+			),
+		);
 	};
 
 	return (
@@ -49,7 +67,7 @@ export function Ingredients() {
 								className="w-full focus:outline-none"
 								value={ingredient.name}
 								onChange={(e) =>
-									store.update(ingredient.id, { name: e.target.value })
+									handleUpdateIngredient(ingredient.id, e.target.value)
 								}
 							/>
 						</li>
