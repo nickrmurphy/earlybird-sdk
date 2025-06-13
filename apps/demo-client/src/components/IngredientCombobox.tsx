@@ -10,8 +10,10 @@ import { useQuery } from './StoreProvider';
 
 export function IngredientCombobox({
 	onSelect,
+	exclude = [],
 }: {
 	onSelect: (ingredient: Ingredient) => void;
+	exclude?: string[];
 }) {
 	const [query, setQuery] = useState('');
 
@@ -19,13 +21,14 @@ export function IngredientCombobox({
 		where: (i) => !i.isDeleted,
 	});
 
-	const options = useMemo(
-		() =>
-			ingredients.filter((i) =>
-				i.name.toLowerCase().includes(query.toString()),
-			),
-		[ingredients, query],
-	);
+	const options = useMemo(() => {
+		const excludeIds = new Set(exclude);
+		return ingredients.filter(
+			(i) =>
+				!excludeIds.has(i.id) &&
+				i.name.toLowerCase().includes(query.toLowerCase().toString()),
+		);
+	}, [ingredients, query, exclude]);
 
 	return (
 		<Combobox
@@ -46,15 +49,25 @@ export function IngredientCombobox({
 				anchor={{ to: 'bottom start', gap: '4px' }}
 				className="border w-[var(--input-width)] empty:invisible bg-white/5 border-white/5 backdrop-blur-sm rounded-2xl"
 			>
-				{options.map((ingredient) => (
+				{options.length > 0 ? (
+					options.map((ingredient) => (
+						<ComboboxOption
+							key={ingredient.id}
+							value={ingredient}
+							className="p-2 text-sm data-focus:bg-black/5 "
+						>
+							{ingredient.name}
+						</ComboboxOption>
+					))
+				) : (
 					<ComboboxOption
-						key={ingredient.id}
-						value={ingredient}
-						className="p-2 text-sm data-focus:bg-black/5 "
+						value={null}
+						disabled
+						className="p-2 text-sm data-focus:bg-black/5 text-white/70"
 					>
-						{ingredient.name}
+						No results found
 					</ComboboxOption>
-				))}
+				)}
 			</ComboboxOptions>
 		</Combobox>
 	);

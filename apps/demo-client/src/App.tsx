@@ -58,7 +58,12 @@ function App() {
 						<section className="flex flex-col gap-2">
 							<div className="flex w-full gap-2 items-center justify-between">
 								<h2 className="font-medium px-2">Ingredients</h2>
-								<IngredientCombobox onSelect={handleIngredientSelect} />
+								<IngredientCombobox
+									onSelect={handleIngredientSelect}
+									exclude={recipe.ingredients.map(
+										(ingredient) => ingredient.id,
+									)}
+								/>
 							</div>
 							<div className="bg-black/5 border border-black/5 rounded-lg flex flex-col gap-3 p-3">
 								{recipe.ingredients.map((ingredient) => (
