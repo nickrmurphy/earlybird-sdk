@@ -24,4 +24,8 @@ type StoreProviderProps = Parameters<
 
 export { createStoreProvider };
 export type { StoreRegistry, UseStore, UseStores };
-export type { InferStoreType, UseQueryOptions, StoreProviderProps } from '../../types';
+export type {
+	InferStoreType,
+	UseQueryOptions,
+	StoreProviderProps,
+} from '../../types';
