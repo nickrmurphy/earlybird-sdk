@@ -31,7 +31,10 @@ function keyIdentity(key: string): string {
 	return key;
 }
 
-export function flatten<T = any, R = Record<string, any>>(target: T, opts?: FlattenOptions): R {
+export function flatten<T = any, R = Record<string, any>>(
+	target: T,
+	opts?: FlattenOptions,
+): R {
 	const options = opts || {};
 
 	const delimiter = options.delimiter || '.';
@@ -71,7 +74,10 @@ export function flatten<T = any, R = Record<string, any>>(target: T, opts?: Flat
 	return output as R;
 }
 
-export function unflatten<T = any, R = any>(target: T, opts?: UnflattenOptions): R {
+export function unflatten<T = any, R = any>(
+	target: T,
+	opts?: UnflattenOptions,
+): R {
 	const options = opts || {};
 
 	const delimiter = options.delimiter || '.';
@@ -97,7 +103,11 @@ export function unflatten<T = any, R = any>(target: T, opts?: UnflattenOptions):
 			: parsedKey;
 	}
 
-	function addKeys(keyPrefix: string, recipient: Record<string, any>, target: Record<string, any>): Record<string, any> {
+	function addKeys(
+		keyPrefix: string,
+		recipient: Record<string, any>,
+		target: Record<string, any>,
+	): Record<string, any> {
 		return Object.keys(target).reduce((result, key) => {
 			result[keyPrefix + delimiter + key] = target[key];
 
@@ -122,21 +132,26 @@ export function unflatten<T = any, R = any>(target: T, opts?: UnflattenOptions):
 		return false;
 	}
 
-	const processedTarget = Object.keys(target as Record<string, any>).reduce((result, key) => {
-		const value = (target as Record<string, any>)[key];
-		const type = Object.prototype.toString.call(value);
-		const isObject = type === '[object Object]' || type === '[object Array]';
-		if (!isObject || isEmpty(value)) {
-			result[key] = value;
-			return result;
-		}
-		return addKeys(key, result, flatten(value, options));
-	}, {} as Record<string, any>);
+	const processedTarget = Object.keys(target as Record<string, any>).reduce(
+		(result, key) => {
+			const value = (target as Record<string, any>)[key];
+			const type = Object.prototype.toString.call(value);
+			const isObject = type === '[object Object]' || type === '[object Array]';
+			if (!isObject || isEmpty(value)) {
+				result[key] = value;
+				return result;
+			}
+			return addKeys(key, result, flatten(value, options));
+		},
+		{} as Record<string, any>,
+	);
 
 	Object.keys(processedTarget).forEach((key) => {
 		const split = key.split(delimiter).map(transformKey);
 		let key1: string | number = getkey(split.shift()!);
-		let key2: string | number | undefined = split[0] ? getkey(split[0]) : undefined;
+		let key2: string | number | undefined = split[0]
+			? getkey(split[0])
+			: undefined;
 		let recipient: any = result;
 
 		while (key2 !== undefined) {

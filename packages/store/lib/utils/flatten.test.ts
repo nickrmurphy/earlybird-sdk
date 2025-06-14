@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, test } from 'vitest';
-import { flatten, unflatten } from './index';
+import { flatten, unflatten } from './flatten';
 
 const primitives: Record<string, any> = {
 	String: 'good morning',
