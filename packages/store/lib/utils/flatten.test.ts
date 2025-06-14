@@ -625,7 +625,7 @@ describe('Unflatten', () => {
 			'prefix.0.__proto__.polluted': true,
 		});
 
-		expect({}.polluted).not.toBe(true);
+    expect(({} as { polluted: boolean } ).polluted).not.toBe(true);
 	});
 });
 

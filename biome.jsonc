@@ -7,7 +7,11 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": ["./packages/react/hooks/use-stable-callback.tsx"]
+		"ignore": [
+			"./packages/react/hooks/use-stable-callback.tsx",
+			"./packages/store/lib/utils/flatten.test.ts", // Ignore forked code
+			"./packages/store/lib/utils/flatten.ts" // Ignore forked code
+		]
 	},
 	"formatter": {
 		"enabled": true,
