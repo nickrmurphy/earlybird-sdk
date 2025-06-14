@@ -4,7 +4,10 @@ import type { InferStoreType, StoreRegistry } from '../types';
 export function createUseDocument<T extends StoreRegistry>(
 	useStore: <K extends keyof T>(collection: K) => T[K],
 ) {
-	const useDocument = <K extends keyof T>(collection: K, id: string | null | undefined) => {
+	const useDocument = <K extends keyof T>(
+		collection: K,
+		id: string | null | undefined,
+	) => {
 		const store = useStore(collection);
 		const queryId = `document-${String(collection)}-${id}`;
 		const [data, setData] = useState<InferStoreType<T[K]> | null>(null);
@@ -27,7 +30,7 @@ export function createUseDocument<T extends StoreRegistry>(
 
 		useEffect(() => {
 			if (!id) return;
-			
+
 			store.addListener(queryId, listenerFn);
 
 			return () => {
