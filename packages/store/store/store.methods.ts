@@ -14,7 +14,7 @@ export const get = <T extends StandardSchemaV1>(
 	): Promise<StandardSchemaV1.InferOutput<T> | null> => {
 		const raw = await readRaw(adapter, collection, id);
 		if (!raw) return null;
-		return await standardValidate(schema, raw);
+		return standardValidate(schema, raw);
 	};
 };
 
@@ -33,7 +33,7 @@ export const all = <T extends StandardSchemaV1>(
 				try {
 					const raw = await readRaw(adapter, collection, id);
 					if (!raw) return null;
-					const validated = await standardValidate(schema, raw);
+					const validated = standardValidate(schema, raw);
 					if (!predicate || predicate(validated)) {
 						return validated;
 					}
@@ -60,7 +60,7 @@ export const insert = <T extends StandardSchemaV1>(
 		data: StandardSchemaV1.InferOutput<T>,
 	): Promise<void> => {
 		// Validate before storing
-		const validated = await standardValidate(schema, data);
+		const validated = standardValidate(schema, data);
 		await writeRaw(adapter, collection, id, validated);
 		onMutate?.('insert', id);
 	};
@@ -80,7 +80,7 @@ export const update = <T extends StandardSchemaV1>(
 		if (!raw) return;
 
 		const merged = { ...raw, ...data };
-		const validated = await standardValidate(schema, merged);
+		const validated = standardValidate(schema, merged);
 
 		await writeRaw(adapter, collection, id, validated);
 		onMutate?.('update', id);

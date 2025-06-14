@@ -4,37 +4,37 @@ import { standardValidate } from './validation';
 
 describe('standardValidate', () => {
 	describe('successful validation', () => {
-		it('should return validated value for simple object schema', async () => {
+		it('should return validated value for simple object schema', () => {
 			const schema = z.object({
 				name: z.string(),
 				age: z.number(),
 			});
 
 			const input = { name: 'John', age: 30 };
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toEqual({ name: 'John', age: 30 });
 		});
 
-		it('should return validated value for string schema', async () => {
+		it('should return validated value for string schema', () => {
 			const schema = z.string();
 			const input = 'test-string';
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toBe('test-string');
 		});
 
-		it('should return validated value for number schema', async () => {
+		it('should return validated value for number schema', () => {
 			const schema = z.number();
 			const input = 42;
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toBe(42);
 		});
 
-		it('should handle complex nested objects', async () => {
+		it('should handle complex nested objects', () => {
 			const schema = z.object({
 				user: z.object({
 					id: z.number(),
@@ -69,12 +69,12 @@ describe('standardValidate', () => {
 				},
 			};
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toEqual(input);
 		});
 
-		it('should handle array schema', async () => {
+		it('should handle array schema', () => {
 			const schema = z.array(
 				z.object({
 					id: z.number(),
@@ -87,12 +87,12 @@ describe('standardValidate', () => {
 				{ id: 2, name: 'Item 2' },
 			];
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toEqual(input);
 		});
 
-		it('should handle optional fields', async () => {
+		it('should handle optional fields', () => {
 			const schema = z.object({
 				name: z.string(),
 				age: z.number().optional(),
@@ -100,47 +100,45 @@ describe('standardValidate', () => {
 			});
 
 			const input = { name: 'John' };
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toEqual({ name: 'John' });
 		});
 
-		it('should handle default values', async () => {
+		it('should handle default values', () => {
 			const schema = z.object({
 				name: z.string(),
 				status: z.string().default('active'),
 			});
 
 			const input = { name: 'John' };
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toEqual({ name: 'John', status: 'active' });
 		});
 
-		it('should handle transformations', async () => {
+		it('should handle transformations', () => {
 			const schema = z.object({
 				name: z.string().transform((s) => s.toUpperCase()),
 				age: z.string().transform((s) => Number.parseInt(s, 10)),
 			});
 
 			const input = { name: 'john', age: '30' };
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toEqual({ name: 'JOHN', age: 30 });
 		});
 	});
 
 	describe('validation failures', () => {
-		it('should throw error for invalid string', async () => {
+		it('should throw error for invalid string', () => {
 			const schema = z.string();
 			const input = 123;
 
-			await expect(
-				standardValidate(schema, input as unknown as string),
-			).rejects.toThrow();
+			expect(() => standardValidate(schema, input as unknown as string)).toThrow();
 		});
 
-		it('should throw error for missing required field', async () => {
+		it('should throw error for missing required field', () => {
 			const schema = z.object({
 				name: z.string(),
 				age: z.number(),
@@ -151,10 +149,10 @@ describe('standardValidate', () => {
 				age: number;
 			}; // missing age on purpose
 
-			await expect(standardValidate(schema, input)).rejects.toThrow();
+			expect(() => standardValidate(schema, input)).toThrow();
 		});
 
-		it('should throw error for wrong type', async () => {
+		it('should throw error for wrong type', () => {
 			const schema = z.object({
 				name: z.string(),
 				age: z.number(),
@@ -165,10 +163,10 @@ describe('standardValidate', () => {
 				age: number;
 			}; // age should be number
 
-			await expect(standardValidate(schema, input)).rejects.toThrow();
+			expect(() => standardValidate(schema, input)).toThrow();
 		});
 
-		it('should format error message as JSON', async () => {
+		it('should format error message as JSON', () => {
 			const schema = z.object({
 				email: z.string().email(),
 			});
@@ -176,14 +174,14 @@ describe('standardValidate', () => {
 			const input = { email: 'invalid-email' };
 
 			try {
-				await standardValidate(schema, input);
+				standardValidate(schema, input);
 			} catch (error) {
 				expect(error).toBeInstanceOf(Error);
 				expect((error as Error).message).toMatch(/^\[/); // Should start with JSON array
 			}
 		});
 
-		it('should handle multiple validation errors', async () => {
+		it('should handle multiple validation errors', () => {
 			const schema = z.object({
 				name: z.string().min(2),
 				age: z.number().min(0).max(120),
@@ -197,7 +195,7 @@ describe('standardValidate', () => {
 			};
 
 			try {
-				await standardValidate(schema, input);
+				standardValidate(schema, input);
 			} catch (error) {
 				const message = (error as Error).message;
 				expect(message).toContain('name');
@@ -206,7 +204,7 @@ describe('standardValidate', () => {
 			}
 		});
 
-		it('should handle nested validation errors', async () => {
+		it('should handle nested validation errors', () => {
 			const schema = z.object({
 				user: z.object({
 					profile: z.object({
@@ -223,10 +221,10 @@ describe('standardValidate', () => {
 				},
 			};
 
-			await expect(standardValidate(schema, input)).rejects.toThrow();
+			expect(() => standardValidate(schema, input)).toThrow();
 		});
 
-		it('should handle array validation errors', async () => {
+		it('should handle array validation errors', () => {
 			const schema = z.array(
 				z.object({
 					id: z.number(),
@@ -242,77 +240,77 @@ describe('standardValidate', () => {
 				name: string;
 			}[];
 
-			await expect(standardValidate(schema, input)).rejects.toThrow();
+			expect(() => standardValidate(schema, input)).toThrow();
 		});
 	});
 
 	describe('edge cases', () => {
-		it('should handle null input with nullable schema', async () => {
+		it('should handle null input with nullable schema', () => {
 			const schema = z.string().nullable();
 			const input = null;
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toBeNull();
 		});
 
-		it('should handle undefined input with optional schema', async () => {
+		it('should handle undefined input with optional schema', () => {
 			const schema = z.string().optional();
 			const input = undefined;
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toBeUndefined();
 		});
 
-		it('should handle boolean values', async () => {
+		it('should handle boolean values', () => {
 			const schema = z.boolean();
 			const input = true;
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toBe(true);
 		});
 
-		it('should handle numeric zero', async () => {
+		it('should handle numeric zero', () => {
 			const schema = z.number();
 			const input = 0;
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toBe(0);
 		});
 
-		it('should handle empty string', async () => {
+		it('should handle empty string', () => {
 			const schema = z.string();
 			const input = '';
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toBe('');
 		});
 
-		it('should handle empty object', async () => {
+		it('should handle empty object', () => {
 			const schema = z.object({});
 			const input = {};
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toEqual({});
 		});
 
-		it('should handle empty array', async () => {
+		it('should handle empty array', () => {
 			const schema = z.array(z.string());
 			const input: string[] = [];
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			expect(result).toEqual([]);
 		});
 	});
 
-	describe('async validation', () => {
-		it('should handle async refinements', async () => {
+	describe('async validation rejection', () => {
+		it('should throw error for async refinements', () => {
 			const schema = z.string().refine(async (val) => {
 				// Simulate async validation (e.g., checking if username exists)
 				await new Promise((resolve) => setTimeout(resolve, 10));
@@ -320,14 +318,10 @@ describe('standardValidate', () => {
 			}, 'Username is already taken');
 
 			const validInput = 'available';
-			const result = await standardValidate(schema, validInput);
-			expect(result).toBe('available');
-
-			const invalidInput = 'taken';
-			await expect(standardValidate(schema, invalidInput)).rejects.toThrow();
+			expect(() => standardValidate(schema, validInput)).toThrow('Async validation is not supported. Schema validation must be synchronous.');
 		});
 
-		it('should handle complex async transformations', async () => {
+		it('should throw error for async transformations', () => {
 			const schema = z.string().transform(async (val) => {
 				// Simulate async transformation
 				await new Promise((resolve) => setTimeout(resolve, 10));
@@ -335,14 +329,12 @@ describe('standardValidate', () => {
 			});
 
 			const input = 'hello';
-			const result = await standardValidate(schema, input);
-
-			expect(result).toBe('HELLO');
+			expect(() => standardValidate(schema, input)).toThrow('Async validation is not supported. Schema validation must be synchronous.');
 		});
 	});
 
 	describe('type inference', () => {
-		it('should maintain type information through validation', async () => {
+		it('should maintain type information through validation', () => {
 			const schema = z.object({
 				id: z.number(),
 				name: z.string(),
@@ -357,7 +349,7 @@ describe('standardValidate', () => {
 				isActive: true,
 			};
 
-			const result = await standardValidate(schema, input);
+			const result = standardValidate(schema, input);
 
 			// TypeScript should infer the correct type
 			expect(typeof result.id).toBe('number');
@@ -371,7 +363,7 @@ describe('standardValidate', () => {
 			expect(result.isActive).toBe(true);
 		});
 
-		it('should handle union types', async () => {
+		it('should handle union types', () => {
 			const schema = z.union([
 				z.object({ type: z.literal('user'), name: z.string() }),
 				z.object({
@@ -381,14 +373,14 @@ describe('standardValidate', () => {
 			]);
 
 			const userInput = { type: 'user' as const, name: 'John' };
-			const userResult = await standardValidate(schema, userInput);
+			const userResult = standardValidate(schema, userInput);
 			expect(userResult).toEqual(userInput);
 
 			const adminInput = {
 				type: 'admin' as const,
 				permissions: ['read', 'write'],
 			};
-			const adminResult = await standardValidate(schema, adminInput);
+			const adminResult = standardValidate(schema, adminInput);
 			expect(adminResult).toEqual(adminInput);
 		});
 	});
