@@ -698,3 +698,511 @@ describe('Order of Keys', () => {
 		expect(Object.keys(result.abc.c[0])).toEqual(Object.keys(obj.abc.c[0]));
 	});
 });
+
+describe('Flatten transformValue', () => {
+	test('should transform primitive values', () => {
+		const data = {
+			user: {
+				name: 'John',
+				age: 30,
+			},
+		};
+
+		const result = flatten(data, {
+			transformValue: (value) => {
+				if (typeof value === 'string') {
+					return value.toUpperCase();
+				}
+				if (typeof value === 'number') {
+					return value * 2;
+				}
+				return value;
+			},
+		});
+
+		expect(result).toEqual({
+			'user.name': 'JOHN',
+			'user.age': 60,
+		});
+	});
+
+	test('should provide key context to transformValue', () => {
+		const data = {
+			user: {
+				id: 123,
+				profile: {
+					email: 'test@example.com',
+				},
+			},
+		};
+
+		const result = flatten(data, {
+			transformValue: (value, key) => {
+				if (key.includes('email')) {
+					return value.toLowerCase();
+				}
+				if (key.includes('id')) {
+					return `ID:${value}`;
+				}
+				return value;
+			},
+		});
+
+		expect(result).toEqual({
+			'user.id': 'ID:123',
+			'user.profile.email': 'test@example.com',
+		});
+	});
+
+	test('should work with Date objects', () => {
+		const testDate = new Date('2023-01-01T10:00:00.000Z');
+		const data = {
+			created: testDate,
+			updated: testDate,
+		};
+
+		const result = flatten(data, {
+			transformValue: (value) => {
+				if (value instanceof Date) {
+					return value.toISOString();
+				}
+				return value;
+			},
+		});
+
+		expect(result).toEqual({
+			created: '2023-01-01T10:00:00.000Z',
+			updated: '2023-01-01T10:00:00.000Z',
+		});
+	});
+
+	test('should not transform when transformValue not provided', () => {
+		const data = {
+			user: {
+				name: 'John',
+				age: 30,
+			},
+		};
+
+		const result = flatten(data);
+
+		expect(result).toEqual({
+			'user.name': 'John',
+			'user.age': 30,
+		});
+	});
+
+	test('should work with arrays', () => {
+		const data = {
+			users: [
+				{ name: 'John', age: 30 },
+				{ name: 'Jane', age: 25 },
+			],
+		};
+
+		const result = flatten(data, {
+			transformValue: (value) => {
+				if (typeof value === 'string') {
+					return value.toUpperCase();
+				}
+				return value;
+			},
+		});
+
+		expect(result).toEqual({
+			'users.0.name': 'JOHN',
+			'users.0.age': 30,
+			'users.1.name': 'JANE',
+			'users.1.age': 25,
+		});
+	});
+
+	test('should work with combined transformKey and transformValue', () => {
+		const data = {
+			userName: 'john',
+			userAge: 30,
+		};
+
+		const result = flatten(data, {
+			transformKey: (key) => key.toLowerCase(),
+			transformValue: (value) => {
+				if (typeof value === 'string') {
+					return value.toUpperCase();
+				}
+				return value;
+			},
+		});
+
+		expect(result).toEqual({
+			username: 'JOHN',
+			userage: 30,
+		});
+	});
+
+	test('should handle null and undefined values', () => {
+		const data = {
+			nullValue: null,
+			undefinedValue: undefined,
+			emptyString: '',
+		};
+
+		const result = flatten(data, {
+			transformValue: (value, key) => {
+				if (value === null) return 'NULL';
+				if (value === undefined) return 'UNDEFINED';
+				if (value === '') return 'EMPTY';
+				return value;
+			},
+		});
+
+		expect(result).toEqual({
+			nullValue: 'NULL',
+			undefinedValue: 'UNDEFINED',
+			emptyString: 'EMPTY',
+		});
+	});
+});
+
+describe('Unflatten transformValue', () => {
+	test('should transform primitive values during unflatten', () => {
+		const flatData = {
+			'user.name': 'john',
+			'user.age': 30,
+		};
+
+		const result = unflatten(flatData, {
+			transformValue: (value) => {
+				if (typeof value === 'string') {
+					return value.toUpperCase();
+				}
+				if (typeof value === 'number') {
+					return value * 2;
+				}
+				return value;
+			},
+		});
+
+		expect(result).toEqual({
+			user: {
+				name: 'JOHN',
+				age: 60,
+			},
+		});
+	});
+
+	test('should provide key context to transformValue during unflatten', () => {
+		const flatData = {
+			'user.id': 123,
+			'user.profile.email': 'TEST@EXAMPLE.COM',
+		};
+
+		const result = unflatten(flatData, {
+			transformValue: (value, key) => {
+				if (key.includes('email')) {
+					return value.toLowerCase();
+				}
+				if (key.includes('id')) {
+					return `ID:${value}`;
+				}
+				return value;
+			},
+		});
+
+		expect(result).toEqual({
+			user: {
+				id: 'ID:123',
+				profile: {
+					email: 'test@example.com',
+				},
+			},
+		});
+	});
+
+	test('should work with Date string to Date object transformation', () => {
+		const flatData = {
+			created: '2023-01-01T10:00:00.000Z',
+			updated: '2023-01-01T10:00:00.000Z',
+		};
+
+		const result = unflatten(flatData, {
+			transformValue: (value) => {
+				if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+					return new Date(value);
+				}
+				return value;
+			},
+		});
+
+		expect(result).toEqual({
+			created: new Date('2023-01-01T10:00:00.000Z'),
+			updated: new Date('2023-01-01T10:00:00.000Z'),
+		});
+	});
+
+	test('should not transform when transformValue not provided', () => {
+		const flatData = {
+			'user.name': 'John',
+			'user.age': 30,
+		};
+
+		const result = unflatten(flatData);
+
+		expect(result).toEqual({
+			user: {
+				name: 'John',
+				age: 30,
+			},
+		});
+	});
+
+	test('should work with arrays during unflatten', () => {
+		const flatData = {
+			'users.0.name': 'john',
+			'users.0.age': 30,
+			'users.1.name': 'jane',
+			'users.1.age': 25,
+		};
+
+		const result = unflatten(flatData, {
+			transformValue: (value) => {
+				if (typeof value === 'string') {
+					return value.toUpperCase();
+				}
+				return value;
+			},
+		});
+
+		expect(result).toEqual({
+			users: [
+				{ name: 'JOHN', age: 30 },
+				{ name: 'JANE', age: 25 },
+			],
+		});
+	});
+});
+
+describe('Round-trip and Integration Tests', () => {
+	test('should handle round-trip Date serialization', () => {
+		const originalData = {
+			user: {
+				createdAt: new Date('2023-01-01T10:00:00.000Z'),
+				profile: {
+					lastLogin: new Date('2023-01-02T15:30:00.000Z'),
+				},
+			},
+		};
+
+		// Flatten with Date to ISO string transformation
+		const flattened = flatten(originalData, {
+			transformValue: (value) => {
+				if (value instanceof Date) {
+					return value.toISOString();
+				}
+				return value;
+			},
+		});
+
+		expect(flattened).toEqual({
+			'user.createdAt': '2023-01-01T10:00:00.000Z',
+			'user.profile.lastLogin': '2023-01-02T15:30:00.000Z',
+		});
+
+		// Unflatten with ISO string to Date transformation
+		const restored = unflatten(flattened, {
+			transformValue: (value) => {
+				if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+					return new Date(value);
+				}
+				return value;
+			},
+		});
+
+		expect(restored).toEqual(originalData);
+	});
+
+	test('should work with combined transformKey and transformValue', () => {
+		const data = {
+			UserName: 'john_doe',
+			UserAge: 30,
+			UserProfile: {
+				EmailAddress: 'JOHN@EXAMPLE.COM',
+			},
+		};
+
+		const flattened = flatten(data, {
+			transformKey: (key) => key.replace(/([A-Z])/g, (match, letter) => '_' + letter.toLowerCase()).toLowerCase(),
+			transformValue: (value) => {
+				if (typeof value === 'string' && value.includes('@')) {
+					return value.toLowerCase();
+				}
+				return value;
+			},
+		});
+
+		expect(flattened).toEqual({
+			'_user_name': 'john_doe',
+			'_user_age': 30,
+			'_user_profile._email_address': 'john@example.com',
+		});
+
+		const restored = unflatten(flattened, {
+			transformKey: (key) => key.replace(/^_/, '').replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()),
+			transformValue: (value) => {
+				if (typeof value === 'string' && value.includes('@')) {
+					return value.toUpperCase();
+				}
+				return value;
+			},
+		});
+
+		expect(restored).toEqual({
+			userName: 'john_doe',
+			userAge: 30,
+			userProfile: {
+				emailAddress: 'JOHN@EXAMPLE.COM',
+			},
+		});
+	});
+
+	test('should work with custom delimiter and transformValue', () => {
+		const data = {
+			user: {
+				settings: {
+					theme: 'dark',
+					language: 'en',
+				},
+			},
+		};
+
+		const flattened = flatten(data, {
+			delimiter: '->',
+			transformValue: (value) => {
+				if (typeof value === 'string') {
+					return value.toUpperCase();
+				}
+				return value;
+			},
+		});
+
+		expect(flattened).toEqual({
+			'user->settings->theme': 'DARK',
+			'user->settings->language': 'EN',
+		});
+
+		const restored = unflatten(flattened, {
+			delimiter: '->',
+			transformValue: (value) => {
+				if (typeof value === 'string') {
+					return value.toLowerCase();
+				}
+				return value;
+			},
+		});
+
+		expect(restored).toEqual({
+			user: {
+				settings: {
+					theme: 'dark',
+					language: 'en',
+				},
+			},
+		});
+	});
+
+	test('should handle maxDepth with transformValue', () => {
+		const data = {
+			level1: {
+				level2: {
+					level3: {
+						value: 'deep',
+					},
+				},
+			},
+		};
+
+		const flattened = flatten(data, {
+			maxDepth: 2,
+			transformValue: (value) => {
+				if (typeof value === 'string') {
+					return value.toUpperCase();
+				}
+				// For objects, we don't transform them
+				return value;
+			},
+		});
+
+		expect(flattened).toEqual({
+			'level1.level2': {
+				level3: {
+					value: 'deep',
+				},
+			},
+		});
+	});
+
+	test('should handle error cases gracefully', () => {
+		const data = {
+			valid: 'test',
+			invalid: null,
+		};
+
+		// Test transformValue that might throw
+		const result = flatten(data, {
+			transformValue: (value, key) => {
+				if (key === 'invalid' && value === null) {
+					return 'NULL_VALUE';
+				}
+				if (typeof value === 'string') {
+					return value.toUpperCase();
+				}
+				return value;
+			},
+		});
+
+		expect(result).toEqual({
+			valid: 'TEST',
+			invalid: 'NULL_VALUE',
+		});
+	});
+
+	test('should maintain object references properly with arrays', () => {
+		const data = {
+			items: [
+				{ id: 1, name: 'first' },
+				{ id: 2, name: 'second' },
+			],
+		};
+
+		const flattened = flatten(data, {
+			transformValue: (value, key) => {
+				if (typeof value === 'string' && key.includes('name')) {
+					return value.toUpperCase();
+				}
+				return value;
+			},
+		});
+
+		expect(flattened).toEqual({
+			'items.0.id': 1,
+			'items.0.name': 'FIRST',
+			'items.1.id': 2,
+			'items.1.name': 'SECOND',
+		});
+
+		const restored = unflatten(flattened, {
+			transformValue: (value, key) => {
+				if (typeof value === 'string' && key.includes('name')) {
+					return value.toLowerCase();
+				}
+				return value;
+			},
+		});
+
+		expect(restored).toEqual({
+			items: [
+				{ id: 1, name: 'first' },
+				{ id: 2, name: 'second' },
+			],
+		});
+	});
+});

@@ -10,6 +10,7 @@ export interface FlattenOptions {
 	maxDepth?: number;
 	safe?: boolean;
 	transformKey?: (key: string) => string;
+	transformValue?: (value: any, key: string) => any;
 }
 
 export interface UnflattenOptions {
@@ -17,6 +18,7 @@ export interface UnflattenOptions {
 	object?: boolean;
 	overwrite?: boolean;
 	transformKey?: (key: string) => string;
+	transformValue?: (value: any, key: string) => any;
 }
 
 function isBuffer(obj: any): obj is Buffer {
@@ -40,6 +42,7 @@ export function flatten<T = any, R = Record<string, any>>(
 	const delimiter = options.delimiter || '.';
 	const maxDepth = options.maxDepth;
 	const transformKey = options.transformKey || keyIdentity;
+	const transformValue = options.transformValue;
 	const output: Record<string, any> = {};
 
 	function step(object: any, prev?: string, currentDepth?: number): void {
@@ -65,7 +68,7 @@ export function flatten<T = any, R = Record<string, any>>(
 				return step(value, newKey, currentDepth + 1);
 			}
 
-			output[newKey] = value;
+			output[newKey] = transformValue ? transformValue(value, newKey) : value;
 		});
 	}
 
@@ -83,6 +86,7 @@ export function unflatten<T = any, R = any>(
 	const delimiter = options.delimiter || '.';
 	const overwrite = options.overwrite || false;
 	const transformKey = options.transformKey || keyIdentity;
+	const transformValue = options.transformValue;
 	const result: any = {};
 
 	const isbuffer = isBuffer(target);
@@ -138,7 +142,7 @@ export function unflatten<T = any, R = any>(
 			const type = Object.prototype.toString.call(value);
 			const isObject = type === '[object Object]' || type === '[object Array]';
 			if (!isObject || isEmpty(value)) {
-				result[key] = value;
+				result[key] = transformValue ? transformValue(value, key) : value;
 				return result;
 			}
 			return addKeys(key, result, flatten(value, options));
