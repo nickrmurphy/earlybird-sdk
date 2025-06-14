@@ -6,9 +6,9 @@
  */
 
 import { describe, expect, test } from 'vitest';
-import { flatten, unflatten } from './index.js';
+import { flatten, unflatten } from './index';
 
-const primitives = {
+const primitives: Record<string, any> = {
 	String: 'good morning',
 	Number: 1234.99,
 	Boolean: true,
@@ -214,7 +214,7 @@ describe('Flatten', () => {
 					},
 				},
 				{
-					transformKey: (key) => `__${key}__`,
+					transformKey: (key: string) => `__${key}__`,
 				},
 			),
 		).toEqual({
@@ -292,7 +292,7 @@ describe('Unflatten', () => {
 	});
 
 	test('nested objects do not clobber each other when a.b inserted before a', () => {
-		const x = {};
+		const x: Record<string, any> = {};
 		x['foo.bar'] = { t: 123 };
 		x.foo = { p: 333 };
 		expect(unflatten(x)).toEqual({
@@ -353,7 +353,7 @@ describe('Unflatten', () => {
 					'__lorem__.__ipsum__.__dolor__': 'good evening',
 				},
 				{
-					transformKey: (key) => key.substring(2, key.length - 2),
+					transformKey: (key: string) => key.substring(2, key.length - 2),
 				},
 			),
 		).toEqual({
@@ -663,7 +663,7 @@ describe('Arrays', () => {
 		).toBe(Object.prototype.toString.call(['foo', 'bar']));
 	});
 
-	test('Do not include keys with numbers inside them', () => {
+	test('Do not include keys with numbers inside them', () => {
 		expect(
 			unflatten({
 				'1key.2_key': 'ok',
