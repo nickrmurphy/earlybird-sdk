@@ -73,8 +73,6 @@ describe('Store', () => {
 
 		const id = '1234';
 		await store.create(id, { title: 'New Todo', completed: false });
-		const data = await adapter.loadData();
-		console.log(data);
 		const item = await store.get(id);
 		expect(item).toEqual({ title: 'New Todo', completed: false });
 	});
