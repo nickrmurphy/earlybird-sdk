@@ -33,6 +33,9 @@ type Store<T extends StandardSchemaV1> = {
 		id: string,
 		value: Partial<StandardSchemaV1.InferInput<T>>,
 	) => Promise<void>;
+	updateMany: (
+		payload: { id: string; value: Partial<StandardSchemaV1.InferInput<T>> }[],
+	) => Promise<void>;
 };
 
 export function createStore<T extends StandardSchemaV1>(
@@ -125,7 +128,7 @@ export function createStore<T extends StandardSchemaV1>(
 
 			if (!clock) throw new Error('Clock not initialized');
 
-			if (!data) throw new Error(`Document with id ${id} not found`);
+			if (!data) throw new Error('Data not initialized');
 
 			const doc = data[id];
 
@@ -140,6 +143,35 @@ export function createStore<T extends StandardSchemaV1>(
 			const updates = serializeToCRDT<T>(value, clock);
 			const mergedDoc = mergeDocuments<T>(doc, updates);
 			data[id] = mergedDoc;
+
+			await config.adapter.saveData(JSON.stringify(data));
+		},
+		updateMany: async (
+			payload: { id: string; value: Partial<StandardSchemaV1.InferInput<T>> }[],
+		) => {
+			if (!initialized) {
+				await initialize();
+			}
+
+			if (!clock) throw new Error('Clock not initialized');
+
+			if (!data) throw new Error('Data not initialized');
+
+			for (const { id, value } of payload) {
+				const doc = data[id];
+
+				if (!doc) throw new Error(`Document with id ${id} not found`);
+
+				const current = deserializeFromCRDT(doc);
+				const rawMerge: unknown = { ...(current as object), ...value };
+				// assert updated doc is valid
+				standardValidate(config.schema, rawMerge);
+
+				// Merge with CRDTs
+				const updates = serializeToCRDT<T>(value, clock);
+				const mergedDoc = mergeDocuments<T>(doc, updates);
+				data[id] = mergedDoc;
+			}
 
 			await config.adapter.saveData(JSON.stringify(data));
 		},
