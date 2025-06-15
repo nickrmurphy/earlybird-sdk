@@ -1,9 +1,9 @@
 import type { StandardSchemaV1 } from '../../store/schema.types';
-import type { CRDTDoc, CRDTField } from '../store';
+import type { CRDTDoc, CRDTField, InferredValue } from '../store';
 import type { Clock } from './hlc';
 
 export function wrap<T extends StandardSchemaV1>(
-	data: StandardSchemaV1.InferOutput<T>,
+	data: InferredValue<T>,
 	clock: Clock,
 ): CRDTField<T> {
 	return {
@@ -13,7 +13,7 @@ export function wrap<T extends StandardSchemaV1>(
 }
 
 export function wrapObject<T extends StandardSchemaV1>(
-	data: { [key: string]: StandardSchemaV1.InferOutput<T> },
+	data: { [key: string]: InferredValue<T> },
 	clock: Clock,
 ): CRDTDoc<T> {
 	const doc: { [key: string]: CRDTField<T> } = {};
@@ -27,7 +27,7 @@ export function wrapObject<T extends StandardSchemaV1>(
 
 export function unwrap<T extends StandardSchemaV1>(
 	field: CRDTField<T>,
-): StandardSchemaV1.InferOutput<T> {
+): InferredValue<T> {
 	return field._value;
 }
 
