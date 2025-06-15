@@ -25,6 +25,9 @@ type Store<T extends StandardSchemaV1> = {
 	all: () => Promise<{ [key: string]: StandardSchemaV1.InferOutput<T> } | null>;
 	get: (id: string) => Promise<StandardSchemaV1.InferOutput<T> | null>;
 	create: (id: string, value: StandardSchemaV1.InferInput<T>) => Promise<void>;
+	createMany: (
+		payload: { id: string; value: StandardSchemaV1.InferInput<T> }[],
+	) => Promise<void>;
 };
 
 export function createStore<T extends StandardSchemaV1>(
@@ -81,6 +84,28 @@ export function createStore<T extends StandardSchemaV1>(
 
 			if (!data) {
 				data = { [id]: doc };
+			}
+
+			await config.adapter.saveData(JSON.stringify(data));
+		},
+		createMany: async (
+			payload: { id: string; value: StandardSchemaV1.InferInput<T> }[],
+		) => {
+			if (!initialized) {
+				await initialize();
+			}
+
+			if (!clock) throw new Error('Clock not initialized');
+
+			for (const { id, value } of payload) {
+				const validated = standardValidate(config.schema, value);
+				const doc = serializeToCRDT(validated, clock);
+
+				if (!data) {
+					data = { [id]: doc };
+				} else {
+					data[id] = doc;
+				}
 			}
 
 			await config.adapter.saveData(JSON.stringify(data));
