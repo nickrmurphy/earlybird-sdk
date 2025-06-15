@@ -63,4 +63,19 @@ describe('Store', () => {
 		const item = await store.get('123');
 		expect(item).toEqual({ title: 'Example Todo', completed: false });
 	});
+
+	test('should create a new item', async () => {
+		const adapter = createMemoryAdapter();
+		const store = createStore('test', {
+			schema: todoSchema,
+			adapter,
+		});
+
+		const id = '1234';
+		await store.create(id, { title: 'New Todo', completed: false });
+		const data = await adapter.loadData();
+		console.log(data);
+		const item = await store.get(id);
+		expect(item).toEqual({ title: 'New Todo', completed: false });
+	});
 });
