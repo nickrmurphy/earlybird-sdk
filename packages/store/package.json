@@ -1,6 +1,6 @@
 {
 	"name": "@byearlybird/store",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Local-first data storage SDK for TypeScript",
 	"type": "module",
 	"main": "./dist/index.js",
@@ -23,8 +23,15 @@
 			"types": "./dist/memory-adapter.d.ts"
 		}
 	},
-	"files": ["dist"],
-	"keywords": ["storage", "typescript", "cross-platform", "sdk"],
+	"files": [
+		"dist"
+	],
+	"keywords": [
+		"storage",
+		"typescript",
+		"cross-platform",
+		"sdk"
+	],
 	"license": "MIT",
 	"scripts": {
 		"build": "vite build",
