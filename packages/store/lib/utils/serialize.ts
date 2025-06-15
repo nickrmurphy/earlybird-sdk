@@ -1,4 +1,4 @@
-import type { StandardSchemaV1 } from '../../store/schema.types';
+import type { StandardSchemaV1 } from '../../standard-schema.types';
 import type { CRDTDoc } from '../store';
 import type { Clock } from './hlc';
 

@@ -28,7 +28,8 @@ export const advanceHLC = (hlc: HLC): HLC => {
 	// Parse current HLC
 	const parts = hlc.split('-');
 	const currentTimestamp = parts.slice(0, 3).join('-'); // ISO timestamp part
-	const currentLogical = Number.parseInt(parts[3], 10);
+	// biome-ignore lint/style/noNonNullAssertion: Static checking for string-string-string guards against this
+	const currentLogical = Number.parseInt(parts[3]!, 10);
 	const currentTime = new Date(currentTimestamp).getTime();
 
 	let newLogical: number;
