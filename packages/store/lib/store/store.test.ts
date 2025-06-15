@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import 'fake-indexeddb/auto'; // automatically sets globalThis.indexedDB etc.
+/// <reference types="@vitest/browser/providers/playwright" />
 
 import type { StorageAdapter } from '../storage/types';
 import type { HLC } from '../utils/hlc';
