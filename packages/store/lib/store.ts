@@ -36,12 +36,16 @@ type Store<T extends StandardSchemaV1> = {
 	updateMany: (
 		payload: { id: string; value: Partial<StandardSchemaV1.InferInput<T>> }[],
 	) => Promise<void>;
+	registerListener: (key: string, callback: () => void) => void;
+	unregisterListener: (key: string) => void;
 };
 
 export function createStore<T extends StandardSchemaV1>(
 	collection: string,
 	config: { schema: T; adapter: StorageAdapter },
 ): Store<T> {
+	const listeners = new Map<string, () => void>();
+
 	let initialized = false;
 	let data: CRDTStore<T> | null = null;
 	let clock: Clock | null = null;
@@ -54,6 +58,12 @@ export function createStore<T extends StandardSchemaV1>(
 		const hlc = (await config.adapter.loadHLC()) as HLC | null;
 		clock = hlc ? createClock(hlc) : createClock();
 		initialized = true;
+	};
+
+	const callListeners = () => {
+		for (const listener of listeners.values()) {
+			listener();
+		}
 	};
 
 	return {
@@ -95,6 +105,7 @@ export function createStore<T extends StandardSchemaV1>(
 			}
 
 			await config.adapter.saveData(JSON.stringify(data));
+			callListeners();
 		},
 		createMany: async (
 			payload: { id: string; value: StandardSchemaV1.InferInput<T> }[],
@@ -117,6 +128,7 @@ export function createStore<T extends StandardSchemaV1>(
 			}
 
 			await config.adapter.saveData(JSON.stringify(data));
+			callListeners();
 		},
 		update: async (
 			id: string,
@@ -145,6 +157,7 @@ export function createStore<T extends StandardSchemaV1>(
 			data[id] = mergedDoc;
 
 			await config.adapter.saveData(JSON.stringify(data));
+			callListeners();
 		},
 		updateMany: async (
 			payload: { id: string; value: Partial<StandardSchemaV1.InferInput<T>> }[],
@@ -174,6 +187,13 @@ export function createStore<T extends StandardSchemaV1>(
 			}
 
 			await config.adapter.saveData(JSON.stringify(data));
+			callListeners();
+		},
+		registerListener: (key: string, listener: () => void) => {
+			listeners.set(key, listener);
+		},
+		unregisterListener: (key: string) => {
+			listeners.delete(key);
 		},
 	};
 }
