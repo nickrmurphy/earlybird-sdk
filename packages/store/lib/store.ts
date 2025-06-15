@@ -1,8 +1,8 @@
 import type { StandardSchemaV1 } from '../store/schema.types';
 import type { StorageAdapter } from './storage/types';
-import type { HLC } from './utils/hlc';
+import { type Clock, type HLC, createClock } from './utils/hlc';
 
-import { deserializeFromCRDT } from './utils/serialize';
+import { deserializeFromCRDT, serializeToCRDT } from './utils/serialize';
 import { standardValidate } from './utils/validate';
 
 export type InferredValue<T extends StandardSchemaV1> =
@@ -24,6 +24,7 @@ export type CRDTStore<T extends StandardSchemaV1> = {
 type Store<T extends StandardSchemaV1> = {
 	all: () => Promise<{ [key: string]: StandardSchemaV1.InferOutput<T> } | null>;
 	get: (id: string) => Promise<StandardSchemaV1.InferOutput<T> | null>;
+	create: (id: string, value: StandardSchemaV1.InferInput<T>) => Promise<void>;
 };
 
 export function createStore<T extends StandardSchemaV1>(
@@ -32,11 +33,15 @@ export function createStore<T extends StandardSchemaV1>(
 ): Store<T> {
 	let initialized = false;
 	let data: CRDTStore<T> | null = null;
+	let clock: Clock | null = null;
 
 	const initialize = async () => {
-		const raw = await config.adapter.loadData();
-		if (!raw) return null;
-		data = JSON.parse(raw) as CRDTStore<T>;
+		const rawData = await config.adapter.loadData();
+		if (rawData) {
+			data = JSON.parse(rawData) as CRDTStore<T>;
+		}
+		const hlc = (await config.adapter.loadHLC()) as HLC | null;
+		clock = hlc ? createClock(hlc) : createClock();
 		initialized = true;
 	};
 
@@ -64,6 +69,21 @@ export function createStore<T extends StandardSchemaV1>(
 			const deserialized = deserializeFromCRDT(doc);
 			const validated = standardValidate(config.schema, deserialized);
 			return validated;
+		},
+		create: async (id: string, value: StandardSchemaV1.InferInput<T>) => {
+			const validated = standardValidate(config.schema, value);
+			if (!initialized) {
+				await initialize();
+			}
+
+			if (!clock) throw new Error('Clock not initialized');
+			const doc = serializeToCRDT(validated, clock);
+
+			if (!data) {
+				data = { [id]: doc };
+			}
+
+			await config.adapter.saveData(JSON.stringify(data));
 		},
 	};
 }
