@@ -135,7 +135,9 @@ describe('standardValidate', () => {
 			const schema = z.string();
 			const input = 123;
 
-			expect(() => standardValidate(schema, input as unknown as string)).toThrow();
+			expect(() =>
+				standardValidate(schema, input as unknown as string),
+			).toThrow();
 		});
 
 		it('should throw error for missing required field', () => {
@@ -318,7 +320,9 @@ describe('standardValidate', () => {
 			}, 'Username is already taken');
 
 			const validInput = 'available';
-			expect(() => standardValidate(schema, validInput)).toThrow('Async validation is not supported. Schema validation must be synchronous.');
+			expect(() => standardValidate(schema, validInput)).toThrow(
+				'Async validation is not supported. Schema validation must be synchronous.',
+			);
 		});
 
 		it('should throw error for async transformations', () => {
@@ -329,7 +333,9 @@ describe('standardValidate', () => {
 			});
 
 			const input = 'hello';
-			expect(() => standardValidate(schema, input)).toThrow('Async validation is not supported. Schema validation must be synchronous.');
+			expect(() => standardValidate(schema, input)).toThrow(
+				'Async validation is not supported. Schema validation must be synchronous.',
+			);
 		});
 	});
 

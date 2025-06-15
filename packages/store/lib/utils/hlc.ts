@@ -1,5 +1,10 @@
 export type HLC = `${string}-${string}-${string}`;
 
+export type Clock = {
+	current: () => HLC;
+	tick: () => HLC;
+};
+
 const generateNonce = () => {
 	return Math.random().toString(36).substring(2, 8);
 };
@@ -48,7 +53,7 @@ export const advanceHLC = (hlc: HLC): HLC => {
 	return `${newTimestamp}-${logical}-${nonce}`;
 };
 
-export const createClock = (seedHLC = generateHLC()) => {
+export const createClock = (seedHLC = generateHLC()): Clock => {
 	let hlc = seedHLC;
 
 	const tick = (): HLC => {

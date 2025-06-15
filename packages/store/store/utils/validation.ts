@@ -6,7 +6,9 @@ export function standardValidate<T extends StandardSchemaV1>(
 ): StandardSchemaV1.InferOutput<T> {
 	const result = schema['~standard'].validate(input);
 	if (result instanceof Promise) {
-		throw new Error('Async validation is not supported. Schema validation must be synchronous.');
+		throw new Error(
+			'Async validation is not supported. Schema validation must be synchronous.',
+		);
 	}
 
 	// if the `issues` field exists, the validation failed
