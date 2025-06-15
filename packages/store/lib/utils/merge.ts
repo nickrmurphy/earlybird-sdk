@@ -1,4 +1,4 @@
-import type { StandardSchemaV1 } from '../../store/schema.types';
+import type { StandardSchemaV1 } from '../../standard-schema.types';
 import type { CRDTDoc, CRDTField } from '../store';
 
 export function mergeFields<T extends StandardSchemaV1>(

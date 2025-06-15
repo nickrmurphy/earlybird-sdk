@@ -7,9 +7,11 @@ export default defineConfig({
 		lib: {
 			entry: {
 				index: resolve(__dirname, 'index.ts'),
-				'memory-adapter': resolve(__dirname, 'storage/memory-adapter.ts'),
-				'node-adapter': resolve(__dirname, 'storage/node-adapter.ts'),
-				'capacitor-adapter': resolve(__dirname, 'storage/capacitor-adapter.ts'),
+				'memory-adapter': resolve(__dirname, 'lib/storage/memory-adapter.ts'),
+				'capacitor-adapter': resolve(
+					__dirname,
+					'lib/storage/capacitor-adapter.ts',
+				),
 			},
 			formats: ['es'],
 		},
