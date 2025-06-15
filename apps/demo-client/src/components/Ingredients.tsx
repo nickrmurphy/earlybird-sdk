@@ -10,28 +10,33 @@ export function Ingredients() {
 
 	const handleAddIngredient = async () => {
 		const id = crypto.randomUUID();
-		await store.insert(id, {
+		const newIngredient = {
 			id,
 			name: '',
 			isDeleted: false,
-		});
+		};
+
+		await store.create(id, newIngredient);
 	};
 
 	const handleUpdateIngredient = async (id: string, name: string) => {
 		await store.update(id, { name });
-		const toUpdate = await recipeStore.all((r) =>
-			r.ingredients.some((i) => i.id === id),
-		);
+		const allRecipes = await recipeStore.all();
+		if (allRecipes) {
+			const toUpdate = Object.values(allRecipes).filter((r) =>
+				r.ingredients.some((i) => i.id === id),
+			);
 
-		await Promise.all(
-			toUpdate.map((recipe) =>
-				recipeStore.update(recipe.id, {
-					ingredients: recipe.ingredients.map((i) =>
-						i.id === id ? { ...i, name } : i,
-					),
-				}),
-			),
-		);
+			await Promise.all(
+				toUpdate.map((recipe) =>
+					recipeStore.update(recipe.id, {
+						ingredients: recipe.ingredients.map((i) =>
+							i.id === id ? { ...i, name } : i,
+						),
+					}),
+				),
+			);
+		}
 	};
 
 	return (

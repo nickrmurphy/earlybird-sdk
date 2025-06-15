@@ -12,7 +12,7 @@ export function Recipes() {
 
 	const handleCreateRecipe = async () => {
 		const id = crypto.randomUUID();
-		await recipeStore.insert(id, {
+		await recipeStore.create(id, {
 			id,
 			title: '',
 			description: '',

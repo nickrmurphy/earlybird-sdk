@@ -4,16 +4,25 @@ import { createCapacitorAdapter } from '@byearlybird/store/capacitor-adapter';
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { ingredientSchema, recipeSchema } from '../schema';
 
-// Create storage adapter (using memory adapter for demo)
-const adapter = createCapacitorAdapter({
+// Create storage adapters
+const recipeAdapter = createCapacitorAdapter('recipes', {
+	fs: Filesystem,
+	directory: Directory.Data,
+});
+
+const ingredientAdapter = createCapacitorAdapter('ingredients', {
 	fs: Filesystem,
 	directory: Directory.Data,
 });
 
 // Create the stores
-const recipesStore = createStore('recipes', { adapter, schema: recipeSchema });
+const recipesStore = createStore('recipes', {
+	adapter: recipeAdapter,
+	schema: recipeSchema,
+});
+
 const ingredientsStore = createStore('ingredients', {
-	adapter,
+	adapter: ingredientAdapter,
 	schema: ingredientSchema,
 });
 
