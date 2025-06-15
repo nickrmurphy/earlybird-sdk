@@ -76,4 +76,24 @@ describe('Store', () => {
 		const item = await store.get(id);
 		expect(item).toEqual({ title: 'New Todo', completed: false });
 	});
+
+	test('should create multiple new items', async () => {
+		const adapter = createMemoryAdapter();
+		const store = createStore('test', {
+			schema: todoSchema,
+			adapter,
+		});
+
+		const payload = [
+			{ id: '1234', value: { title: 'New Todo 1', completed: false } },
+			{ id: '5678', value: { title: 'New Todo 2', completed: true } },
+		];
+
+		await store.createMany(payload);
+		const items = await store.all();
+		expect(items).toEqual({
+			'1234': { title: 'New Todo 1', completed: false },
+			'5678': { title: 'New Todo 2', completed: true },
+		});
+	});
 });
