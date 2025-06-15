@@ -96,4 +96,17 @@ describe('Store', () => {
 			'5678': { title: 'New Todo 2', completed: true },
 		});
 	});
+
+	test('should update an item', async () => {
+		const adapter = createMemoryAdapter();
+		const store = createStore('test', {
+			schema: todoSchema,
+			adapter,
+		});
+
+		await store.create('123', { title: 'Old title', completed: false });
+		await store.update('123', { title: 'New title' });
+		const item = await store.get('123');
+		expect(item).toEqual({ title: 'New title', completed: false });
+	});
 });
