@@ -23,7 +23,7 @@ export type CRDTStore<T extends StandardSchemaV1> = {
 	[id: string]: CRDTDoc<T>;
 };
 
-type Store<T extends StandardSchemaV1> = {
+export type Store<T extends StandardSchemaV1> = {
 	all: () => Promise<{ [key: string]: StandardSchemaV1.InferOutput<T> } | null>;
 	get: (id: string) => Promise<StandardSchemaV1.InferOutput<T> | null>;
 	create: (id: string, value: StandardSchemaV1.InferInput<T>) => Promise<void>;
@@ -72,7 +72,9 @@ export function createStore<T extends StandardSchemaV1>(
 			if (!initialized) {
 				await initialize();
 			}
+
 			if (!data) return null;
+
 			const record: Record<string, StandardSchemaV1.InferOutput<T>> = {};
 			for (const [id, doc] of Object.entries(data)) {
 				const deserialized = deserializeFromCRDT(doc);
@@ -94,6 +96,7 @@ export function createStore<T extends StandardSchemaV1>(
 		},
 		create: async (id: string, value: StandardSchemaV1.InferInput<T>) => {
 			const validated = standardValidate(config.schema, value);
+
 			if (!initialized) {
 				await initialize();
 			}
@@ -103,6 +106,8 @@ export function createStore<T extends StandardSchemaV1>(
 
 			if (!data) {
 				data = { [id]: doc };
+			} else {
+				data[id] = doc;
 			}
 
 			await config.adapter.saveData(JSON.stringify(data));

@@ -17,11 +17,21 @@ export function createUseQuery<T extends StoreRegistry>(
 		const [isLoading, setIsLoading] = useState(true);
 
 		const listenerFn = useCallback(async () => {
-			const result = await store.all(stableWhere);
-			if (stableSort) {
-				result.sort(stableSort);
+			const result = await store.all();
+			let data: InferStoreType<T[K]>[] = [];
+
+			if (result) {
+				// Convert object to array
+				data = Object.values(result);
+				if (stableWhere) {
+					data = data.filter(stableWhere);
+				}
+				if (stableSort) {
+					data.sort(stableSort);
+				}
 			}
-			setData(result);
+
+			setData(data);
 			setIsLoading(false);
 		}, [stableWhere, stableSort, store]);
 
@@ -30,10 +40,10 @@ export function createUseQuery<T extends StoreRegistry>(
 		}, [listenerFn]);
 
 		useEffect(() => {
-			store.addListener(queryId, listenerFn);
+			store.registerListener(queryId, listenerFn);
 
 			return () => {
-				store.removeListener(queryId);
+				store.unregisterListener(queryId);
 			};
 		}, [listenerFn, store, queryId]);
 

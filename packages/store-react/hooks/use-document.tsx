@@ -31,10 +31,10 @@ export function createUseDocument<T extends StoreRegistry>(
 		useEffect(() => {
 			if (!id) return;
 
-			store.addListener(queryId, listenerFn);
+			store.registerListener(queryId, listenerFn);
 
 			return () => {
-				store.removeListener(queryId);
+				store.unregisterListener(queryId);
 			};
 		}, [listenerFn, store, queryId, id]);
 
