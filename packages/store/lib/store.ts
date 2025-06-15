@@ -23,6 +23,7 @@ export type CRDTStore<T extends StandardSchemaV1> = {
 
 type Store<T extends StandardSchemaV1> = {
 	all: () => Promise<{ [key: string]: StandardSchemaV1.InferOutput<T> } | null>;
+	get: (id: string) => Promise<StandardSchemaV1.InferOutput<T> | null>;
 };
 
 export function createStore<T extends StandardSchemaV1>(
@@ -51,7 +52,18 @@ export function createStore<T extends StandardSchemaV1>(
 				const validated = standardValidate(config.schema, deserialized);
 				record[id] = validated;
 			}
-			return Promise.resolve(record);
+			return record;
+		},
+		get: async (id: string) => {
+			if (!initialized) {
+				await initialize();
+			}
+			if (!data) return null;
+			const doc = data[id];
+			if (!doc) return null;
+			const deserialized = deserializeFromCRDT(doc);
+			const validated = standardValidate(config.schema, deserialized);
+			return validated;
 		},
 	};
 }
