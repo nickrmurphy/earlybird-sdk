@@ -1,10 +1,11 @@
-import type { StandardSchemaV1 } from '../store/schema.types';
-import type { StorageAdapter } from './storage/types';
-import { type Clock, type HLC, createClock } from './utils/hlc';
-import { mergeDocuments } from './utils/merge';
+import type { StandardSchemaV1 } from '../../store/schema.types';
+import type { StorageAdapter } from '../storage/types';
+import type { Clock, HLC } from '../utils/hlc';
 
-import { deserializeFromCRDT, serializeToCRDT } from './utils/serialize';
-import { standardValidate } from './utils/validate';
+import { createClock } from '../utils/hlc';
+import { mergeDocuments } from '../utils/merge';
+import { deserializeFromCRDT, serializeToCRDT } from '../utils/serialize';
+import { standardValidate } from '../utils/validate';
 
 export type InferredValue<T extends StandardSchemaV1> =
 	StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>];

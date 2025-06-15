@@ -1,8 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
-import { createMemoryAdapter } from './storage/memory-adapter';
+import { createMemoryAdapter } from '../storage/memory-adapter';
+import type { HLC } from '../utils/hlc';
 import { type CRDTStore, createStore } from './store';
-import type { HLC } from './utils/hlc';
 
 const todoSchema = z.object({
 	title: z.string().min(2).max(100),
