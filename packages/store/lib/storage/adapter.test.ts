@@ -1,8 +1,11 @@
+// @vitest-environment jsdom
+import 'fake-indexeddb/auto'; // automatically sets globalThis.indexedDB etc.
+import type { StorageAdapter } from './types';
+
 import { Directory, Filesystem } from '@capacitor/filesystem';
 import { describe, expect, it } from 'vitest';
 import { createCapacitorAdapter } from './capacitor-adapter';
 import { createMemoryAdapter } from './memory-adapter';
-import type { StorageAdapter } from './types';
 
 export type AdapterFactory = () => StorageAdapter | Promise<StorageAdapter>;
 
