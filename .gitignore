@@ -1,6 +1,7 @@
 .DS_store
 node_modules/
 coverage/
+__screenshots__/
 
 **/_store/**
 

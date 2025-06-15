@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import 'fake-indexeddb/auto';
+/// <reference types="@vitest/browser/providers/playwright" />
 
 import type { StorageAdapter } from '../storage/types';
 

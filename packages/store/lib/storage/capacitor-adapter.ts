@@ -1,9 +1,7 @@
-import {
-	type Directory,
-	Encoding,
-	type FilesystemPlugin,
-} from '@capacitor/filesystem';
+import type { Directory, FilesystemPlugin } from '@capacitor/filesystem';
 import type { StorageAdapter } from './types';
+
+import { Encoding } from '@capacitor/filesystem';
 
 export type CapacitorAdapterConfig = {
 	fs: FilesystemPlugin;

@@ -1,4 +1,4 @@
-import type { StandardSchemaV1 } from '../../store/schema.types';
+import type { StandardSchemaV1 } from '../../standard-schema.types';
 import type { StorageAdapter } from '../storage/types';
 import type { Clock, HLC } from '../utils/hlc';
 
