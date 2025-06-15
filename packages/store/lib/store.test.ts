@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
 import { createMemoryAdapter } from './storage/memory-adapter';
 import { type CRDTStore, createStore } from './store';
@@ -130,5 +130,50 @@ describe('Store', () => {
 			'1234': { title: 'Updated Todo 1', completed: true },
 			'5678': { title: 'Updated Todo 2', completed: false },
 		});
+	});
+
+	test('should call listeners on mutate', async () => {
+		const adapter = createMemoryAdapter();
+		const store = createStore('test', {
+			schema: todoSchema,
+			adapter,
+		});
+
+		const mockFn = vi.fn();
+
+		store.registerListener('mutate', mockFn);
+		await store.create('123', { title: 'Old title', completed: false });
+		expect(mockFn).toHaveBeenCalledTimes(1);
+		await store.update('123', { title: 'New title' });
+		expect(mockFn).toHaveBeenCalledTimes(2);
+		await store.createMany([
+			{ id: '1234', value: { title: 'New Todo 1', completed: false } },
+			{ id: '5678', value: { title: 'New Todo 2', completed: true } },
+		]);
+		expect(mockFn).toHaveBeenCalledTimes(3);
+		await store.updateMany([
+			{ id: '1234', value: { title: 'Updated Todo 1', completed: true } },
+			{ id: '5678', value: { title: 'Updated Todo 2', completed: false } },
+		]);
+		expect(mockFn).toHaveBeenCalledTimes(4);
+	});
+
+	test('should not call unregistered listeners', async () => {
+		const adapter = createMemoryAdapter();
+		const store = createStore('test', {
+			schema: todoSchema,
+			adapter,
+		});
+
+		const mockFn = vi.fn();
+
+		store.registerListener('mutate', mockFn);
+		await store.create('123', { title: 'Old title', completed: false });
+		expect(mockFn).toHaveBeenCalledTimes(1);
+
+		store.unregisterListener('mutate');
+		await store.create('456', { title: 'New title', completed: true });
+
+		expect(mockFn).toHaveBeenCalledTimes(1);
 	});
 });
