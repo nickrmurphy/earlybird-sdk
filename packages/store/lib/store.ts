@@ -1,6 +1,7 @@
 import type { StandardSchemaV1 } from '../store/schema.types';
 import type { StorageAdapter } from './storage/types';
 import { type Clock, type HLC, createClock } from './utils/hlc';
+import { mergeDocuments } from './utils/merge';
 
 import { deserializeFromCRDT, serializeToCRDT } from './utils/serialize';
 import { standardValidate } from './utils/validate';
@@ -27,6 +28,10 @@ type Store<T extends StandardSchemaV1> = {
 	create: (id: string, value: StandardSchemaV1.InferInput<T>) => Promise<void>;
 	createMany: (
 		payload: { id: string; value: StandardSchemaV1.InferInput<T> }[],
+	) => Promise<void>;
+	update: (
+		id: string,
+		value: Partial<StandardSchemaV1.InferInput<T>>,
 	) => Promise<void>;
 };
 
@@ -107,6 +112,34 @@ export function createStore<T extends StandardSchemaV1>(
 					data[id] = doc;
 				}
 			}
+
+			await config.adapter.saveData(JSON.stringify(data));
+		},
+		update: async (
+			id: string,
+			value: Partial<StandardSchemaV1.InferInput<T>>,
+		) => {
+			if (!initialized) {
+				await initialize();
+			}
+
+			if (!clock) throw new Error('Clock not initialized');
+
+			if (!data) throw new Error(`Document with id ${id} not found`);
+
+			const doc = data[id];
+
+			if (!doc) throw new Error(`Document with id ${id} not found`);
+
+			const current = deserializeFromCRDT(doc);
+			const rawMerge: unknown = { ...(current as object), ...value };
+			// assert updated doc is valid
+			standardValidate(config.schema, rawMerge);
+
+			// Merge with CRDTs
+			const updates = serializeToCRDT<T>(value, clock);
+			const mergedDoc = mergeDocuments<T>(doc, updates);
+			data[id] = mergedDoc;
 
 			await config.adapter.saveData(JSON.stringify(data));
 		},
