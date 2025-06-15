@@ -37,4 +37,30 @@ describe('Store', () => {
 			'123': { title: 'Example Todo', completed: false },
 		});
 	});
+
+	test('should return a single item deserialized', async () => {
+		const exampleStoreData: CRDTStore<typeof todoSchema> = {
+			'123': {
+				title: {
+					_value: 'Example Todo',
+					_hlc: 'some-example-hlc' as HLC,
+				},
+				completed: {
+					_value: false,
+					_hlc: 'some-example-hlc' as HLC,
+				},
+			},
+		};
+
+		const adapter = createMemoryAdapter();
+		adapter.saveData(JSON.stringify(exampleStoreData));
+
+		const store = createStore('test', {
+			schema: todoSchema,
+			adapter,
+		});
+
+		const item = await store.get('123');
+		expect(item).toEqual({ title: 'Example Todo', completed: false });
+	});
 });
