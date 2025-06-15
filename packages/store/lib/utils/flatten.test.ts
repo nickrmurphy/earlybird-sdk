@@ -625,7 +625,7 @@ describe('Unflatten', () => {
 			'prefix.0.__proto__.polluted': true,
 		});
 
-    expect(({} as { polluted: boolean } ).polluted).not.toBe(true);
+		expect(({} as { polluted: boolean }).polluted).not.toBe(true);
 	});
 });
 
@@ -1030,7 +1030,10 @@ describe('Round-trip and Integration Tests', () => {
 		};
 
 		const flattened = flatten(data, {
-			transformKey: (key) => key.replace(/([A-Z])/g, (match, letter) => '_' + letter.toLowerCase()).toLowerCase(),
+			transformKey: (key) =>
+				key
+					.replace(/([A-Z])/g, (match, letter) => '_' + letter.toLowerCase())
+					.toLowerCase(),
 			transformValue: (value) => {
 				if (typeof value === 'string' && value.includes('@')) {
 					return value.toLowerCase();
@@ -1040,13 +1043,16 @@ describe('Round-trip and Integration Tests', () => {
 		});
 
 		expect(flattened).toEqual({
-			'_user_name': 'john_doe',
-			'_user_age': 30,
+			_user_name: 'john_doe',
+			_user_age: 30,
 			'_user_profile._email_address': 'john@example.com',
 		});
 
 		const restored = unflatten(flattened, {
-			transformKey: (key) => key.replace(/^_/, '').replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()),
+			transformKey: (key) =>
+				key
+					.replace(/^_/, '')
+					.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()),
 			transformValue: (value) => {
 				if (typeof value === 'string' && value.includes('@')) {
 					return value.toUpperCase();
