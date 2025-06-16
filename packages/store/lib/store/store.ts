@@ -11,15 +11,15 @@ export type InferredValue<T extends StandardSchemaV1> =
 	StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>];
 
 export type CRDTField<T extends StandardSchemaV1> = {
-	_value: InferredValue<T>;
-	_hlc: HLC;
+	$value: InferredValue<T>;
+	$hlc: HLC;
 };
 
 export type CRDTDoc<T extends StandardSchemaV1> = {
-	_value: {
+	$value: {
 		[path: string]: CRDTField<T>;
 	};
-	_hash: string;
+	$hash: string;
 };
 
 export type CRDTStore<T extends StandardSchemaV1> = {
@@ -79,10 +79,8 @@ export function createStore<T extends StandardSchemaV1>(
 			const record: Record<string, StandardSchemaV1.InferOutput<T>> = {};
 
 			for (const [id, doc] of Object.entries(data)) {
-				console.log('id', id);
-				console.log('doc', doc);
 				const deserialized = deserializeFromCRDT(doc);
-				console.log(deserialized);
+
 				const validated = standardValidate(config.schema, deserialized);
 				record[id] = validated;
 			}
@@ -143,7 +141,6 @@ export function createStore<T extends StandardSchemaV1>(
 			id: string,
 			value: Partial<StandardSchemaV1.InferInput<T>>,
 		) => {
-			console.log('Calliong update', id, value);
 			if (!initialized) {
 				await initialize();
 			}
@@ -157,10 +154,7 @@ export function createStore<T extends StandardSchemaV1>(
 			if (!doc) throw new Error(`Document with id ${id} not found`);
 
 			const current = deserializeFromCRDT(doc);
-			console.log('current', current);
-			console.log('value', value);
 			const rawMerge: unknown = { ...(current as object), ...value };
-			console.log('raw merge', rawMerge);
 			// assert updated doc is valid
 			standardValidate(config.schema, rawMerge);
 
@@ -213,7 +207,7 @@ export function createStore<T extends StandardSchemaV1>(
 
 			if (!data) throw new Error('Data not initialized');
 
-			return Object.values(data).map((doc) => doc._hash);
+			return Object.values(data).map((doc) => doc.$hash);
 		},
 	};
 }

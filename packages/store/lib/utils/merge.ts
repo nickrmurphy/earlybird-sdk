@@ -6,7 +6,7 @@ export function mergeFields<T extends StandardSchemaV1>(
 	a: CRDTField<T>,
 	b: CRDTField<T>,
 ): CRDTField<T> {
-	return a._hlc > b._hlc ? a : b;
+	return a.$hlc > b.$hlc ? a : b;
 }
 
 export function mergeDocuments<T extends StandardSchemaV1>(
@@ -15,8 +15,8 @@ export function mergeDocuments<T extends StandardSchemaV1>(
 ): CRDTDoc<T> {
 	// Do a naiive merge to have a source of truth for paths
 	const unionedValue = {
-		...a._value,
-		...b._value,
+		...a.$value,
+		...b.$value,
 	};
 
 	const mergedValue: {
@@ -24,8 +24,8 @@ export function mergeDocuments<T extends StandardSchemaV1>(
 	} = {};
 
 	for (const key of Object.keys(unionedValue)) {
-		const aField = a._value[key];
-		const bField = b._value[key];
+		const aField = a.$value[key];
+		const bField = b.$value[key];
 
 		if (!aField && bField) {
 			mergedValue[key] = bField;
@@ -50,7 +50,7 @@ export function mergeDocuments<T extends StandardSchemaV1>(
 	}
 
 	return {
-		_value: mergedValue,
-		_hash: hashObject(mergedValue),
+		$value: mergedValue,
+		$hash: hashObject(mergedValue),
 	};
 }

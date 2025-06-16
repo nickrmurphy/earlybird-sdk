@@ -8,8 +8,8 @@ export function wrapField<T extends StandardSchemaV1>(
 	clock: Clock,
 ): CRDTField<T> {
 	return {
-		_value: data,
-		_hlc: clock.tick(),
+		$value: data,
+		$hlc: clock.tick(),
 	};
 }
 
@@ -24,15 +24,15 @@ export function wrapDoc<T extends StandardSchemaV1>(
 	}
 
 	return {
-		_value: docValue,
-		_hash: hashObject(docValue),
+		$value: docValue,
+		$hash: hashObject(docValue),
 	};
 }
 
 export function unwrapField<T extends StandardSchemaV1>(
 	field: CRDTField<T>,
 ): InferredValue<T> {
-	return field._value;
+	return field.$value;
 }
 
 export function unwrapDoc<T extends StandardSchemaV1>(
@@ -40,7 +40,7 @@ export function unwrapDoc<T extends StandardSchemaV1>(
 ): { [key: string]: StandardSchemaV1.InferOutput<T> } {
 	const data: { [key: string]: StandardSchemaV1.InferOutput<T> } = {};
 
-	for (const [key, field] of Object.entries(doc._value)) {
+	for (const [key, field] of Object.entries(doc.$value)) {
 		data[key] = unwrapField(field);
 	}
 

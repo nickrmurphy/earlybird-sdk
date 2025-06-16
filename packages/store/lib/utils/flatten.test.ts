@@ -1156,7 +1156,7 @@ describe('Round-trip and Integration Tests', () => {
 		const result = flatten(data, {
 			transformValue: (value, key) => {
 				if (key === 'invalid' && value === null) {
-					return 'NULL_VALUE';
+					return 'NULL$value';
 				}
 				if (typeof value === 'string') {
 					return value.toUpperCase();
@@ -1167,7 +1167,7 @@ describe('Round-trip and Integration Tests', () => {
 
 		expect(result).toEqual({
 			valid: 'TEST',
-			invalid: 'NULL_VALUE',
+			invalid: 'NULL$value',
 		});
 	});
 

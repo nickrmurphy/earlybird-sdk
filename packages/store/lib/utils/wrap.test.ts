@@ -14,8 +14,8 @@ describe('wrap', () => {
 	test('wraps value with clock', () => {
 		const clock = createClock();
 		const result = wrapField<typeof stringSchema>('test', clock);
-		expect(result._value).toBe('test');
-		expect(result._hlc).toBeDefined();
+		expect(result.$value).toBe('test');
+		expect(result.$hlc).toBeDefined();
 	});
 });
 
@@ -23,13 +23,13 @@ describe('wrapObject', () => {
 	test('wraps object values', () => {
 		const clock = createClock();
 		const result = wrapDoc<typeof objectSchema>({ key: 'value' }, clock);
-		expect(result._value.key._value).toBe('value');
+		expect(result.$value.key.$value).toBe('value');
 	});
 });
 
 describe('unwrap', () => {
 	test('extracts value from field', () => {
-		const field = { _value: 'test', _hlc: 'clock-is-something' as HLC };
+		const field = { $value: 'test', $hlc: 'clock-is-something' as HLC };
 		expect(unwrapField<typeof stringSchema>(field)).toBe('test');
 	});
 });
@@ -37,8 +37,8 @@ describe('unwrap', () => {
 describe('unwrapObject', () => {
 	test('extracts values from object', () => {
 		const doc = {
-			_hash: '123',
-			_value: { key: { _value: 'value', _hlc: 'clock-is-something' as HLC } },
+			$hash: '123',
+			$value: { key: { $value: 'value', $hlc: 'clock-is-something' as HLC } },
 		};
 		expect(unwrapDoc<typeof objectSchema>(doc)).toEqual({ key: 'value' });
 	});
