@@ -23,9 +23,12 @@ export const createStorageAdapterTests = (
 						path: '',
 						directory: Directory.Temporary,
 					});
-					
+
 					for (const file of files.files) {
-						if (file.name.startsWith('test-') && (file.name.endsWith('.json') || file.name.endsWith('.hlc.txt'))) {
+						if (
+							file.name.startsWith('test-') &&
+							(file.name.endsWith('.json') || file.name.endsWith('.hlc.txt'))
+						) {
 							await Filesystem.deleteFile({
 								path: file.name,
 								directory: Directory.Temporary,
@@ -107,7 +110,7 @@ export const createStorageAdapterTests = (
 			it('notifies listeners when data is saved', async () => {
 				const adapter = await createAdapter();
 				let notificationCount = 0;
-				
+
 				const listener = () => {
 					notificationCount++;
 				};
@@ -116,14 +119,14 @@ export const createStorageAdapterTests = (
 				await adapter.saveData('{"test": "data"}');
 
 				expect(notificationCount).toBe(1);
-				
+
 				adapter.unregisterListener('test-listener');
 			});
 
 			it('does not notify unregistered listeners', async () => {
 				const adapter = await createAdapter();
 				let notificationCount = 0;
-				
+
 				const listener = () => {
 					notificationCount++;
 				};

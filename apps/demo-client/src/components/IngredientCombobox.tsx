@@ -1,3 +1,5 @@
+import type { Ingredient } from '@byearlybird/demo-shared';
+
 import {
 	Combobox,
 	ComboboxInput,
@@ -5,7 +7,6 @@ import {
 	ComboboxOptions,
 } from '@headlessui/react';
 import { useState } from 'react';
-import type { Ingredient } from '../schema';
 import { useQuery } from './StoreProvider';
 
 export function IngredientCombobox({

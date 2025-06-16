@@ -1,8 +1,9 @@
-import { createStore } from '@byearlybird/store';
+import type { PropsWithChildren } from 'react';
+
+import { createDemoStores } from '@byearlybird/demo-shared';
 import { createStoreProvider } from '@byearlybird/store-react';
 import { createCapacitorAdapter } from '@byearlybird/store/capacitor-adapter';
 import { Directory, Filesystem } from '@capacitor/filesystem';
-import { ingredientSchema, recipeSchema } from '../schema';
 
 // Create storage adapters
 const recipeAdapter = createCapacitorAdapter('recipes', {
@@ -15,22 +16,11 @@ const ingredientAdapter = createCapacitorAdapter('ingredients', {
 	directory: Directory.Data,
 });
 
-// Create the stores
-const recipesStore = createStore('recipes', {
-	adapter: recipeAdapter,
-	schema: recipeSchema,
+// Create the stores using shared configuration
+const stores = createDemoStores({
+	recipes: recipeAdapter,
+	ingredients: ingredientAdapter,
 });
-
-const ingredientsStore = createStore('ingredients', {
-	adapter: ingredientAdapter,
-	schema: ingredientSchema,
-});
-
-// Store registry
-const stores = {
-	recipes: recipesStore,
-	ingredients: ingredientsStore,
-} as const;
 
 // Create the typed provider and hooks
 const {
@@ -44,6 +34,6 @@ const {
 // Export the hooks for use in components
 export { useStore, useStores, useQuery, useDocument };
 
-export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
+export const StoreProvider = ({ children }: PropsWithChildren) => {
 	return <BaseStoreProvider stores={stores}>{children}</BaseStoreProvider>;
 };

@@ -1,9 +1,9 @@
+import type { Ingredient } from '@byearlybird/demo-shared';
 import { IngredientCombobox } from './components/IngredientCombobox';
 import { Ingredients } from './components/Ingredients';
 import { Recipes } from './components/Recipes';
 import { useDocument, useStore } from './components/StoreProvider';
 import { useSelectedRecipe } from './hooks/useSelectedRecipe';
-import type { Ingredient } from './schema';
 
 function App() {
 	const [selectedRecipeId, setSelectedRecipeId] = useSelectedRecipe();

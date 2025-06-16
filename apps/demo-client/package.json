@@ -10,10 +10,11 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
+		"@byearlybird/demo-shared": "workspace:*",
+		"@byearlybird/demo-styles": "workspace:*",
 		"@byearlybird/store": "workspace:*",
 		"@byearlybird/store-react": "workspace:*",
 		"@heroicons/react": "^2.2.0",
-		"cva": "^1.0.0-beta.4",
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
 		"zod": "^3.25.56"

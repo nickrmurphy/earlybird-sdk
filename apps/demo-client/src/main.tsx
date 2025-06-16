@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import './main.css';
+import '@byearlybird/demo-styles/styles.css';
 import App from './App.tsx';
 import { StoreProvider } from './components/StoreProvider.tsx';
 
