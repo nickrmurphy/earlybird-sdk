@@ -42,6 +42,7 @@ export type Store<T extends StandardSchemaV1> = {
 	) => Promise<void>;
 	registerListener: (key: string, callback: () => void) => void;
 	unregisterListener: (key: string) => void;
+	getHashes: () => string[];
 };
 
 export function createStore<T extends StandardSchemaV1>(
@@ -76,7 +77,7 @@ export function createStore<T extends StandardSchemaV1>(
 			if (!data) return null;
 
 			const record: Record<string, StandardSchemaV1.InferOutput<T>> = {};
-			console.log('data', data);
+
 			for (const [id, doc] of Object.entries(data)) {
 				console.log('id', id);
 				console.log('doc', doc);
@@ -204,6 +205,15 @@ export function createStore<T extends StandardSchemaV1>(
 		},
 		unregisterListener: (key: string) => {
 			config.adapter.unregisterListener(key);
+		},
+		getHashes: () => {
+			if (!initialized) {
+				throw new Error('Store not initialized');
+			}
+
+			if (!data) throw new Error('Data not initialized');
+
+			return Object.values(data).map((doc) => doc._hash);
 		},
 	};
 }

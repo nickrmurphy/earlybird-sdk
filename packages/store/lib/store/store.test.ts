@@ -28,13 +28,16 @@ const createStoreTests = (
 		test('should return all items deserialized', async () => {
 			const exampleStoreData: CRDTStore<typeof todoSchema> = {
 				'123': {
-					title: {
-						_value: 'Example Todo',
-						_hlc: 'some-example-hlc' as HLC,
-					},
-					completed: {
-						_value: false,
-						_hlc: 'some-example-hlc' as HLC,
+					_hash: 'example-hash',
+					_value: {
+						title: {
+							_value: 'Example Todo',
+							_hlc: 'some-example-hlc' as HLC,
+						},
+						completed: {
+							_value: false,
+							_hlc: 'some-example-hlc' as HLC,
+						},
 					},
 				},
 			};
@@ -56,13 +59,16 @@ const createStoreTests = (
 		test('should return a single item deserialized', async () => {
 			const exampleStoreData: CRDTStore<typeof todoSchema> = {
 				'123': {
-					title: {
-						_value: 'Example Todo',
-						_hlc: 'some-example-hlc' as HLC,
-					},
-					completed: {
-						_value: false,
-						_hlc: 'some-example-hlc' as HLC,
+					_hash: 'example-hash',
+					_value: {
+						title: {
+							_value: 'Example Todo',
+							_hlc: 'some-example-hlc' as HLC,
+						},
+						completed: {
+							_value: false,
+							_hlc: 'some-example-hlc' as HLC,
+						},
 					},
 				},
 			};
@@ -190,6 +196,32 @@ const createStoreTests = (
 			await store.create('456', { title: 'New title', completed: true });
 
 			expect(mockFn).toHaveBeenCalledTimes(1);
+		});
+
+		test('should return document hashes', async () => {
+			const adapter = createAdapter();
+			const store = createStore(collectionName, {
+				schema: todoSchema,
+				adapter,
+			});
+
+			await store.create('123', { title: 'Todo 1', completed: false });
+			await store.create('456', { title: 'Todo 2', completed: true });
+
+			const hashes = store.getHashes();
+			expect(hashes).toHaveLength(2);
+			expect(hashes.every(hash => typeof hash === 'string')).toBe(true);
+			expect(hashes.every(hash => hash.length > 0)).toBe(true);
+		});
+
+		test('should throw error when getting hashes from uninitialized store', () => {
+			const adapter = createAdapter();
+			const store = createStore(collectionName, {
+				schema: todoSchema,
+				adapter,
+			});
+
+			expect(() => store.getHashes()).toThrow('Store not initialized');
 		});
 	});
 };
