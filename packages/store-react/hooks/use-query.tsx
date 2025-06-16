@@ -9,8 +9,12 @@ export function createUseQuery<T extends StoreRegistry>(
 		options: UseQueryOptions<K, T> = {},
 		deps: React.DependencyList = [],
 	) => {
-		const stableWhere = options.where ? useCallback(options.where, deps) : undefined;
-		const stableSort = options.sort ? useCallback(options.sort, deps) : undefined;
+		const stableFilter = options.filter
+			? useCallback(options.filter, deps)
+			: undefined;
+		const stableSort = options.sort
+			? useCallback(options.sort, deps)
+			: undefined;
 		const queryId = useId();
 		const store = useStore(collection);
 		const [data, setData] = useState<InferStoreType<T[K]>[]>([]);
@@ -23,8 +27,8 @@ export function createUseQuery<T extends StoreRegistry>(
 			if (result) {
 				// Convert object to array
 				data = Object.values(result);
-				if (stableWhere) {
-					data = data.filter(stableWhere);
+				if (stableFilter) {
+					data = data.filter(stableFilter);
 				}
 				if (stableSort) {
 					data.sort(stableSort);
@@ -33,7 +37,7 @@ export function createUseQuery<T extends StoreRegistry>(
 
 			setData(data);
 			setIsLoading(false);
-		}, [stableWhere, stableSort, store, ...deps]);
+		}, [stableFilter, stableSort, store, ...deps]);
 
 		useEffect(() => {
 			listenerFn();

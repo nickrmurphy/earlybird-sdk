@@ -3,9 +3,9 @@ import { useQuery, useStore } from './StoreProvider';
 
 export function Ingredients() {
 	const recipeStore = useStore('recipes');
-	const store = useStore('ingredients');
+	const ingredientStore = useStore('ingredients');
 	const { data: ingredients } = useQuery('ingredients', {
-		where: (i) => !i.isDeleted,
+		filter: (i) => !i.isDeleted,
 	});
 
 	const handleAddIngredient = async () => {
@@ -16,11 +16,11 @@ export function Ingredients() {
 			isDeleted: false,
 		};
 
-		await store.create(id, newIngredient);
+		await ingredientStore.create(id, newIngredient);
 	};
 
 	const handleUpdateIngredient = async (id: string, name: string) => {
-		await store.update(id, { name });
+		await ingredientStore.update(id, { name });
 		const allRecipes = await recipeStore.all();
 		if (!allRecipes) return;
 
@@ -67,7 +67,7 @@ export function Ingredients() {
 								autoFocus={ingredient.name === ''}
 								onBlur={() => {
 									if (ingredient.name === '') {
-										store.update(ingredient.id, { isDeleted: true });
+										ingredientStore.update(ingredient.id, { isDeleted: true });
 									}
 								}}
 								className="w-full focus:outline-none"

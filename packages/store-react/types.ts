@@ -15,6 +15,6 @@ export interface StoreProviderProps<T extends StoreRegistry> {
 }
 
 export interface UseQueryOptions<K extends keyof T, T extends StoreRegistry> {
-	where?: (data: InferStoreType<T[K]>) => boolean;
+	filter?: (data: InferStoreType<T[K]>) => boolean;
 	sort?: (a: InferStoreType<T[K]>, b: InferStoreType<T[K]>) => number;
 }

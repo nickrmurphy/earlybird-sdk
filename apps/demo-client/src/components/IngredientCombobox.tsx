@@ -20,7 +20,7 @@ export function IngredientCombobox({
 	const { data: options } = useQuery(
 		'ingredients',
 		{
-			where: (i) =>
+			filter: (i) =>
 				!i.isDeleted &&
 				!exclude.includes(i.id) &&
 				i.name.toLowerCase().includes(query.toLowerCase().toString()),

@@ -6,7 +6,7 @@ import { useQuery, useStore } from './StoreProvider';
 export function Recipes() {
 	const recipeStore = useStore('recipes');
 	const { data: recipes } = useQuery('recipes', {
-		where: (r) => !r.isDeleted,
+		filter: (r) => !r.isDeleted,
 	});
 	const [selectedRecipe, setSelectedRecipe] = useSelectedRecipe();
 
