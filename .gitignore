@@ -20,3 +20,6 @@ coverage/
 *.swp
 *.swo
 *~
+
+# Package manager lock files
+pnpm-lock.yaml

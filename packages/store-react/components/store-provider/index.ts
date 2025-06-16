@@ -18,9 +18,6 @@ function createStoreProvider<T extends StoreRegistry>() {
 
 type UseStore = ReturnType<typeof createStoreProvider>['useStore'];
 type UseStores = ReturnType<typeof createStoreProvider>['useStores'];
-type StoreProviderProps = Parameters<
-	ReturnType<typeof createStoreProvider>['StoreProvider']
->[0];
 
 export { createStoreProvider };
 export type { StoreRegistry, UseStore, UseStores };

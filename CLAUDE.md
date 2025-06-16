@@ -5,22 +5,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ### Development
-- `bun run test` - Run tests across all packages (preferred over `bun test`)
-- `bun run test:coverage` - Generate coverage reports for all packages
-- `bun run bench` - Run performance benchmarks across all packages
-- `bun run build` - Build all packages
-- `bun run lint` - Check code with Biome
-- `bun run lint:fix` - Auto-fix linting issues
+- `pnpm test` - Run tests across all packages
+- `pnpm test:coverage` - Generate coverage reports for all packages
+- `pnpm bench` - Run performance benchmarks across all packages
+- `pnpm build` - Build all packages
+- `pnpm lint` - Check code with Biome
+- `pnpm lint:fix` - Auto-fix linting issues
 
 ### Package-specific (from package directories)
-- `bun run test` - Run Vitest tests for specific package
-- `bun run test:coverage` - Generate coverage report for specific package
-- `bun run bench` - Run Vitest benchmarks for specific package
-- `bun run dev` - Start Vite dev server (demo client only)
+- `pnpm test` - Run Vitest tests for specific package
+- `pnpm test:coverage` - Generate coverage report for specific package
+- `pnpm bench` - Run Vitest benchmarks for specific package
+- `pnpm dev` - Start Vite dev server (demo client only)
 
 ### Testing individual files
-- `bun test <file-pattern>` - Run specific test files
-- `bun run bench <file-pattern>` - Run specific benchmark files
+- `pnpm test <file-pattern>` - Run specific test files
+- `pnpm bench <file-pattern>` - Run specific benchmark files
 
 ## Architecture
 

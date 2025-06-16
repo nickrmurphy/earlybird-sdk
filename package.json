@@ -3,17 +3,16 @@
 	"private": true,
 	"workspaces": ["packages/*", "apps/*"],
 	"scripts": {
-		"test": "bun run --filter='*' test",
-		"test:coverage": "bun run --filter='*' test:coverage",
-		"bench": "bun run --filter='*' bench",
-		"build": "bun run --filter='*' build",
+		"test": "pnpm -r run test",
+		"test:coverage": "pnpm -r run test:coverage",
+		"bench": "pnpm -r run bench",
+		"build": "pnpm -r run build",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write ."
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@capacitor/filesystem": "^7.1.1",
-		"@types/bun": "latest",
 		"typescript": "^5",
 		"valibot": "^1.1.0",
 		"vitest": "^3.2.2",
