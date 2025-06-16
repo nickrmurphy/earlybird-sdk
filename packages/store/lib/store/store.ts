@@ -45,8 +45,6 @@ export function createStore<T extends StandardSchemaV1>(
 	collection: string,
 	config: { schema: T; adapter: StorageAdapter },
 ): Store<T> {
-	const listeners = new Map<string, () => void>();
-
 	let initialized = false;
 	let data: CRDTStore<T> | null = null;
 	let clock: Clock | null = null;
@@ -64,9 +62,6 @@ export function createStore<T extends StandardSchemaV1>(
 	const saveChanges = async () => {
 		if (clock) await config.adapter.saveHLC(clock.current());
 		await config.adapter.saveData(JSON.stringify(data));
-		for (const listener of listeners.values()) {
-			listener();
-		}
 	};
 
 	return {
@@ -194,10 +189,10 @@ export function createStore<T extends StandardSchemaV1>(
 			await saveChanges();
 		},
 		registerListener: (key: string, listener: () => void) => {
-			listeners.set(key, listener);
+			config.adapter.registerListener(key, listener);
 		},
 		unregisterListener: (key: string) => {
-			listeners.delete(key);
+			config.adapter.unregisterListener(key);
 		},
 	};
 }

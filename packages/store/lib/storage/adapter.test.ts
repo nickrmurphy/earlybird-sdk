@@ -3,7 +3,7 @@
 import type { StorageAdapter } from './types';
 
 import { Directory, Filesystem } from '@capacitor/filesystem';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { createCapacitorAdapter } from './capacitor-adapter';
 import { createMemoryAdapter } from './memory-adapter';
 
@@ -14,6 +14,29 @@ export const createStorageAdapterTests = (
 	createAdapter: AdapterFactory,
 ) => {
 	describe(`${name} Storage Adapter`, () => {
+		// Cleanup test files for Capacitor adapter after each test
+		if (name === 'Capacitor') {
+			afterEach(async () => {
+				try {
+					// Clean up any test files that might have been created
+					const files = await Filesystem.readdir({
+						path: '',
+						directory: Directory.Temporary,
+					});
+					
+					for (const file of files.files) {
+						if (file.name.startsWith('test-') && (file.name.endsWith('.json') || file.name.endsWith('.hlc.txt'))) {
+							await Filesystem.deleteFile({
+								path: file.name,
+								directory: Directory.Temporary,
+							});
+						}
+					}
+				} catch (error) {
+					// Ignore cleanup errors - files might not exist
+				}
+			});
+		}
 		describe('loadData and saveData', () => {
 			it('returns null when file does not exist', async () => {
 				const adapter = await createAdapter();
@@ -79,11 +102,45 @@ export const createStorageAdapterTests = (
 				expect(hlcResult).toBe('hlc-content');
 			});
 		});
+
+		describe('listener notifications', () => {
+			it('notifies listeners when data is saved', async () => {
+				const adapter = await createAdapter();
+				let notificationCount = 0;
+				
+				const listener = () => {
+					notificationCount++;
+				};
+
+				adapter.registerListener('test-listener', listener);
+				await adapter.saveData('{"test": "data"}');
+
+				expect(notificationCount).toBe(1);
+				
+				adapter.unregisterListener('test-listener');
+			});
+
+			it('does not notify unregistered listeners', async () => {
+				const adapter = await createAdapter();
+				let notificationCount = 0;
+				
+				const listener = () => {
+					notificationCount++;
+				};
+
+				adapter.registerListener('test-listener', listener);
+				adapter.unregisterListener('test-listener');
+				await adapter.saveData('{"test": "data"}');
+
+				expect(notificationCount).toBe(0);
+			});
+		});
 	});
 };
 
 createStorageAdapterTests('Capacitor', () => {
-	return createCapacitorAdapter('test', {
+	const uniqueCollection = `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+	return createCapacitorAdapter(uniqueCollection, {
 		fs: Filesystem,
 		directory: Directory.Temporary,
 	});

@@ -1,14 +1,10 @@
+import { createListeners } from '../utils/listeners';
 import type { StorageAdapter } from './types';
 
 export function createMemoryAdapter(): StorageAdapter {
 	const data = new Map<'hlc' | 'data', string>();
-	const listeners = new Map<string, () => void>();
-
-	const notifyListeners = () => {
-		for (const listener of listeners.values()) {
-			listener();
-		}
-	};
+	const { notifyListeners, registerListener, unregisterListener } =
+		createListeners();
 
 	return {
 		loadData: async () => {
@@ -26,11 +22,7 @@ export function createMemoryAdapter(): StorageAdapter {
 			data.set('hlc', value);
 			return Promise.resolve();
 		},
-		registerListener: (id: string, listener: () => void) => {
-			listeners.set(id, listener);
-		},
-		unregisterListener: (id: string) => {
-			listeners.delete(id);
-		},
+		registerListener,
+		unregisterListener,
 	};
 }

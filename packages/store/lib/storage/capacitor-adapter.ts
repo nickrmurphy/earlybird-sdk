@@ -2,6 +2,7 @@ import type { Directory, FilesystemPlugin } from '@capacitor/filesystem';
 import type { StorageAdapter } from './types';
 
 import { Encoding } from '@capacitor/filesystem';
+import { createListeners } from '../utils/listeners';
 
 export type CapacitorAdapterConfig = {
 	fs: FilesystemPlugin;
@@ -51,6 +52,8 @@ export function createCapacitorAdapter(
 	collection: string,
 	config: CapacitorAdapterConfig,
 ): StorageAdapter {
+	const { notifyListeners, registerListener, unregisterListener } =
+		createListeners();
 	return {
 		loadData: async () => {
 			const storePath = createStorePath(collection);
@@ -74,6 +77,7 @@ export function createCapacitorAdapter(
 				directory: config.directory,
 				encoding: Encoding.UTF8,
 			});
+			notifyListeners();
 		},
 		loadHLC: async () => {
 			const hlcPath = createHLCPath(collection);
@@ -98,5 +102,7 @@ export function createCapacitorAdapter(
 				encoding: Encoding.UTF8,
 			});
 		},
+		registerListener,
+		unregisterListener,
 	};
 }
