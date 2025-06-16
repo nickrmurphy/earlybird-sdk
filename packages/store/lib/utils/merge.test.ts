@@ -27,39 +27,77 @@ describe('mergeFields', () => {
 describe('mergeDocuments', () => {
 	test('merges documents with no conflicts', () => {
 		const docA = {
-			a: {
-				_value: 'valueA',
-				_hlc: '2023-01-01T00:00:00.000Z-000000-abc123' as HLC,
+			_hash: 'hashA',
+			_value: {
+				a: {
+					_value: 'valueA',
+					_hlc: '2023-01-01T00:00:00.000Z-000000-abc123' as HLC,
+				},
 			},
 		};
 		const docB = {
-			b: {
-				_value: 'valueB',
-				_hlc: '2023-01-01T00:00:00.000Z-000000-def456' as HLC,
+			_hash: 'hashB',
+			_value: {
+				b: {
+					_value: 'valueB',
+					_hlc: '2023-01-01T00:00:00.000Z-000000-def456' as HLC,
+				},
 			},
 		};
 		const result = mergeDocuments<typeof objectSchema>(docA, docB);
-		expect(result.a._value).toBe('valueA');
-		expect(result.b._value).toBe('valueB');
+		expect(result._value.a._value).toBe('valueA');
+		expect(result._value.b._value).toBe('valueB');
 	});
 
 	test('resolves conflicts using HLC', () => {
 		const docA = {
-			key: {
-				_value: 'old',
-				_hlc: '2023-01-01T00:00:00.000Z-000000-abc123' as HLC,
+			_hash: 'hashA',
+			_value: {
+				key: {
+					_value: 'old',
+					_hlc: '2023-01-01T00:00:00.000Z-000000-abc123' as HLC,
+				},
 			},
 		};
 		const docB = {
-			key: {
-				_value: 'new',
-				_hlc: '2023-01-01T00:00:01.000Z-000000-def456' as HLC,
+			_hash: 'hashB',
+			_value: {
+				key: {
+					_value: 'new',
+					_hlc: '2023-01-01T00:00:01.000Z-000000-def456' as HLC,
+				},
 			},
 		};
-		const objectSchema = z.object({
+		const keyObjectSchema = z.object({
 			key: stringSchema,
 		});
+		const result = mergeDocuments<typeof keyObjectSchema>(docA, docB);
+		expect(result._value.key._value).toBe('new');
+	});
+
+	test('generates new hash for merged document', () => {
+		const docA = {
+			_hash: 'hashA',
+			_value: {
+				a: {
+					_value: 'valueA',
+					_hlc: '2023-01-01T00:00:00.000Z-000000-abc123' as HLC,
+				},
+			},
+		};
+		const docB = {
+			_hash: 'hashB',
+			_value: {
+				b: {
+					_value: 'valueB',
+					_hlc: '2023-01-01T00:00:00.000Z-000000-def456' as HLC,
+				},
+			},
+		};
 		const result = mergeDocuments<typeof objectSchema>(docA, docB);
-		expect(result.key._value).toBe('new');
+		expect(result._hash).toBeDefined();
+		expect(result._hash).not.toBe('hashA');
+		expect(result._hash).not.toBe('hashB');
+		expect(typeof result._hash).toBe('string');
 	});
 });

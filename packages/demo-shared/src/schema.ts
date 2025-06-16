@@ -3,7 +3,6 @@ import { z } from 'zod/v4';
 export const recipeSchema = z.object({
 	id: z.uuid(),
 	title: z.string(),
-	description: z.string(),
 	ingredients: z.array(
 		z.object({
 			id: z.uuid(),

@@ -1,5 +1,6 @@
 import type { StandardSchemaV1 } from '../../standard-schema.types';
 import type { CRDTDoc, CRDTField } from '../store';
+import { hashObject } from './hash';
 
 export function mergeFields<T extends StandardSchemaV1>(
 	a: CRDTField<T>,
@@ -13,24 +14,26 @@ export function mergeDocuments<T extends StandardSchemaV1>(
 	b: CRDTDoc<T>,
 ): CRDTDoc<T> {
 	// Do a naiive merge to have a source of truth for paths
-	const unionedDoc: CRDTDoc<T> = {
-		...a,
-		...b,
+	const unionedValue = {
+		...a._value,
+		...b._value,
 	};
 
-	const mergedDoc: CRDTDoc<T> = {};
+	const mergedValue: {
+		[path: string]: CRDTField<T>;
+	} = {};
 
-	for (const key of Object.keys(unionedDoc)) {
-		const aField = a[key];
-		const bField = b[key];
+	for (const key of Object.keys(unionedValue)) {
+		const aField = a._value[key];
+		const bField = b._value[key];
 
 		if (!aField && bField) {
-			mergedDoc[key] = bField;
+			mergedValue[key] = bField;
 			continue;
 		}
 
 		if (!bField && aField) {
-			mergedDoc[key] = aField;
+			mergedValue[key] = aField;
 			continue;
 		}
 
@@ -43,8 +46,11 @@ export function mergeDocuments<T extends StandardSchemaV1>(
 			continue;
 		}
 
-		mergedDoc[key] = mergeFields(aField, bField);
+		mergedValue[key] = mergeFields(aField, bField);
 	}
 
-	return mergedDoc;
+	return {
+		_value: mergedValue,
+		_hash: hashObject(mergedValue),
+	};
 }

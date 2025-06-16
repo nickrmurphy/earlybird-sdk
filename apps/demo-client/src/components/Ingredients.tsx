@@ -10,13 +10,12 @@ export function Ingredients() {
 
 	const handleAddIngredient = async () => {
 		const id = crypto.randomUUID();
-		const newIngredient = {
+
+		await ingredientStore.create(id, {
 			id,
 			name: '',
 			isDeleted: false,
-		};
-
-		await ingredientStore.create(id, newIngredient);
+		});
 	};
 
 	const handleUpdateIngredient = async (id: string, name: string) => {

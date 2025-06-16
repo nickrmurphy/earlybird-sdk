@@ -7,8 +7,9 @@ describe('serializeToCRDT', () => {
 		const clock = createClock();
 		const data = { name: 'test' };
 		const result = serializeToCRDT(data, clock);
-		expect(result.name._value).toBe('test');
-		expect(result.name._hlc).toBeDefined();
+
+		expect(result._value.name._value).toBe('test');
+		expect(result._value.name._hlc).toBeDefined();
 	});
 
 	test('throws on invalid data', () => {

@@ -1,9 +1,8 @@
 import type { StandardSchemaV1 } from '../../standard-schema.types';
 import type { CRDTDoc } from '../store';
-import type { Clock } from './hlc';
-
 import { flatten, unflatten } from './flatten';
-import { unwrapObject, wrapObject } from './wrap';
+import type { Clock } from './hlc';
+import { unwrapDoc, wrapDoc } from './wrap';
 
 export function serializeToCRDT<T extends StandardSchemaV1>(
 	data: StandardSchemaV1.InferInput<T>,
@@ -14,14 +13,14 @@ export function serializeToCRDT<T extends StandardSchemaV1>(
 	}
 
 	const flattened = flatten(data);
-	const wrapped = wrapObject<T>(flattened, clock);
+	const wrapped = wrapDoc<T>(flattened, clock);
 	return wrapped;
 }
 
 export function deserializeFromCRDT<T extends StandardSchemaV1>(
 	data: CRDTDoc<T>,
 ): StandardSchemaV1.InferOutput<T> {
-	const unwrapped = unwrapObject<T>(data);
+	const unwrapped = unwrapDoc<T>(data);
 	const unflattened = unflatten(unwrapped);
 	return unflattened;
 }
