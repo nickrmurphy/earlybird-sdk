@@ -22,21 +22,22 @@ export function Ingredients() {
 	const handleUpdateIngredient = async (id: string, name: string) => {
 		await store.update(id, { name });
 		const allRecipes = await recipeStore.all();
-		if (allRecipes) {
-			const toUpdate = Object.values(allRecipes).filter((r) =>
-				r.ingredients.some((i) => i.id === id),
-			);
+		if (!allRecipes) return;
 
-			await Promise.all(
-				toUpdate.map((recipe) =>
-					recipeStore.update(recipe.id, {
-						ingredients: recipe.ingredients.map((i) =>
-							i.id === id ? { ...i, name } : i,
-						),
-					}),
-				),
-			);
-		}
+		const toUpdate = Object.values(allRecipes).filter((r) =>
+			r.ingredients.some((i) => i.id === id),
+		);
+
+		await recipeStore.updateMany(
+			toUpdate.map((recipe) => ({
+				id: recipe.id,
+				value: {
+					ingredients: recipe.ingredients.map((i) =>
+						i.id === id ? { ...i, name } : i,
+					),
+				},
+			})),
+		);
 	};
 
 	return (
