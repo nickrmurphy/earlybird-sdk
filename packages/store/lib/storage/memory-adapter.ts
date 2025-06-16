@@ -2,6 +2,13 @@ import type { StorageAdapter } from './types';
 
 export function createMemoryAdapter(): StorageAdapter {
 	const data = new Map<'hlc' | 'data', string>();
+	const listeners = new Map<string, () => void>();
+
+	const notifyListeners = () => {
+		for (const listener of listeners.values()) {
+			listener();
+		}
+	};
 
 	return {
 		loadData: async () => {
@@ -9,6 +16,7 @@ export function createMemoryAdapter(): StorageAdapter {
 		},
 		saveData: async (value: string) => {
 			data.set('data', value);
+			notifyListeners();
 			return Promise.resolve();
 		},
 		loadHLC: async () => {
@@ -17,6 +25,12 @@ export function createMemoryAdapter(): StorageAdapter {
 		saveHLC: async (value: string) => {
 			data.set('hlc', value);
 			return Promise.resolve();
+		},
+		registerListener: (id: string, listener: () => void) => {
+			listeners.set(id, listener);
+		},
+		unregisterListener: (id: string) => {
+			listeners.delete(id);
 		},
 	};
 }

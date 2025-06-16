@@ -3,4 +3,6 @@ export type StorageAdapter = {
 	saveData: (data: string) => Promise<void>;
 	loadHLC: () => Promise<string | null>;
 	saveHLC: (data: string) => Promise<void>;
+	registerListener: (key: string, listener: () => void) => void;
+	unregisterListener: (key: string) => void;
 };

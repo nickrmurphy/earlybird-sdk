@@ -61,7 +61,9 @@ export function createStore<T extends StandardSchemaV1>(
 		initialized = true;
 	};
 
-	const callListeners = () => {
+	const saveChanges = async () => {
+		if (clock) await config.adapter.saveHLC(clock.current());
+		await config.adapter.saveData(JSON.stringify(data));
 		for (const listener of listeners.values()) {
 			listener();
 		}
@@ -110,8 +112,7 @@ export function createStore<T extends StandardSchemaV1>(
 				data[id] = doc;
 			}
 
-			await config.adapter.saveData(JSON.stringify(data));
-			callListeners();
+			await saveChanges();
 		},
 		createMany: async (
 			payload: { id: string; value: StandardSchemaV1.InferInput<T> }[],
@@ -133,8 +134,7 @@ export function createStore<T extends StandardSchemaV1>(
 				}
 			}
 
-			await config.adapter.saveData(JSON.stringify(data));
-			callListeners();
+			await saveChanges();
 		},
 		update: async (
 			id: string,
@@ -162,8 +162,7 @@ export function createStore<T extends StandardSchemaV1>(
 			const mergedDoc = mergeDocuments<T>(doc, updates);
 			data[id] = mergedDoc;
 
-			await config.adapter.saveData(JSON.stringify(data));
-			callListeners();
+			await saveChanges();
 		},
 		updateMany: async (
 			payload: { id: string; value: Partial<StandardSchemaV1.InferInput<T>> }[],
@@ -192,8 +191,7 @@ export function createStore<T extends StandardSchemaV1>(
 				data[id] = mergedDoc;
 			}
 
-			await config.adapter.saveData(JSON.stringify(data));
-			callListeners();
+			await saveChanges();
 		},
 		registerListener: (key: string, listener: () => void) => {
 			listeners.set(key, listener);
