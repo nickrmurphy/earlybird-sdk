@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import type { InferStoreType, StoreRegistry, UseQueryOptions } from '../types';
-import { useStableCallback } from './use-stable-callback';
 
 export function createUseQuery<T extends StoreRegistry>(
 	useStore: <K extends keyof T>(collection: K) => T[K],
@@ -8,9 +7,10 @@ export function createUseQuery<T extends StoreRegistry>(
 	const useQuery = <K extends keyof T>(
 		collection: K,
 		options: UseQueryOptions<K, T> = {},
+		deps: React.DependencyList = [],
 	) => {
-		const stableWhere = useStableCallback(options.where);
-		const stableSort = useStableCallback(options.sort);
+		const stableWhere = options.where ? useCallback(options.where, deps) : undefined;
+		const stableSort = options.sort ? useCallback(options.sort, deps) : undefined;
 		const queryId = useId();
 		const store = useStore(collection);
 		const [data, setData] = useState<InferStoreType<T[K]>[]>([]);
@@ -33,7 +33,7 @@ export function createUseQuery<T extends StoreRegistry>(
 
 			setData(data);
 			setIsLoading(false);
-		}, [stableWhere, stableSort, store]);
+		}, [stableWhere, stableSort, store, ...deps]);
 
 		useEffect(() => {
 			listenerFn();

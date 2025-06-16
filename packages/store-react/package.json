@@ -13,9 +13,7 @@
 			"types": "./dist/index.d.ts"
 		}
 	},
-	"files": [
-		"dist"
-	],
+	"files": ["dist"],
 	"scripts": {
 		"build": "vite build",
 		"test:coverage": "vitest run --coverage --passWithNoTests"
@@ -38,11 +36,5 @@
 		}
 	},
 	"license": "MIT",
-	"keywords": [
-		"react",
-		"hooks",
-		"storage",
-		"typescript",
-		"store"
-	]
+	"keywords": ["react", "hooks", "storage", "typescript", "store"]
 }

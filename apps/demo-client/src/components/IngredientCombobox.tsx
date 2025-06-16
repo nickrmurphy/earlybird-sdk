@@ -4,7 +4,7 @@ import {
 	ComboboxOption,
 	ComboboxOptions,
 } from '@headlessui/react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { Ingredient } from '../schema';
 import { useQuery } from './StoreProvider';
 
@@ -17,18 +17,16 @@ export function IngredientCombobox({
 }) {
 	const [query, setQuery] = useState('');
 
-	const { data: ingredients } = useQuery('ingredients', {
-		where: (i) => !i.isDeleted,
-	});
-
-	const options = useMemo(() => {
-		const excludeIds = new Set(exclude);
-		return ingredients.filter(
-			(i) =>
-				!excludeIds.has(i.id) &&
+	const { data: options } = useQuery(
+		'ingredients',
+		{
+			where: (i) =>
+				!i.isDeleted &&
+				!exclude.includes(i.id) &&
 				i.name.toLowerCase().includes(query.toLowerCase().toString()),
-		);
-	}, [ingredients, query, exclude]);
+		},
+		[query, exclude],
+	);
 
 	return (
 		<Combobox
