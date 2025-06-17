@@ -3,9 +3,14 @@ import type { Clock, HLC } from '../crdt/hlc';
 import type { StorageAdapter } from '../storage/types';
 
 import { createClock } from '../crdt/hlc';
-import { mergeDocuments } from '../crdt/merge';
-import { deserializeFromCRDT, serializeToCRDT } from '../crdt/serialize';
-import { standardValidate } from '../utils/validate';
+import {
+	createDocumentOperation,
+	deserializeDocumentOperation,
+	deserializeStoreOperation,
+	mergeStoreOperation,
+	updateDocumentOperation,
+	validateDocumentExists,
+} from './store-operations';
 
 export type InferredValue<T extends StandardSchemaV1> =
 	StandardSchemaV1.InferOutput<T>[keyof StandardSchemaV1.InferOutput<T>];
@@ -99,12 +104,6 @@ export function createStore<T extends StandardSchemaV1>(
 			: { clock: Clock };
 	};
 
-	const validateDocumentExists = (id: string, storeData: CRDTStore<T>) => {
-		const doc = storeData[id];
-		if (!doc) throw new Error(ERRORS.DOCUMENT_NOT_FOUND(id));
-		return doc;
-	};
-
 	const setDocumentInStore = (id: string, doc: CRDTDoc<T>) => {
 		if (!data) {
 			data = { [id]: doc };
@@ -113,60 +112,39 @@ export function createStore<T extends StandardSchemaV1>(
 		}
 	};
 
-	const createDocument = (
-		id: string,
-		value: StandardSchemaV1.InferInput<T>,
-		clockInstance: Clock,
-	) => {
-		const validated = standardValidate(config.schema, value);
-		const doc = serializeToCRDT(validated, clockInstance);
-		setDocumentInStore(id, doc);
-	};
-
-	const updateDocument = (
-		id: string,
-		value: Partial<StandardSchemaV1.InferInput<T>>,
-		clockInstance: Clock,
-		storeData: CRDTStore<T>,
-	) => {
-		const doc = validateDocumentExists(id, storeData);
-		const current = deserializeFromCRDT(doc);
-		const rawMerge: unknown = { ...(current as object), ...value };
-		standardValidate(config.schema, rawMerge);
-
-		const updates = serializeToCRDT<T>(value, clockInstance);
-		const mergedDoc = mergeDocuments<T>(doc, updates);
-		storeData[id] = mergedDoc;
-	};
-
 	return {
 		all: async () => {
 			await ensureReady();
 
 			if (!data) return null;
 
-			const record: Record<string, StandardSchemaV1.InferOutput<T>> = {};
-
-			for (const [id, doc] of Object.entries(data)) {
-				const deserialized = deserializeFromCRDT(doc);
-
-				const validated = standardValidate(config.schema, deserialized);
-				record[id] = validated;
+			const result = deserializeStoreOperation(config.schema, data);
+			if (!result.success) {
+				throw new Error(result.error.message);
 			}
-			return record;
+			return result.data;
 		},
 		get: async (id: string) => {
 			await ensureReady();
 			if (!data) return null;
 			const doc = data[id];
 			if (!doc) return null;
-			const deserialized = deserializeFromCRDT(doc);
-			const validated = standardValidate(config.schema, deserialized);
-			return validated;
+
+			const result = deserializeDocumentOperation(config.schema, doc);
+			if (!result.success) {
+				throw new Error(result.error.message);
+			}
+			return result.data;
 		},
 		create: async (id: string, value: StandardSchemaV1.InferInput<T>) => {
 			const { clock } = await ensureReady();
-			createDocument(id, value, clock);
+
+			const result = createDocumentOperation(config.schema, value, clock);
+			if (!result.success) {
+				throw new Error(result.error.message);
+			}
+
+			setDocumentInStore(id, result.data);
 			await saveChanges();
 		},
 		createMany: async (
@@ -175,7 +153,11 @@ export function createStore<T extends StandardSchemaV1>(
 			const { clock } = await ensureReady();
 
 			for (const { id, value } of payload) {
-				createDocument(id, value, clock);
+				const result = createDocumentOperation(config.schema, value, clock);
+				if (!result.success) {
+					throw new Error(result.error.message);
+				}
+				setDocumentInStore(id, result.data);
 			}
 
 			await saveChanges();
@@ -185,7 +167,23 @@ export function createStore<T extends StandardSchemaV1>(
 			value: Partial<StandardSchemaV1.InferInput<T>>,
 		) => {
 			const { clock, data: storeData } = await ensureReady(true);
-			updateDocument(id, value, clock, storeData);
+
+			const docResult = validateDocumentExists(storeData, id);
+			if (!docResult.success) {
+				throw new Error(docResult.error.message);
+			}
+
+			const updateResult = updateDocumentOperation(
+				config.schema,
+				docResult.data,
+				value,
+				clock,
+			);
+			if (!updateResult.success) {
+				throw new Error(updateResult.error.message);
+			}
+
+			storeData[id] = updateResult.data;
 			await saveChanges();
 		},
 		updateMany: async (
@@ -194,7 +192,22 @@ export function createStore<T extends StandardSchemaV1>(
 			const { clock, data: storeData } = await ensureReady(true);
 
 			for (const { id, value } of payload) {
-				updateDocument(id, value, clock, storeData);
+				const docResult = validateDocumentExists(storeData, id);
+				if (!docResult.success) {
+					throw new Error(docResult.error.message);
+				}
+
+				const updateResult = updateDocumentOperation(
+					config.schema,
+					docResult.data,
+					value,
+					clock,
+				);
+				if (!updateResult.success) {
+					throw new Error(updateResult.error.message);
+				}
+
+				storeData[id] = updateResult.data;
 			}
 
 			await saveChanges();
@@ -217,16 +230,8 @@ export function createStore<T extends StandardSchemaV1>(
 				data = {};
 			}
 
-			for (const [id, doc] of Object.entries(store)) {
-				const existingDoc = data[id];
-				if (!existingDoc) {
-					data[id] = doc;
-				} else {
-					// Merge CRDT documents directly
-					const mergedDoc = mergeDocuments<T>(existingDoc, doc);
-					data[id] = mergedDoc;
-				}
-			}
+			// Use pure merge operation
+			data = mergeStoreOperation(data, store);
 
 			await saveChanges();
 		},
