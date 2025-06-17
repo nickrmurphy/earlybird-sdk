@@ -225,6 +225,107 @@ const createStoreTests = (
 
 			expect(() => store.getHashes()).toThrow('Store not initialized');
 		});
+
+		test('should merge external store data', async () => {
+			const adapter = createAdapter();
+			const store = createStore(collectionName, {
+				schema: todoSchema,
+				adapter,
+			});
+
+			// Create initial data
+			await store.create('123', { title: 'Original Todo', completed: false });
+
+			// External store data to merge
+			const externalStore: CRDTStore<typeof todoSchema> = {
+				'456': {
+					$hash: 'external-hash-456',
+					$hlc: 'external-hlc-456',
+					$value: {
+						title: {
+							$value: 'External Todo',
+							$hlc: 'external-hlc-456' as HLC,
+						},
+						completed: {
+							$value: true,
+							$hlc: 'external-hlc-456' as HLC,
+						},
+					},
+				},
+			};
+
+			store.merge(externalStore);
+
+			const items = await store.all();
+			expect(items).toEqual({
+				'123': { title: 'Original Todo', completed: false },
+				'456': { title: 'External Todo', completed: true },
+			});
+		});
+
+		test('should merge conflicting documents using CRDT resolution', async () => {
+			const adapter = createAdapter();
+			const store = createStore(collectionName, {
+				schema: todoSchema,
+				adapter,
+			});
+
+			// Create initial data
+			await store.create('123', { title: 'Original Todo', completed: false });
+
+			// External store data with same ID but different values
+			const externalStore: CRDTStore<typeof todoSchema> = {
+				'123': {
+					$hash: 'external-hash-123',
+					$hlc: 'external-hlc-123',
+					$value: {
+						title: {
+							$value: 'Conflicting Todo Title',
+							$hlc: 'external-hlc-123' as HLC,
+						},
+						completed: {
+							$value: true,
+							$hlc: 'external-hlc-123' as HLC,
+						},
+					},
+				},
+			};
+
+			store.merge(externalStore);
+
+			// The merge should resolve conflicts using CRDT merge logic
+			const item = await store.get('123');
+			expect(item).toBeDefined();
+			expect(item?.title).toBe('Conflicting Todo Title');
+			expect(item?.completed).toBe(true);
+		});
+
+		test('should throw error when merging into uninitialized store', () => {
+			const adapter = createAdapter();
+			const store = createStore(collectionName, {
+				schema: todoSchema,
+				adapter,
+			});
+
+			const externalStore: CRDTStore<typeof todoSchema> = {
+				'123': {
+					$hash: 'external-hash',
+					$hlc: 'external-hlc',
+					$value: {
+						title: {
+							$value: 'External Todo',
+							$hlc: 'external-hlc' as HLC,
+						},
+						completed: {
+							$value: true,
+							$hlc: 'external-hlc' as HLC,
+						},
+					},
+				},
+			};
+
+			expect(() => store.merge(externalStore)).toThrow('Store not initialized');
+		});
 	});
 };
 

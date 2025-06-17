@@ -44,6 +44,7 @@ export type Store<T extends StandardSchemaV1> = {
 	registerListener: (key: string, callback: () => void) => void;
 	unregisterListener: (key: string) => void;
 	getHashes: () => string[];
+	merge: (store: CRDTStore<T>) => void;
 };
 
 export function createStore<T extends StandardSchemaV1>(
@@ -209,6 +210,26 @@ export function createStore<T extends StandardSchemaV1>(
 			if (!data) throw new Error('Data not initialized');
 
 			return Object.values(data).map((doc) => doc.$hash);
+		},
+		merge: (store) => {
+			if (!initialized) {
+				throw new Error('Store not initialized');
+			}
+
+			if (!data) throw new Error('Data not initialized');
+
+			if (!clock) throw new Error('Clock not initialized');
+
+			for (const [id, doc] of Object.entries(store)) {
+				const existingDoc = data[id];
+				if (!existingDoc) {
+					data[id] = doc;
+				} else {
+					// Merge CRDT documents directly
+					const mergedDoc = mergeDocuments<T>(existingDoc, doc);
+					data[id] = mergedDoc;
+				}
+			}
 		},
 	};
 }
