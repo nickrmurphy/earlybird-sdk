@@ -13,21 +13,22 @@ export function hash(str: string): string {
 }
 
 /**
- * Creates a deterministic string representation of an object.
- * Sorts keys to ensure consistent serialization regardless of property order.
- */
-function serializeObject(obj: unknown): string {
-	return JSON.stringify(
-		obj,
-		Object.keys(obj as Record<string, unknown>).sort(),
-	);
-}
-
-/**
  * Creates a hash of an object by first serializing it to a deterministic string
  * representation, then applying the djb2 hash algorithm.
  * Suitable for cache keys and object comparison.
  */
 export function hashObject(obj: unknown): string {
-	return hash(serializeObject(obj));
+	const serialized = JSON.stringify(
+		obj,
+		Object.keys(obj as Record<string, unknown>).sort(),
+	);
+	return hash(serialized);
+}
+
+/**
+ * Deterministically combines two hash strings into a single hash.
+ * Order matters: combineHashes(a, b) !== combineHashes(b, a)
+ */
+export function combineHashes(a: string, b: string): string {
+	return hash(`${a}:${b}`);
 }

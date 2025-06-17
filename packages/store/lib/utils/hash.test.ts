@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hash, hashObject } from './hash';
+import { hash, hashObject, combineHashes } from './hash';
 
 describe('hash', () => {
 	it('should return a string hash for any string', () => {
@@ -38,6 +38,68 @@ describe('hash', () => {
 
 		expect(typeof hashValue).toBe('string');
 		expect(hashValue.length).toBeGreaterThan(0);
+	});
+});
+
+describe('combineHashes', () => {
+	it('should return a string hash when combining two hashes', () => {
+		const hash1 = 'abc123';
+		const hash2 = 'def456';
+		const combined = combineHashes(hash1, hash2);
+
+		expect(typeof combined).toBe('string');
+		expect(combined.length).toBeGreaterThan(0);
+	});
+
+	it('should return consistent results for the same inputs', () => {
+		const hash1 = 'abc123';
+		const hash2 = 'def456';
+		const combined1 = combineHashes(hash1, hash2);
+		const combined2 = combineHashes(hash1, hash2);
+
+		expect(combined1).toBe(combined2);
+	});
+
+	it('should be order-sensitive (a,b) !== (b,a)', () => {
+		const hash1 = 'abc123';
+		const hash2 = 'def456';
+		const combined1 = combineHashes(hash1, hash2);
+		const combined2 = combineHashes(hash2, hash1);
+
+		expect(combined1).not.toBe(combined2);
+	});
+
+	it('should handle empty hash strings', () => {
+		const hash1 = '';
+		const hash2 = 'abc123';
+		const combined = combineHashes(hash1, hash2);
+
+		expect(typeof combined).toBe('string');
+		expect(combined.length).toBeGreaterThan(0);
+	});
+
+	it('should produce different results for different hash combinations', () => {
+		const hash1 = 'abc123';
+		const hash2 = 'def456';
+		const hash3 = 'ghi789';
+		
+		const combined1 = combineHashes(hash1, hash2);
+		const combined2 = combineHashes(hash1, hash3);
+
+		expect(combined1).not.toBe(combined2);
+	});
+
+	it('should work with real hash outputs', () => {
+		const str1 = 'hello';
+		const str2 = 'world';
+		const hash1 = hash(str1);
+		const hash2 = hash(str2);
+		const combined = combineHashes(hash1, hash2);
+
+		expect(typeof combined).toBe('string');
+		expect(combined.length).toBeGreaterThan(0);
+		expect(combined).not.toBe(hash1);
+		expect(combined).not.toBe(hash2);
 	});
 });
 
