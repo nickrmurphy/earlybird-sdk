@@ -210,20 +210,21 @@ const createStoreTests = (
 			await store.create('123', { title: 'Todo 1', completed: false });
 			await store.create('456', { title: 'Todo 2', completed: true });
 
-			const hashes = store.getHashes();
+			const hashes = await store.getHashes();
 			expect(hashes).toHaveLength(2);
 			expect(hashes.every((hash) => typeof hash === 'string')).toBe(true);
 			expect(hashes.every((hash) => hash.length > 0)).toBe(true);
 		});
 
-		test('should throw error when getting hashes from uninitialized store', () => {
+		test('should return empty array when getting hashes from uninitialized store', async () => {
 			const adapter = createAdapter();
 			const store = createStore(collectionName, {
 				schema: todoSchema,
 				adapter,
 			});
 
-			expect(() => store.getHashes()).toThrow('Store not initialized');
+			const hashes = await store.getHashes();
+			expect(hashes).toEqual([]);
 		});
 
 		test('should merge external store data', async () => {
@@ -300,7 +301,7 @@ const createStoreTests = (
 			expect(item?.completed).toBe(true);
 		});
 
-		test('should throw error when merging into uninitialized store', () => {
+		test('should merge into uninitialized store after auto-initialization', async () => {
 			const adapter = createAdapter();
 			const store = createStore(collectionName, {
 				schema: todoSchema,
@@ -324,7 +325,10 @@ const createStoreTests = (
 				},
 			};
 
-			expect(() => store.merge(externalStore)).toThrow('Store not initialized');
+			await store.merge(externalStore);
+			
+			const item = await store.get('123');
+			expect(item).toEqual({ title: 'External Todo', completed: true });
 		});
 	});
 };

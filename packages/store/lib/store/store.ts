@@ -43,14 +43,20 @@ export type Store<T extends StandardSchemaV1> = {
 	) => Promise<void>;
 	registerListener: (key: string, callback: () => void) => void;
 	unregisterListener: (key: string) => void;
-	getHashes: () => string[];
-	merge: (store: CRDTStore<T>) => void;
+	getHashes: () => Promise<string[]>;
+	merge: (store: CRDTStore<T>) => Promise<void>;
 };
 
 export function createStore<T extends StandardSchemaV1>(
 	collection: string,
 	config: { schema: T; adapter: StorageAdapter },
 ): Store<T> {
+	const ERRORS = {
+		STORE_NOT_INITIALIZED: 'Store not initialized',
+		CLOCK_NOT_INITIALIZED: 'Clock not initialized',
+		DATA_NOT_INITIALIZED: 'Data not initialized',
+		DOCUMENT_NOT_FOUND: (id: string) => `Document with id ${id} not found`,
+	} as const;
 	let initialized = false;
 	let data: CRDTStore<T> | null = null;
 	let clock: Clock | null = null;
@@ -70,11 +76,72 @@ export function createStore<T extends StandardSchemaV1>(
 		await config.adapter.saveData(JSON.stringify(data));
 	};
 
+	const ensureReady = async <TNeedsData extends boolean = false>(
+		needsData?: TNeedsData,
+	): Promise<
+		TNeedsData extends true
+			? { clock: Clock; data: CRDTStore<T> }
+			: { clock: Clock }
+	> => {
+		if (!initialized) await initialize();
+		if (!clock) throw new Error(ERRORS.CLOCK_NOT_INITIALIZED);
+
+		if (needsData) {
+			// For empty stores, data will be null, which is valid - initialize to empty object
+			const storeData = data || {};
+			return { clock, data: storeData } as TNeedsData extends true
+				? { clock: Clock; data: CRDTStore<T> }
+				: { clock: Clock };
+		}
+
+		return { clock } as TNeedsData extends true
+			? { clock: Clock; data: CRDTStore<T> }
+			: { clock: Clock };
+	};
+
+	const validateDocumentExists = (id: string, storeData: CRDTStore<T>) => {
+		const doc = storeData[id];
+		if (!doc) throw new Error(ERRORS.DOCUMENT_NOT_FOUND(id));
+		return doc;
+	};
+
+	const setDocumentInStore = (id: string, doc: CRDTDoc<T>) => {
+		if (!data) {
+			data = { [id]: doc };
+		} else {
+			data[id] = doc;
+		}
+	};
+
+	const createDocument = (
+		id: string,
+		value: StandardSchemaV1.InferInput<T>,
+		clockInstance: Clock,
+	) => {
+		const validated = standardValidate(config.schema, value);
+		const doc = serializeToCRDT(validated, clockInstance);
+		setDocumentInStore(id, doc);
+	};
+
+	const updateDocument = (
+		id: string,
+		value: Partial<StandardSchemaV1.InferInput<T>>,
+		clockInstance: Clock,
+		storeData: CRDTStore<T>,
+	) => {
+		const doc = validateDocumentExists(id, storeData);
+		const current = deserializeFromCRDT(doc);
+		const rawMerge: unknown = { ...(current as object), ...value };
+		standardValidate(config.schema, rawMerge);
+
+		const updates = serializeToCRDT<T>(value, clockInstance);
+		const mergedDoc = mergeDocuments<T>(doc, updates);
+		storeData[id] = mergedDoc;
+	};
+
 	return {
 		all: async () => {
-			if (!initialized) {
-				await initialize();
-			}
+			await ensureReady();
 
 			if (!data) return null;
 
@@ -89,9 +156,7 @@ export function createStore<T extends StandardSchemaV1>(
 			return record;
 		},
 		get: async (id: string) => {
-			if (!initialized) {
-				await initialize();
-			}
+			await ensureReady();
 			if (!data) return null;
 			const doc = data[id];
 			if (!doc) return null;
@@ -100,41 +165,17 @@ export function createStore<T extends StandardSchemaV1>(
 			return validated;
 		},
 		create: async (id: string, value: StandardSchemaV1.InferInput<T>) => {
-			const validated = standardValidate(config.schema, value);
-
-			if (!initialized) {
-				await initialize();
-			}
-
-			if (!clock) throw new Error('Clock not initialized');
-			const doc = serializeToCRDT(validated, clock);
-
-			if (!data) {
-				data = { [id]: doc };
-			} else {
-				data[id] = doc;
-			}
-
+			const { clock } = await ensureReady();
+			createDocument(id, value, clock);
 			await saveChanges();
 		},
 		createMany: async (
 			payload: { id: string; value: StandardSchemaV1.InferInput<T> }[],
 		) => {
-			if (!initialized) {
-				await initialize();
-			}
-
-			if (!clock) throw new Error('Clock not initialized');
+			const { clock } = await ensureReady();
 
 			for (const { id, value } of payload) {
-				const validated = standardValidate(config.schema, value);
-				const doc = serializeToCRDT(validated, clock);
-
-				if (!data) {
-					data = { [id]: doc };
-				} else {
-					data[id] = doc;
-				}
+				createDocument(id, value, clock);
 			}
 
 			await saveChanges();
@@ -143,55 +184,17 @@ export function createStore<T extends StandardSchemaV1>(
 			id: string,
 			value: Partial<StandardSchemaV1.InferInput<T>>,
 		) => {
-			if (!initialized) {
-				await initialize();
-			}
-
-			if (!clock) throw new Error('Clock not initialized');
-
-			if (!data) throw new Error('Data not initialized');
-
-			const doc = data[id];
-
-			if (!doc) throw new Error(`Document with id ${id} not found`);
-
-			const current = deserializeFromCRDT(doc);
-			const rawMerge: unknown = { ...(current as object), ...value };
-			// assert updated doc is valid
-			standardValidate(config.schema, rawMerge);
-
-			// Merge with CRDTs
-			const updates = serializeToCRDT<T>(value, clock);
-			const mergedDoc = mergeDocuments<T>(doc, updates);
-			data[id] = mergedDoc;
-
+			const { clock, data: storeData } = await ensureReady(true);
+			updateDocument(id, value, clock, storeData);
 			await saveChanges();
 		},
 		updateMany: async (
 			payload: { id: string; value: Partial<StandardSchemaV1.InferInput<T>> }[],
 		) => {
-			if (!initialized) {
-				await initialize();
-			}
-
-			if (!clock) throw new Error('Clock not initialized');
-
-			if (!data) throw new Error('Data not initialized');
+			const { clock, data: storeData } = await ensureReady(true);
 
 			for (const { id, value } of payload) {
-				const doc = data[id];
-
-				if (!doc) throw new Error(`Document with id ${id} not found`);
-
-				const current = deserializeFromCRDT(doc);
-				const rawMerge: unknown = { ...(current as object), ...value };
-				// assert updated doc is valid
-				standardValidate(config.schema, rawMerge);
-
-				// Merge with CRDTs
-				const updates = serializeToCRDT<T>(value, clock);
-				const mergedDoc = mergeDocuments<T>(doc, updates);
-				data[id] = mergedDoc;
+				updateDocument(id, value, clock, storeData);
 			}
 
 			await saveChanges();
@@ -202,23 +205,17 @@ export function createStore<T extends StandardSchemaV1>(
 		unregisterListener: (key: string) => {
 			config.adapter.unregisterListener(key);
 		},
-		getHashes: () => {
-			if (!initialized) {
-				throw new Error('Store not initialized');
-			}
-
-			if (!data) throw new Error('Data not initialized');
-
-			return Object.values(data).map((doc) => doc.$hash);
+		getHashes: async () => {
+			const { data: storeData } = await ensureReady(true);
+			return Object.values(storeData).map((doc) => doc.$hash);
 		},
-		merge: (store) => {
-			if (!initialized) {
-				throw new Error('Store not initialized');
+		merge: async (store) => {
+			await ensureReady(true);
+
+			// Initialize data if it's null (empty store)
+			if (!data) {
+				data = {};
 			}
-
-			if (!data) throw new Error('Data not initialized');
-
-			if (!clock) throw new Error('Clock not initialized');
 
 			for (const [id, doc] of Object.entries(store)) {
 				const existingDoc = data[id];
@@ -230,6 +227,8 @@ export function createStore<T extends StandardSchemaV1>(
 					data[id] = mergedDoc;
 				}
 			}
+
+			await saveChanges();
 		},
 	};
 }
