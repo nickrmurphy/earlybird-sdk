@@ -1,5 +1,6 @@
-import { createListeners } from '../utils/listeners';
 import type { StorageAdapter } from './types';
+
+import { createListeners } from '../utils/listeners';
 
 export function createMemoryAdapter(): StorageAdapter {
 	const data = new Map<'hlc' | 'data', string>();

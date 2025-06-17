@@ -1,7 +1,7 @@
 /// <reference types="@vitest/browser/providers/playwright" />
 
+import type { HLC } from '../crdt/hlc';
 import type { StorageAdapter } from '../storage/types';
-import type { HLC } from '../utils/hlc';
 import type { CRDTStore } from './store';
 
 import { Directory, Filesystem } from '@capacitor/filesystem';

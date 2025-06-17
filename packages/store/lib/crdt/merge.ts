@@ -1,6 +1,7 @@
 import type { StandardSchemaV1 } from '../../standard-schema.types';
 import type { CRDTDoc, CRDTField } from '../store';
-import { hashObject } from './hash';
+
+import { hashObject } from '../utils/hash';
 
 export function mergeFields<T extends StandardSchemaV1>(
 	a: CRDTField<T>,

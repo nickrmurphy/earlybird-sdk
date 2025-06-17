@@ -1,7 +1,8 @@
 import type { StandardSchemaV1 } from '../../standard-schema.types';
 import type { CRDTDoc } from '../store';
-import { flatten, unflatten } from './flatten';
 import type { Clock } from './hlc';
+
+import { flatten, unflatten } from '../utils/flatten';
 import { unwrapDoc, wrapDoc } from './wrap';
 
 export function serializeToCRDT<T extends StandardSchemaV1>(

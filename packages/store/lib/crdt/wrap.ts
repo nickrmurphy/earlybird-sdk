@@ -1,7 +1,8 @@
 import type { StandardSchemaV1 } from '../../standard-schema.types';
 import type { CRDTDoc, CRDTField, InferredValue } from '../store';
-import { hashObject } from './hash';
 import type { Clock } from './hlc';
+
+import { hashObject } from '../utils/hash';
 
 export function wrapField<T extends StandardSchemaV1>(
 	data: InferredValue<T>,

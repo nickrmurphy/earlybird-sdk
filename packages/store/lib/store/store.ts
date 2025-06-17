@@ -1,10 +1,10 @@
 import type { StandardSchemaV1 } from '../../standard-schema.types';
+import type { Clock, HLC } from '../crdt/hlc';
 import type { StorageAdapter } from '../storage/types';
-import type { Clock, HLC } from '../utils/hlc';
 
-import { createClock } from '../utils/hlc';
-import { mergeDocuments } from '../utils/merge';
-import { deserializeFromCRDT, serializeToCRDT } from '../utils/serialize';
+import { createClock } from '../crdt/hlc';
+import { mergeDocuments } from '../crdt/merge';
+import { deserializeFromCRDT, serializeToCRDT } from '../crdt/serialize';
 import { standardValidate } from '../utils/validate';
 
 export type InferredValue<T extends StandardSchemaV1> =
