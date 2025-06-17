@@ -26,6 +26,7 @@ export function wrapDoc<T extends StandardSchemaV1>(
 
 	return {
 		$value: docValue,
+		$hlc: clock.tick(),
 		$hash: hashObject(docValue),
 	};
 }

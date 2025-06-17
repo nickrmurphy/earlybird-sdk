@@ -20,6 +20,7 @@ export type CRDTDoc<T extends StandardSchemaV1> = {
 		[path: string]: CRDTField<T>;
 	};
 	$hash: string;
+	$hlc: string;
 };
 
 export type CRDTStore<T extends StandardSchemaV1> = {

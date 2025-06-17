@@ -24,6 +24,8 @@ describe('wrapObject', () => {
 		const clock = createClock();
 		const result = wrapDoc<typeof objectSchema>({ key: 'value' }, clock);
 		expect(result.$value.key.$value).toBe('value');
+		expect(result.$hash).toBeDefined();
+		expect(result.$hlc).toBeDefined();
 	});
 });
 
@@ -39,6 +41,7 @@ describe('unwrapObject', () => {
 		const doc = {
 			$hash: '123',
 			$value: { key: { $value: 'value', $hlc: 'clock-is-something' as HLC } },
+			$hlc: 'hlc',
 		};
 		expect(unwrapDoc<typeof objectSchema>(doc)).toEqual({ key: 'value' });
 	});

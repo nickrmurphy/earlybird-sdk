@@ -29,6 +29,7 @@ const createStoreTests = (
 			const exampleStoreData: CRDTStore<typeof todoSchema> = {
 				'123': {
 					$hash: 'example-hash',
+					$hlc: 'some-example-hlc',
 					$value: {
 						title: {
 							$value: 'Example Todo',
@@ -60,6 +61,7 @@ const createStoreTests = (
 			const exampleStoreData: CRDTStore<typeof todoSchema> = {
 				'123': {
 					$hash: 'example-hash',
+					$hlc: 'some-example-hlc',
 					$value: {
 						title: {
 							$value: 'Example Todo',

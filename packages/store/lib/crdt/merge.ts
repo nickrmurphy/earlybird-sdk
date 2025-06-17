@@ -53,5 +53,6 @@ export function mergeDocuments<T extends StandardSchemaV1>(
 	return {
 		$value: mergedValue,
 		$hash: hashObject(mergedValue),
+		$hlc: a.$hlc > b.$hlc ? a.$hlc : b.$hlc,
 	};
 }
