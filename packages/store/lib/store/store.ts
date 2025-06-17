@@ -220,7 +220,9 @@ export function createStore<T extends StandardSchemaV1>(
 		},
 		getHashes: async () => {
 			const { data: storeData } = await ensureReady(true);
-			return Object.values(storeData).map((doc) => doc.$hash);
+			return Object.values(storeData)
+				.sort((a, b) => a.$hlc.localeCompare(b.$hlc))
+				.map((doc) => doc.$hash);
 		},
 		merge: async (store) => {
 			await ensureReady(true);
