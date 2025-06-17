@@ -1,5 +1,45 @@
 import { describe, expect, it } from 'vitest';
-import { hashObject } from './hash';
+import { hash, hashObject } from './hash';
+
+describe('hash', () => {
+	it('should return a string hash for any string', () => {
+		const str = 'hello world';
+		const hashValue = hash(str);
+
+		expect(typeof hashValue).toBe('string');
+		expect(hashValue.length).toBeGreaterThan(0);
+	});
+
+	it('should return consistent hashes for the same string', () => {
+		const str = 'hello world';
+		const hash1 = hash(str);
+		const hash2 = hash(str);
+
+		expect(hash1).toBe(hash2);
+	});
+
+	it('should return different hashes for different strings', () => {
+		const str1 = 'hello world';
+		const str2 = 'hello universe';
+
+		expect(hash(str1)).not.toBe(hash(str2));
+	});
+
+	it('should handle empty strings', () => {
+		const emptyHash = hash('');
+
+		expect(typeof emptyHash).toBe('string');
+		expect(emptyHash.length).toBeGreaterThan(0);
+	});
+
+	it('should handle unicode characters', () => {
+		const unicodeStr = '🚀 Hello 世界 🌍';
+		const hashValue = hash(unicodeStr);
+
+		expect(typeof hashValue).toBe('string');
+		expect(hashValue.length).toBeGreaterThan(0);
+	});
+});
 
 describe('hashObject', () => {
 	it('should return a string hash for simple objects', () => {
