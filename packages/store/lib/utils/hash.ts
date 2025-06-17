@@ -32,3 +32,30 @@ export function hashObject(obj: unknown): string {
 export function combineHashes(a: string, b: string): string {
 	return hash(`${a}:${b}`);
 }
+
+/**
+ * Sequentially combines all hashes in an array into a single cumulative hash.
+ * Order matters: different arrangements produce different results.
+ */
+export function accumulateHashes(hashes: string[]): string {
+	return hashes.reduce((acc, hash) => combineHashes(acc, hash), '');
+}
+
+/**
+ * Groups hashes into buckets of specified size and creates a hash for each bucket.
+ * Each bucket contains a combined hash of all items within that bucket.
+ */
+export function bucketHashes(
+	hashes: string[],
+	bucketSize: number,
+): Record<number, string> {
+	const buckets: Record<number, string> = {};
+	
+	for (let i = 0; i < hashes.length; i += bucketSize) {
+		const bucketIndex = Math.floor(i / bucketSize);
+		const bucketSlice = hashes.slice(i, i + bucketSize);
+		buckets[bucketIndex] = accumulateHashes(bucketSlice);
+	}
+	
+	return buckets;
+}
