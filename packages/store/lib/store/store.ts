@@ -7,6 +7,7 @@ import {
 	createDocumentOperation,
 	deserializeDocumentOperation,
 	deserializeStoreOperation,
+	getDocumentsByBucketOperation,
 	getStoreHashes,
 	mergeStoreOperation,
 	updateDocumentOperation,
@@ -50,6 +51,7 @@ export type Store<T extends StandardSchemaV1> = {
 	registerListener: (key: string, callback: () => void) => void;
 	unregisterListener: (key: string) => void;
 	getHashes: () => Promise<{ root: string; buckets: Record<number, string> }>;
+	getDocumentsByBucket: (bucketIndices: number[]) => Promise<CRDTDoc<T>[]>;
 	merge: (store: CRDTStore<T>) => Promise<void>;
 };
 
@@ -222,6 +224,10 @@ export function createStore<T extends StandardSchemaV1>(
 		getHashes: async () => {
 			const { data: storeData } = await ensureReady(true);
 			return getStoreHashes(storeData);
+		},
+		getDocumentsByBucket: async (bucketIndices: number[]) => {
+			const { data: storeData } = await ensureReady(true);
+			return getDocumentsByBucketOperation(storeData, bucketIndices);
 		},
 		merge: async (store) => {
 			await ensureReady(true);

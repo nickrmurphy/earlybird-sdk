@@ -230,6 +230,90 @@ const createStoreTests = (
 			expect(hashes).toEqual({ root: '', buckets: {} });
 		});
 
+		test('should get documents by bucket indices', async () => {
+			const adapter = createAdapter();
+			const store = createStore(collectionName, {
+				schema: todoSchema,
+				adapter,
+			});
+
+			// Create multiple documents
+			await store.create('1', { title: 'Todo 1', completed: false });
+			await store.create('2', { title: 'Todo 2', completed: true });
+			await store.create('3', { title: 'Todo 3', completed: false });
+
+			// Get documents from bucket 0
+			const docs = await store.getDocumentsByBucket([0]);
+			expect(Array.isArray(docs)).toBe(true);
+			expect(docs.length).toBeGreaterThan(0);
+
+			// Each document should have CRDT structure
+			for (const doc of docs) {
+				expect(doc).toHaveProperty('$hash');
+				expect(doc).toHaveProperty('$hlc');
+				expect(doc).toHaveProperty('$value');
+				expect(typeof doc.$hash).toBe('string');
+				expect(typeof doc.$hlc).toBe('string');
+				expect(typeof doc.$value).toBe('object');
+			}
+		});
+
+		test('should return empty array for non-existent bucket', async () => {
+			const adapter = createAdapter();
+			const store = createStore(collectionName, {
+				schema: todoSchema,
+				adapter,
+			});
+
+			await store.create('1', { title: 'Todo 1', completed: false });
+
+			const docs = await store.getDocumentsByBucket([999]);
+			expect(docs).toEqual([]);
+		});
+
+		test('should return empty array for empty bucket indices', async () => {
+			const adapter = createAdapter();
+			const store = createStore(collectionName, {
+				schema: todoSchema,
+				adapter,
+			});
+
+			await store.create('1', { title: 'Todo 1', completed: false });
+
+			const docs = await store.getDocumentsByBucket([]);
+			expect(docs).toEqual([]);
+		});
+
+		test('should get documents from multiple buckets', async () => {
+			const adapter = createAdapter();
+			const store = createStore(collectionName, {
+				schema: todoSchema,
+				adapter,
+			});
+
+			// Create enough documents to span multiple buckets (100+ documents)
+			const promises: Promise<unknown>[] = [];
+			for (let i = 0; i < 150; i++) {
+				promises.push(
+					store.create(`doc-${i}`, {
+						title: `Todo ${i}`,
+						completed: i % 2 === 0,
+					}),
+				);
+			}
+			await Promise.all(promises);
+
+			// Get documents from buckets 0 and 1
+			const docs = await store.getDocumentsByBucket([0, 1]);
+			expect(Array.isArray(docs)).toBe(true);
+			expect(docs.length).toBe(150); // All documents should be returned
+
+			// Verify documents are sorted by HLC
+			for (let i = 1; i < docs.length; i++) {
+				expect(docs[i].$hlc >= docs[i - 1].$hlc).toBe(true);
+			}
+		});
+
 		test('should merge external store data', async () => {
 			const adapter = createAdapter();
 			const store = createStore(collectionName, {

@@ -197,3 +197,33 @@ export function getStoreHashes<T extends StandardSchemaV1>(
 	const buckets = bucketHashes(sortedHashArray, HASH_BUCKET_SIZE);
 	return { root, buckets };
 }
+
+/**
+ * Pure function to get documents from specific bucket indices
+ */
+export function getDocumentsByBucketOperation<T extends StandardSchemaV1>(
+	storeData: CRDTStore<T>,
+	bucketIndices: number[],
+): CRDTDoc<T>[] {
+	if (bucketIndices.length === 0) {
+		return [];
+	}
+
+	const sortedDocs = Object.values(storeData)
+		.sort((a, b) => a.$hlc.localeCompare(b.$hlc));
+
+	const bucketSet = new Set(bucketIndices);
+	const result: CRDTDoc<T>[] = [];
+
+	for (let i = 0; i < sortedDocs.length; i++) {
+		const bucketIndex = Math.floor(i / HASH_BUCKET_SIZE);
+		if (bucketSet.has(bucketIndex)) {
+			const doc = sortedDocs[i];
+			if (doc) {
+				result.push(doc);
+			}
+		}
+	}
+
+	return result;
+}
