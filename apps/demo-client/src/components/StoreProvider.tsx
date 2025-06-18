@@ -2,19 +2,11 @@ import type { PropsWithChildren } from 'react';
 
 import { createDemoStores } from '@byearlybird/demo-shared';
 import { createStoreProvider } from '@byearlybird/store-react';
-import { createCapacitorAdapter } from '@byearlybird/store/capacitor-adapter';
-import { Directory, Filesystem } from '@capacitor/filesystem';
+import { createIndexedDBAdapter } from '@byearlybird/store/indexeddb-adapter';
 
 // Create storage adapters
-const recipeAdapter = createCapacitorAdapter('recipes', {
-	fs: Filesystem,
-	directory: Directory.Data,
-});
-
-const ingredientAdapter = createCapacitorAdapter('ingredients', {
-	fs: Filesystem,
-	directory: Directory.Data,
-});
+const recipeAdapter = createIndexedDBAdapter('recipes');
+const ingredientAdapter = createIndexedDBAdapter('ingredients');
 
 // Create the stores using shared configuration
 const stores = createDemoStores({
