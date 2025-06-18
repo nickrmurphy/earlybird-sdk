@@ -26,6 +26,11 @@
 			"development": "./lib/storage/libsql-adapter.ts",
 			"import": "./dist/libsql-adapter.js",
 			"types": "./dist/libsql-adapter.d.ts"
+		},
+		"./indexeddb-adapter": {
+			"development": "./lib/storage/indexeddb-adapter.ts",
+			"import": "./dist/indexeddb-adapter.js",
+			"types": "./dist/indexeddb-adapter.d.ts"
 		}
 	},
 	"files": ["dist"],

@@ -6,6 +6,7 @@ import { Directory, Filesystem } from '@capacitor/filesystem';
 import { createClient } from '@libsql/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createCapacitorAdapter } from './capacitor-adapter';
+import { createIndexedDBAdapter } from './indexeddb-adapter';
 import { createLibSQLAdapter } from './libsql-adapter';
 import { createMemoryAdapter } from './memory-adapter';
 
@@ -170,3 +171,11 @@ if (typeof window === 'undefined') {
 		});
 	});
 }
+
+createStorageAdapterTests('IndexedDB', () => {
+	const uniqueCollection = `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+	
+	return createIndexedDBAdapter(uniqueCollection, {
+		databaseName: `test_db_${Date.now()}`,
+	});
+});

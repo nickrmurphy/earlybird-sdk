@@ -13,6 +13,7 @@ export default defineConfig({
 					'lib/storage/capacitor-adapter.ts',
 				),
 				'libsql-adapter': resolve(__dirname, 'lib/storage/libsql-adapter.ts'),
+				'indexeddb-adapter': resolve(__dirname, 'lib/storage/indexeddb-adapter.ts'),
 			},
 			formats: ['es'],
 		},
