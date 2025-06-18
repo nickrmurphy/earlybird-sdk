@@ -38,8 +38,8 @@
 	"license": "MIT",
 	"scripts": {
 		"build": "vite build",
-		"test": "vitest --config=vitest.browser.config.ts",
-		"test:coverage": "vitest --config=vitest.browser.config.ts vitest run --coverage",
+		"test": "vitest --config=vitest.browser.config.ts && vitest run --config=vitest.node.config.ts",
+		"test:coverage": "vitest run --coverage --config=vitest.browser.config.ts && vitest run --coverage --config=vitest.node.config.ts",
 		"bench": "vitest bench --config=vitest.browser.config.ts"
 	},
 	"peerDependencies": {
