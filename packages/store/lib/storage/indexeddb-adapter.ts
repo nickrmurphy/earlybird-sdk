@@ -7,7 +7,7 @@ export type IndexedDBAdapterConfig = {
 	version?: number;
 };
 
-const DEFAULT_DATABASE_NAME = 'earlybird_store';
+const DEFAULT_DATABASE_NAME = '__eb_store';
 const DEFAULT_VERSION = 1;
 const DATA_STORE_NAME = 'data';
 const HLC_STORE_NAME = 'hlc';

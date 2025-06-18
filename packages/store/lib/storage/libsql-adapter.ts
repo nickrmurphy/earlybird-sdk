@@ -8,9 +8,10 @@ export type LibSQLAdapterConfig = {
 	tablePrefix?: string;
 };
 
-const DEFAULT_TABLE_PREFIX = 'earlybird_store';
+const DEFAULT_TABLE_PREFIX = '__eb_store';
 
-const createTableName = (prefix: string, suffix: string) => `${prefix}_${suffix}`;
+const createTableName = (prefix: string, suffix: string) =>
+	`${prefix}_${suffix}`;
 
 const initializeTables = async (client: Client, tablePrefix: string) => {
 	const dataTable = createTableName(tablePrefix, 'data');
@@ -37,7 +38,7 @@ export function createLibSQLAdapter(
 ): StorageAdapter {
 	const { notifyListeners, registerListener, unregisterListener } =
 		createListeners();
-	
+
 	const tablePrefix = config.tablePrefix ?? DEFAULT_TABLE_PREFIX;
 	const dataTable = createTableName(tablePrefix, 'data');
 	const hlcTable = createTableName(tablePrefix, 'hlc');
@@ -54,7 +55,7 @@ export function createLibSQLAdapter(
 	return {
 		loadData: async () => {
 			await ensureTablesExist();
-			
+
 			const result = await config.client.execute({
 				sql: `SELECT data FROM ${dataTable} WHERE collection = ?`,
 				args: [collection],
@@ -69,18 +70,18 @@ export function createLibSQLAdapter(
 
 		saveData: async (data: string) => {
 			await ensureTablesExist();
-			
+
 			await config.client.execute({
 				sql: `INSERT OR REPLACE INTO ${dataTable} (collection, data) VALUES (?, ?)`,
 				args: [collection, data],
 			});
-			
+
 			notifyListeners();
 		},
 
 		loadHLC: async () => {
 			await ensureTablesExist();
-			
+
 			const result = await config.client.execute({
 				sql: `SELECT hlc FROM ${hlcTable} WHERE collection = ?`,
 				args: [collection],
@@ -95,7 +96,7 @@ export function createLibSQLAdapter(
 
 		saveHLC: async (data: string) => {
 			await ensureTablesExist();
-			
+
 			await config.client.execute({
 				sql: `INSERT OR REPLACE INTO ${hlcTable} (collection, hlc) VALUES (?, ?)`,
 				args: [collection, data],
