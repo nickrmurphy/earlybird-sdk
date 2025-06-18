@@ -12,11 +12,12 @@ export default defineConfig({
 					__dirname,
 					'lib/storage/capacitor-adapter.ts',
 				),
+				'libsql-adapter': resolve(__dirname, 'lib/storage/libsql-adapter.ts'),
 			},
 			formats: ['es'],
 		},
 		rollupOptions: {
-			external: ['zod', 'valibot', '@capacitor/filesystem'],
+			external: ['zod', 'valibot', '@capacitor/filesystem', '@libsql/client'],
 		},
 	},
 	plugins: [

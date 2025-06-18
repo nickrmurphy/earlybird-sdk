@@ -3,8 +3,10 @@
 import type { StorageAdapter } from './types';
 
 import { Directory, Filesystem } from '@capacitor/filesystem';
+import { createClient } from '@libsql/client';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createCapacitorAdapter } from './capacitor-adapter';
+import { createLibSQLAdapter } from './libsql-adapter';
 import { createMemoryAdapter } from './memory-adapter';
 
 export type AdapterFactory = () => StorageAdapter | Promise<StorageAdapter>;
@@ -152,3 +154,19 @@ createStorageAdapterTests('Capacitor', () => {
 createStorageAdapterTests('Memory', () => {
 	return createMemoryAdapter();
 });
+
+// LibSQL adapter tests are skipped in browser environments
+// since LibSQL client has limited browser support
+if (typeof window === 'undefined') {
+	createStorageAdapterTests('LibSQL', () => {
+		const uniqueCollection = `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+		const client = createClient({
+			url: ':memory:',
+		});
+		
+		return createLibSQLAdapter(uniqueCollection, {
+			client,
+			tablePrefix: 'test_store',
+		});
+	});
+}

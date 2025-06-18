@@ -21,6 +21,11 @@
 			"development": "./lib/storage/memory-adapter.ts",
 			"import": "./dist/memory-adapter.js",
 			"types": "./dist/memory-adapter.d.ts"
+		},
+		"./libsql-adapter": {
+			"development": "./lib/storage/libsql-adapter.ts",
+			"import": "./dist/libsql-adapter.js",
+			"types": "./dist/libsql-adapter.d.ts"
 		}
 	},
 	"files": ["dist"],
@@ -32,7 +37,16 @@
 		"test:coverage": "vitest --config=vitest.browser.config.ts vitest run --coverage",
 		"bench": "vitest bench --config=vitest.browser.config.ts"
 	},
+	"peerDependencies": {
+		"@libsql/client": "^0.15.0"
+	},
+	"peerDependenciesMeta": {
+		"@libsql/client": {
+			"optional": true
+		}
+	},
 	"devDependencies": {
+		"@libsql/client": "^0.15.9",
 		"@types/node": "^24.0.0",
 		"@vitest/browser": "^3.2.3",
 		"@vitest/coverage-v8": "^3.2.3",
