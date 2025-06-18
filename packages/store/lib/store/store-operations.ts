@@ -4,6 +4,7 @@ import type { CRDTDoc, CRDTStore } from './store';
 
 import { mergeDocuments } from '../crdt/merge';
 import { deserializeFromCRDT, serializeToCRDT } from '../crdt/serialize';
+import { accumulateHashes, bucketHashes } from '../utils/hash';
 import { standardValidate } from '../utils/validate';
 
 export type DocumentNotFoundError = {
@@ -22,6 +23,8 @@ export type StoreError = DocumentNotFoundError | OperationError;
 export type OperationResult<T> =
 	| { success: true; data: T }
 	| { success: false; error: StoreError };
+
+const HASH_BUCKET_SIZE = 100;
 
 /**
  * Pure function to create a new CRDT document from input data
@@ -182,4 +185,15 @@ export function deserializeDocumentOperation<T extends StandardSchemaV1>(
 			},
 		};
 	}
+}
+
+export function getStoreHashes<T extends StandardSchemaV1>(
+	storeData: CRDTStore<T>,
+): { root: string; buckets: Record<string, string> } {
+	const sortedHashArray = Object.values(storeData)
+		.sort((a, b) => a.$hlc.localeCompare(b.$hlc))
+		.map((doc) => doc.$hash);
+	const root = accumulateHashes(sortedHashArray);
+	const buckets = bucketHashes(sortedHashArray, HASH_BUCKET_SIZE);
+	return { root, buckets };
 }

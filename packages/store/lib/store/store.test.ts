@@ -211,12 +211,15 @@ const createStoreTests = (
 			await store.create('456', { title: 'Todo 2', completed: true });
 
 			const hashes = await store.getHashes();
-			expect(hashes).toHaveLength(2);
-			expect(hashes.every((hash) => typeof hash === 'string')).toBe(true);
-			expect(hashes.every((hash) => hash.length > 0)).toBe(true);
+			expect(hashes).toHaveProperty('root');
+			expect(hashes).toHaveProperty('buckets');
+			expect(typeof hashes.root).toBe('string');
+			expect(hashes.root.length).toBeGreaterThan(0);
+			expect(typeof hashes.buckets).toBe('object');
+			expect(hashes.buckets['0']).toBeDefined();
 		});
 
-		test('should return empty array when getting hashes from uninitialized store', async () => {
+		test('should return empty hashes when getting hashes from uninitialized store', async () => {
 			const adapter = createAdapter();
 			const store = createStore(collectionName, {
 				schema: todoSchema,
@@ -224,7 +227,7 @@ const createStoreTests = (
 			});
 
 			const hashes = await store.getHashes();
-			expect(hashes).toEqual([]);
+			expect(hashes).toEqual({ root: '', buckets: {} });
 		});
 
 		test('should merge external store data', async () => {
@@ -326,7 +329,7 @@ const createStoreTests = (
 			};
 
 			await store.merge(externalStore);
-			
+
 			const item = await store.get('123');
 			expect(item).toEqual({ title: 'External Todo', completed: true });
 		});

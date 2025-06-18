@@ -7,6 +7,7 @@ import {
 	createDocumentOperation,
 	deserializeDocumentOperation,
 	deserializeStoreOperation,
+	getStoreHashes,
 	mergeStoreOperation,
 	updateDocumentOperation,
 	validateDocumentExists,
@@ -48,7 +49,7 @@ export type Store<T extends StandardSchemaV1> = {
 	) => Promise<void>;
 	registerListener: (key: string, callback: () => void) => void;
 	unregisterListener: (key: string) => void;
-	getHashes: () => Promise<string[]>;
+	getHashes: () => Promise<{ root: string; buckets: Record<number, string> }>;
 	merge: (store: CRDTStore<T>) => Promise<void>;
 };
 
@@ -220,9 +221,7 @@ export function createStore<T extends StandardSchemaV1>(
 		},
 		getHashes: async () => {
 			const { data: storeData } = await ensureReady(true);
-			return Object.values(storeData)
-				.sort((a, b) => a.$hlc.localeCompare(b.$hlc))
-				.map((doc) => doc.$hash);
+			return getStoreHashes(storeData);
 		},
 		merge: async (store) => {
 			await ensureReady(true);
