@@ -133,4 +133,153 @@ describe('Store Integration Tests', () => {
 		const finalHashesB = await storeB.getHashes();
 		expect(finalHashesA.root).toBe(finalHashesB.root);
 	});
+
+	test('should synchronize an empty store with a populated store', async () => {
+		// Create a populated store
+		const populatedStore = createStore('populated-store', {
+			schema: todoSchema,
+			adapter: createMemoryAdapter(),
+		});
+
+		await populatedStore.create('1', { title: 'Existing Task 1', completed: false });
+		await populatedStore.create('2', { title: 'Existing Task 2', completed: true });
+		await populatedStore.create('3', { title: 'Existing Task 3', completed: false });
+
+		// Create an empty store
+		const emptyStore = createStore('empty-store', {
+			schema: todoSchema,
+			adapter: createMemoryAdapter(),
+		});
+
+		// Verify initial states
+		const populatedItems = await populatedStore.all();
+		const emptyItems = await emptyStore.all();
+
+		expect(Object.keys(populatedItems || {})).toHaveLength(3);
+		expect(emptyItems).toBeNull(); // Empty store returns null
+
+		const populatedHashes = await populatedStore.getHashes();
+		const emptyHashes = await emptyStore.getHashes();
+
+		expect(populatedHashes.root).toBeTruthy();
+		expect(emptyHashes.root).toBe(''); // Empty store has empty root hash
+		expect(populatedHashes.root).not.toBe(emptyHashes.root);
+
+		// Get all documents from populated store for merging
+		const docsFromPopulated = await populatedStore.getDocumentsByBucket([0]);
+		expect(Object.keys(docsFromPopulated)).toHaveLength(3);
+
+		// Merge populated store's documents into empty store
+		await emptyStore.merge(docsFromPopulated);
+
+		// Verify empty store now has all documents
+		const syncedItems = await emptyStore.all();
+		expect(syncedItems).toEqual({
+			'1': { title: 'Existing Task 1', completed: false },
+			'2': { title: 'Existing Task 2', completed: true },
+			'3': { title: 'Existing Task 3', completed: false },
+		});
+
+		// Verify both stores now have identical hashes
+		const finalPopulatedHashes = await populatedStore.getHashes();
+		const finalEmptyHashes = await emptyStore.getHashes();
+		expect(finalPopulatedHashes.root).toBe(finalEmptyHashes.root);
+
+		// Verify both stores have identical content
+		const finalPopulatedItems = await populatedStore.all();
+		const finalEmptyItems = await emptyStore.all();
+		expect(finalPopulatedItems).toEqual(finalEmptyItems);
+	});
+
+	test('should handle incremental synchronization through multiple rounds', async () => {
+		// Create two stores and establish initial sync
+		const storeA = createStore('incremental-a', {
+			schema: todoSchema,
+			adapter: createMemoryAdapter(),
+		});
+
+		const storeB = createStore('incremental-b', {
+			schema: todoSchema,
+			adapter: createMemoryAdapter(),
+		});
+
+		// Round 1: Initial data and sync
+		await storeA.create('1', { title: 'Initial Task A', completed: false });
+		await storeB.create('2', { title: 'Initial Task B', completed: true });
+
+		// Sync initial data
+		const round1DocsA = await storeA.getDocumentsByBucket([0]);
+		const round1DocsB = await storeB.getDocumentsByBucket([0]);
+
+		await storeA.merge(round1DocsB);
+		await storeB.merge(round1DocsA);
+
+		// Verify both stores are synchronized after round 1
+		const round1HashesA = await storeA.getHashes();
+		const round1HashesB = await storeB.getHashes();
+		expect(round1HashesA.root).toBe(round1HashesB.root);
+
+		const round1ItemsA = await storeA.all();
+		const round1ItemsB = await storeB.all();
+		expect(round1ItemsA).toEqual(round1ItemsB);
+		expect(Object.keys(round1ItemsA || {})).toHaveLength(2);
+
+		// Round 2: Make additional changes
+		await storeA.create('3', { title: 'Round 2 Task A', completed: false });
+		await storeA.update('1', { title: 'Updated Initial Task A' });
+
+		await storeB.create('4', { title: 'Round 2 Task B', completed: true });
+		await storeB.update('2', { completed: false });
+
+		// Verify stores have different hashes before round 2 sync
+		const preRound2HashesA = await storeA.getHashes();
+		const preRound2HashesB = await storeB.getHashes();
+		expect(preRound2HashesA.root).not.toBe(preRound2HashesB.root);
+
+		// Sync round 2 changes
+		const round2DocsA = await storeA.getDocumentsByBucket([0]);
+		const round2DocsB = await storeB.getDocumentsByBucket([0]);
+
+		await storeA.merge(round2DocsB);
+		await storeB.merge(round2DocsA);
+
+		// Verify both stores are synchronized after round 2
+		const round2HashesA = await storeA.getHashes();
+		const round2HashesB = await storeB.getHashes();
+		expect(round2HashesA.root).toBe(round2HashesB.root);
+
+		const round2ItemsA = await storeA.all();
+		const round2ItemsB = await storeB.all();
+		expect(round2ItemsA).toEqual(round2ItemsB);
+		expect(Object.keys(round2ItemsA || {})).toHaveLength(4);
+
+		// Verify final state contains all expected changes
+		expect(round2ItemsA).toEqual({
+			'1': { title: 'Updated Initial Task A', completed: false },
+			'2': { title: 'Initial Task B', completed: false },
+			'3': { title: 'Round 2 Task A', completed: false },
+			'4': { title: 'Round 2 Task B', completed: true },
+		});
+
+		// Round 3: Test one more round with minimal changes
+		await storeA.update('3', { completed: true });
+		await storeB.create('5', { title: 'Final Task', completed: false });
+
+		// Final sync
+		const round3DocsA = await storeA.getDocumentsByBucket([0]);
+		const round3DocsB = await storeB.getDocumentsByBucket([0]);
+
+		await storeA.merge(round3DocsB);
+		await storeB.merge(round3DocsA);
+
+		// Final verification
+		const finalHashesA = await storeA.getHashes();
+		const finalHashesB = await storeB.getHashes();
+		expect(finalHashesA.root).toBe(finalHashesB.root);
+
+		const finalItemsA = await storeA.all();
+		const finalItemsB = await storeB.all();
+		expect(finalItemsA).toEqual(finalItemsB);
+		expect(Object.keys(finalItemsA || {})).toHaveLength(5);
+	});
 });
