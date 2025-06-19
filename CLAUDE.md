@@ -27,20 +27,56 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a monorepo SDK (`@byearlybird/sdk`) for cross-platform data storage with the following key architectural patterns:
 
 ### Storage Layer (`/packages/store/storage/`)
-- **Adapter Pattern**: Abstract `StorageAdapter` interface with multiple implementations (Memory, Node.js filesystem, Capacitor mobile)
-- **Consistent API**: All adapters implement `read()`, `write()`, `list()` methods
+- **Adapter Pattern**: Abstract `StorageAdapter` interface with multiple implementations
+  - Memory adapter (in-memory storage)
+  - Capacitor adapter (mobile filesystem)
+  - IndexedDB adapter (browser database)
+  - LibSQL adapter (SQLite/Turso database)
+- **Consistent API**: All adapters implement `loadData()`, `saveData()`, `loadHLC()`, `saveHLC()`, and listener methods
 - **Platform Abstraction**: Enables the same store logic to work across Node.js, browser, and mobile
 
 ### Store Layer (`/packages/store/store/`)
 - **Factory Pattern**: `createStore(collection, config)` creates type-safe store instances
 - **Schema Validation**: Uses Zod schemas with `StandardSchemaV1` interface for runtime type checking
-- **CRUD Operations**: `get()`, `all()`, `insert()`, `update()` methods with consistent error handling
+- **CRUD Operations**: `get()`, `all()`, `create()`, `update()`, `merge()` methods with consistent error handling
+
+### CRDT Implementation (`/packages/store/lib/crdt/`)
+- **Hybrid Logical Clock (HLC)**: Provides total ordering for conflict resolution across distributed instances
+- **Last-Writer-Wins**: Field-level conflict resolution using HLC timestamps
+- **Document Hashing**: Each document has a content hash for efficient change detection
+- **Merge Logic**: Pure functions for merging conflicting CRDT documents
+
+### Synchronization System
+- **Hash-Based Sync**: Root hash and bucket hashes enable efficient change detection
+- **Bucket System**: Documents are organized into buckets (100 docs per bucket) for selective synchronization
+- **Document Exchange**: `getDocumentsByBucket()` returns `Record<string, CRDTDoc<T>>` for merging
+- **Integration Tests**: Comprehensive test suite covers conflict resolution, empty store sync, and incremental synchronization
+
+### React Bindings (`/packages/store-react/`)
+- **Store Provider**: Context-based store management for React applications
+- **Custom Hooks**: `useStore()`, `useDocument()`, `useQuery()` for reactive data access
+- **Type Safety**: Full TypeScript integration with schema validation
 
 ### Key Design Principles
 - **Type Safety**: Full TypeScript with strict configuration and runtime validation
 - **Performance**: Includes comprehensive benchmark suite tracking 10k+ operation performance
-- **Modularity**: Clean separation between storage adapters and business logic
+- **Modularity**: Clean separation between storage adapters, CRDT logic, and business logic
 - **Cross-platform**: Single codebase works across Node.js, browser, and Capacitor mobile apps
+- **Conflict-Free**: CRDT architecture ensures data consistency across distributed instances
+
+## Testing Strategy
+
+### Dual Environment Testing
+- **Browser Tests**: Vitest with Playwright for browser-specific functionality (IndexedDB, Capacitor)
+- **Node.js Tests**: Vitest for server-side functionality (LibSQL, Memory adapter)
+- **Integration Tests**: End-to-end CRDT synchronization scenarios with multiple store instances
+- **Benchmarks**: Performance tracking for 10k+ operations across all adapters
+
+### Test Patterns
+- **Adapter Testing**: Consistent test suite across all storage adapters
+- **CRDT Conflict Resolution**: Tests for concurrent modifications and merge scenarios
+- **Hash Synchronization**: Tests for bucket-based document exchange and hash comparison
+- **Empty Store Sync**: Tests for new client onboarding scenarios
 
 ## Code Style
 - **Formatter**: Biome with tab indentation and single quotes
