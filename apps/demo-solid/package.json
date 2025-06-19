@@ -8,7 +8,10 @@
     "build": "vite build"
   },
   "dependencies": {
-    "solid-js": "^1.9.5"
+    "solid-js": "^1.9.5",
+    "@byearlybird/store": "workspace:*",
+    "@byearlybird/demo-shared": "workspace:*",
+    "zod": "^3.25.56"
   },
   "devDependencies": {
     "typescript": "~5.8.3",
