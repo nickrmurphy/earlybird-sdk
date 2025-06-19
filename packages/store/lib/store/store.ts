@@ -51,7 +51,9 @@ export type Store<T extends StandardSchemaV1> = {
 	registerListener: (key: string, callback: () => void) => void;
 	unregisterListener: (key: string) => void;
 	getHashes: () => Promise<{ root: string; buckets: Record<number, string> }>;
-	getDocumentsByBucket: (bucketIndices: number[]) => Promise<CRDTDoc<T>[]>;
+	getDocumentsByBucket: (
+		bucketIndices: number[],
+	) => Promise<Record<string, CRDTDoc<T>>>;
 	merge: (store: CRDTStore<T>) => Promise<void>;
 };
 

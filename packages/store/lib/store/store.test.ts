@@ -244,11 +244,11 @@ const createStoreTests = (
 
 			// Get documents from bucket 0
 			const docs = await store.getDocumentsByBucket([0]);
-			expect(Array.isArray(docs)).toBe(true);
-			expect(docs.length).toBeGreaterThan(0);
+			expect(typeof docs).toBe('object');
+			expect(Object.keys(docs).length).toBeGreaterThan(0);
 
 			// Each document should have CRDT structure
-			for (const doc of docs) {
+			for (const doc of Object.values(docs)) {
 				expect(doc).toHaveProperty('$hash');
 				expect(doc).toHaveProperty('$hlc');
 				expect(doc).toHaveProperty('$value');
@@ -258,7 +258,7 @@ const createStoreTests = (
 			}
 		});
 
-		test('should return empty array for non-existent bucket', async () => {
+		test('should return empty object for non-existent bucket', async () => {
 			const adapter = createAdapter();
 			const store = createStore(collectionName, {
 				schema: todoSchema,
@@ -268,10 +268,10 @@ const createStoreTests = (
 			await store.create('1', { title: 'Todo 1', completed: false });
 
 			const docs = await store.getDocumentsByBucket([999]);
-			expect(docs).toEqual([]);
+			expect(docs).toEqual({});
 		});
 
-		test('should return empty array for empty bucket indices', async () => {
+		test('should return empty object for empty bucket indices', async () => {
 			const adapter = createAdapter();
 			const store = createStore(collectionName, {
 				schema: todoSchema,
@@ -281,7 +281,7 @@ const createStoreTests = (
 			await store.create('1', { title: 'Todo 1', completed: false });
 
 			const docs = await store.getDocumentsByBucket([]);
-			expect(docs).toEqual([]);
+			expect(docs).toEqual({});
 		});
 
 		test('should get documents from multiple buckets', async () => {
@@ -305,12 +305,13 @@ const createStoreTests = (
 
 			// Get documents from buckets 0 and 1
 			const docs = await store.getDocumentsByBucket([0, 1]);
-			expect(Array.isArray(docs)).toBe(true);
-			expect(docs.length).toBe(150); // All documents should be returned
+			expect(typeof docs).toBe('object');
+			expect(Object.keys(docs).length).toBe(150); // All documents should be returned
 
 			// Verify documents are sorted by HLC
-			for (let i = 1; i < docs.length; i++) {
-				expect(docs[i].$hlc >= docs[i - 1].$hlc).toBe(true);
+			const docValues = Object.values(docs);
+			for (let i = 1; i < docValues.length; i++) {
+				expect(docValues[i].$hlc >= docValues[i - 1].$hlc).toBe(true);
 			}
 		});
 

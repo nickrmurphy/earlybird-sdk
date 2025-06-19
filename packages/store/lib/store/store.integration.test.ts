@@ -39,25 +39,17 @@ describe('Store Integration Tests', () => {
 
 		// Get documents from Store A to merge into Store B
 		const docsFromA = await storeA.getDocumentsByBucket([0]);
-		expect(docsFromA).toHaveLength(2);
+		expect(Object.keys(docsFromA)).toHaveLength(2);
 
 		// Get documents from Store B to merge into Store A
 		const docsFromB = await storeB.getDocumentsByBucket([0]);
-		expect(docsFromB).toHaveLength(2);
-
-		// Convert document arrays to store format for merging
-		const storeDataFromA = Object.fromEntries(
-			docsFromA.map((doc, index) => [`${index + 1}`, doc]),
-		);
-		const storeDataFromB = Object.fromEntries(
-			docsFromB.map((doc, index) => [`${index + 3}`, doc]),
-		);
+		expect(Object.keys(docsFromB)).toHaveLength(2);
 
 		// Merge Store A's documents into Store B
-		await storeB.merge(storeDataFromA);
+		await storeB.merge(docsFromA);
 
 		// Merge Store B's documents into Store A
-		await storeA.merge(storeDataFromB);
+		await storeA.merge(docsFromB);
 
 		// Verify both stores now contain all 4 documents
 		const allItemsA = await storeA.all();

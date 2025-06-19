@@ -204,24 +204,24 @@ export function getStoreHashes<T extends StandardSchemaV1>(
 export function getDocumentsByBucketOperation<T extends StandardSchemaV1>(
 	storeData: CRDTStore<T>,
 	bucketIndices: number[],
-): CRDTDoc<T>[] {
+): Record<string, CRDTDoc<T>> {
 	if (bucketIndices.length === 0) {
-		return [];
+		return {};
 	}
 
-	const sortedDocs = Object.values(storeData).sort((a, b) =>
+	const sortedEntries = Object.entries(storeData).sort(([, a], [, b]) =>
 		a.$hlc.localeCompare(b.$hlc),
 	);
 
 	const bucketSet = new Set(bucketIndices);
-	const result: CRDTDoc<T>[] = [];
+	const result: Record<string, CRDTDoc<T>> = {};
 
-	for (let i = 0; i < sortedDocs.length; i++) {
+	for (let i = 0; i < sortedEntries.length; i++) {
 		const bucketIndex = Math.floor(i / HASH_BUCKET_SIZE);
 		if (bucketSet.has(bucketIndex)) {
-			const doc = sortedDocs[i];
+			const [id, doc] = sortedEntries[i];
 			if (doc) {
-				result.push(doc);
+				result[id] = doc;
 			}
 		}
 	}
