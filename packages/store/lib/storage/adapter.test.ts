@@ -164,7 +164,7 @@ if (typeof window === 'undefined') {
 		const client = createClient({
 			url: ':memory:',
 		});
-		
+
 		return createLibSQLAdapter(uniqueCollection, {
 			client,
 			tablePrefix: 'test_store',
@@ -174,7 +174,7 @@ if (typeof window === 'undefined') {
 
 createStorageAdapterTests('IndexedDB', () => {
 	const uniqueCollection = `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-	
+
 	return createIndexedDBAdapter(uniqueCollection, {
 		databaseName: `test_db_${Date.now()}`,
 	});

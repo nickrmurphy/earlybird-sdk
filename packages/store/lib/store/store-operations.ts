@@ -209,8 +209,9 @@ export function getDocumentsByBucketOperation<T extends StandardSchemaV1>(
 		return [];
 	}
 
-	const sortedDocs = Object.values(storeData)
-		.sort((a, b) => a.$hlc.localeCompare(b.$hlc));
+	const sortedDocs = Object.values(storeData).sort((a, b) =>
+		a.$hlc.localeCompare(b.$hlc),
+	);
 
 	const bucketSet = new Set(bucketIndices);
 	const result: CRDTDoc<T>[] = [];
