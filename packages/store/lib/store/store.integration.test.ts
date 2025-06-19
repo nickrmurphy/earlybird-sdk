@@ -74,4 +74,63 @@ describe('Store Integration Tests', () => {
 		const finalHashesB = await storeB.getHashes();
 		expect(finalHashesA.root).toBe(finalHashesB.root);
 	});
+
+	test('should resolve conflicting modifications to the same document using CRDT logic', async () => {
+		// Create Store A and Store B with the same initial document
+		const storeA = createStore('conflict-test-a', {
+			schema: todoSchema,
+			adapter: createMemoryAdapter(),
+		});
+
+		const storeB = createStore('conflict-test-b', {
+			schema: todoSchema,
+			adapter: createMemoryAdapter(),
+		});
+
+		// Both stores create the same document initially
+		await storeA.create('shared-task', { title: 'Original Task', completed: false });
+		await storeB.create('shared-task', { title: 'Original Task', completed: false });
+
+		// Simulate concurrent modifications to the same document
+		// Store A updates the title
+		await storeA.update('shared-task', { title: 'Task Updated by A' });
+
+		// Store B updates the completed status (and potentially title too)
+		await storeB.update('shared-task', { completed: true, title: 'Task Updated by B' });
+
+		// Get current state before merge
+		const beforeMergeA = await storeA.get('shared-task');
+		const beforeMergeB = await storeB.get('shared-task');
+
+		expect(beforeMergeA).toEqual({ title: 'Task Updated by A', completed: false });
+		expect(beforeMergeB).toEqual({ title: 'Task Updated by B', completed: true });
+
+		// Get documents from each store for merging
+		const docsFromA = await storeA.getDocumentsByBucket([0]);
+		const docsFromB = await storeB.getDocumentsByBucket([0]);
+
+		// Merge Store A's changes into Store B
+		await storeB.merge(docsFromA);
+
+		// Merge Store B's changes into Store A  
+		await storeA.merge(docsFromB);
+
+		// After merge, both stores should have the same resolved state
+		const finalStateA = await storeA.get('shared-task');
+		const finalStateB = await storeB.get('shared-task');
+
+		// Both stores should have identical final state (CRDT resolution)
+		expect(finalStateA).toEqual(finalStateB);
+
+		// The resolution should contain the most recent changes based on HLC timestamps
+		// Since this is a last-writer-wins resolution, we expect the values to be determined by the latest HLC
+		expect(finalStateA).toBeTruthy();
+		expect(finalStateA?.title).toBeTruthy();
+		expect(typeof finalStateA?.completed).toBe('boolean');
+
+		// Verify both stores have identical hashes after conflict resolution
+		const finalHashesA = await storeA.getHashes();
+		const finalHashesB = await storeB.getHashes();
+		expect(finalHashesA.root).toBe(finalHashesB.root);
+	});
 });
