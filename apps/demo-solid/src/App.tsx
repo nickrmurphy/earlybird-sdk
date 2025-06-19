@@ -3,6 +3,8 @@ import './App.css'
 import { StoreProvider, useStore } from './components/StoreProvider'
 import { useSelectedRecipe } from './hooks/useSelectedRecipe'
 import { Ingredients } from './components/Ingredients'
+import { IngredientCombobox } from './components/IngredientCombobox'
+import type { Ingredient } from '@byearlybird/demo-shared'
 
 function RecipeApp() {
   const recipeStore = useStore('recipes');
@@ -76,6 +78,32 @@ function RecipeApp() {
     }
   };
 
+  const handleIngredientSelect = async (ingredient: Ingredient) => {
+    if (!selectedRecipeId() || !selectedRecipe()) return;
+    
+    const currentIngredients = selectedRecipe()?.ingredients || [];
+    const ingredientSet = new Set(currentIngredients.map(i => i.id));
+    
+    if (!ingredientSet.has(ingredient.id)) {
+      await recipeStore.update(selectedRecipeId(), {
+        ingredients: [...currentIngredients, ingredient],
+      });
+      await loadSelectedRecipe();
+    }
+  };
+
+  const handleRemoveIngredient = async (ingredientId: string) => {
+    if (!selectedRecipeId() || !selectedRecipe()) return;
+    
+    const currentIngredients = selectedRecipe()?.ingredients || [];
+    const updatedIngredients = currentIngredients.filter(i => i.id !== ingredientId);
+    
+    await recipeStore.update(selectedRecipeId(), {
+      ingredients: updatedIngredients,
+    });
+    await loadSelectedRecipe();
+  };
+
   return (
     <main class="grid grid-cols-3 bg-green-950 h-full gap-4 p-4">
       {/* Sidebar */}
@@ -141,12 +169,10 @@ function RecipeApp() {
             <section class="flex flex-col gap-2 flex-1">
               <div class="flex w-full gap-2 items-center justify-between">
                 <h2 class="font-medium px-2 text-white">Recipe Ingredients</h2>
-                <button 
-                  class="rounded-full text-xs px-3 py-1 bg-blue-600 text-white border border-white/10 opacity-50 cursor-not-allowed"
-                  disabled
-                >
-                  + Add (Phase 5)
-                </button>
+                <IngredientCombobox
+                  onSelect={handleIngredientSelect}
+                  exclude={selectedRecipe()?.ingredients?.map(i => i.id) || []}
+                />
               </div>
               <div class="bg-black/5 border border-black/5 rounded-lg flex flex-col gap-3 p-3 flex-1">
                 <For each={selectedRecipe()?.ingredients || []}>
@@ -158,12 +184,18 @@ function RecipeApp() {
                         </span>
                         {ingredient.name}
                       </div>
+                      <button
+                        onClick={() => handleRemoveIngredient(ingredient.id)}
+                        class="text-red-400 hover:text-red-300 transition-colors text-sm px-2 py-1 rounded hover:bg-red-400/10"
+                      >
+                        Remove
+                      </button>
                     </div>
                   )}
                 </For>
                 {(!selectedRecipe()?.ingredients || selectedRecipe()?.ingredients.length === 0) && (
                   <p class="text-white/60 text-center mt-10">
-                    No ingredients added yet.
+                    No ingredients added yet. Use the dropdown above to add some!
                   </p>
                 )}
               </div>
