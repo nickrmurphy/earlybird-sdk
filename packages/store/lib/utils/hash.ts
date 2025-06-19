@@ -18,10 +18,19 @@ export function hash(str: string): string {
  * Suitable for cache keys and object comparison.
  */
 export function hashObject(obj: unknown): string {
-	const serialized = JSON.stringify(
-		obj,
-		Object.keys(obj as Record<string, unknown>).sort(),
-	);
+	const serialized = JSON.stringify(obj, (_key, value) => {
+		if (value && typeof value === 'object' && !Array.isArray(value)) {
+			const sortedObj: Record<string, unknown> = {};
+			// biome-ignore lint/complexity/noForEach: simple usecase
+			Object.keys(value)
+				.sort()
+				.forEach((k) => {
+					sortedObj[k] = value[k];
+				});
+			return sortedObj;
+		}
+		return value;
+	});
 	return hash(serialized);
 }
 
@@ -50,12 +59,12 @@ export function bucketHashes(
 	bucketSize: number,
 ): Record<number, string> {
 	const buckets: Record<number, string> = {};
-	
+
 	for (let i = 0; i < hashes.length; i += bucketSize) {
 		const bucketIndex = Math.floor(i / bucketSize);
 		const bucketSlice = hashes.slice(i, i + bucketSize);
 		buckets[bucketIndex] = accumulateHashes(bucketSlice);
 	}
-	
+
 	return buckets;
 }

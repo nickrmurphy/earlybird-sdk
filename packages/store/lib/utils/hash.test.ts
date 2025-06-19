@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { hash, hashObject, combineHashes, accumulateHashes, bucketHashes } from './hash';
+import {
+	accumulateHashes,
+	bucketHashes,
+	combineHashes,
+	hash,
+	hashObject,
+} from './hash';
 
 describe('hash', () => {
 	it('should return a string hash for any string', () => {
@@ -23,6 +29,11 @@ describe('hash', () => {
 		const str2 = 'hello universe';
 
 		expect(hash(str1)).not.toBe(hash(str2));
+
+		const str3 = 'task1';
+		const str4 = 'task2';
+
+		expect(hash(str3)).not.toBe(hash(str4));
 	});
 
 	it('should handle empty strings', () => {
@@ -82,7 +93,7 @@ describe('combineHashes', () => {
 		const hash1 = 'abc123';
 		const hash2 = 'def456';
 		const hash3 = 'ghi789';
-		
+
 		const combined1 = combineHashes(hash1, hash2);
 		const combined2 = combineHashes(hash1, hash3);
 
@@ -106,7 +117,7 @@ describe('combineHashes', () => {
 describe('accumulateHashes', () => {
 	it('should return empty string for empty array', () => {
 		const result = accumulateHashes([]);
-		
+
 		expect(typeof result).toBe('string');
 		expect(result).toBe(''); // Empty array reduces to empty string accumulator
 	});
@@ -114,7 +125,7 @@ describe('accumulateHashes', () => {
 	it('should return the single hash for single-item array', () => {
 		const singleHash = 'abc123';
 		const result = accumulateHashes([singleHash]);
-		
+
 		expect(result).toBe(combineHashes('', singleHash));
 	});
 
@@ -122,7 +133,7 @@ describe('accumulateHashes', () => {
 		const hashes = ['hash1', 'hash2', 'hash3'];
 		const result1 = accumulateHashes(hashes);
 		const result2 = accumulateHashes(hashes);
-		
+
 		expect(result1).toBe(result2);
 		expect(typeof result1).toBe('string');
 		expect(result1.length).toBeGreaterThan(0);
@@ -133,24 +144,24 @@ describe('accumulateHashes', () => {
 		const hashes2 = ['hash3', 'hash2', 'hash1'];
 		const result1 = accumulateHashes(hashes1);
 		const result2 = accumulateHashes(hashes2);
-		
+
 		expect(result1).not.toBe(result2);
 	});
 
 	it('should work with real hash outputs', () => {
 		const strings = ['hello', 'world', 'test'];
-		const hashes = strings.map(s => hash(s));
+		const hashes = strings.map((s) => hash(s));
 		const result = accumulateHashes(hashes);
-		
+
 		expect(typeof result).toBe('string');
 		expect(result.length).toBeGreaterThan(0);
-		expect(hashes.every(h => h !== result)).toBe(true);
+		expect(hashes.every((h) => h !== result)).toBe(true);
 	});
 
 	it('should handle large arrays efficiently', () => {
 		const largeArray = Array.from({ length: 1000 }, (_, i) => `hash${i}`);
 		const result = accumulateHashes(largeArray);
-		
+
 		expect(typeof result).toBe('string');
 		expect(result.length).toBeGreaterThan(0);
 	});
@@ -159,14 +170,14 @@ describe('accumulateHashes', () => {
 describe('bucketHashes', () => {
 	it('should return empty object for empty array', () => {
 		const result = bucketHashes([], 10);
-		
+
 		expect(result).toEqual({});
 	});
 
 	it('should create single bucket for array smaller than bucket size', () => {
 		const hashes = ['hash1', 'hash2', 'hash3'];
 		const result = bucketHashes(hashes, 10);
-		
+
 		expect(Object.keys(result)).toHaveLength(1);
 		expect(result[0]).toBeDefined();
 		expect(typeof result[0]).toBe('string');
@@ -175,7 +186,7 @@ describe('bucketHashes', () => {
 	it('should create multiple buckets when array exceeds bucket size', () => {
 		const hashes = ['hash1', 'hash2', 'hash3', 'hash4', 'hash5'];
 		const result = bucketHashes(hashes, 2);
-		
+
 		expect(Object.keys(result)).toHaveLength(3); // Math.ceil(5/2) = 3
 		expect(result[0]).toBeDefined(); // bucket 0: hash1, hash2
 		expect(result[1]).toBeDefined(); // bucket 1: hash3, hash4
@@ -186,14 +197,14 @@ describe('bucketHashes', () => {
 		const hashes = ['hash1', 'hash2', 'hash3', 'hash4'];
 		const result1 = bucketHashes(hashes, 2);
 		const result2 = bucketHashes(hashes, 2);
-		
+
 		expect(result1).toEqual(result2);
 	});
 
 	it('should handle bucket size of 1 (each hash in its own bucket)', () => {
 		const hashes = ['hash1', 'hash2', 'hash3'];
 		const result = bucketHashes(hashes, 1);
-		
+
 		expect(Object.keys(result)).toHaveLength(3);
 		expect(result[0]).toBe(accumulateHashes(['hash1']));
 		expect(result[1]).toBe(accumulateHashes(['hash2']));
@@ -203,7 +214,7 @@ describe('bucketHashes', () => {
 	it('should combine hashes within buckets correctly', () => {
 		const hashes = ['hash1', 'hash2', 'hash3'];
 		const result = bucketHashes(hashes, 2);
-		
+
 		// First bucket should have hash1 and hash2 accumulated
 		expect(result[0]).toBe(accumulateHashes(['hash1', 'hash2']));
 		// Second bucket should have just hash3 accumulated
@@ -212,9 +223,9 @@ describe('bucketHashes', () => {
 
 	it('should work with real hash outputs', () => {
 		const strings = ['hello', 'world', 'test', 'data'];
-		const hashes = strings.map(s => hash(s));
+		const hashes = strings.map((s) => hash(s));
 		const result = bucketHashes(hashes, 2);
-		
+
 		expect(Object.keys(result)).toHaveLength(2);
 		expect(typeof result[0]).toBe('string');
 		expect(typeof result[1]).toBe('string');
@@ -224,21 +235,23 @@ describe('bucketHashes', () => {
 	it('should handle large arrays with appropriate bucket sizes', () => {
 		const largeArray = Array.from({ length: 1000 }, (_, i) => `hash${i}`);
 		const result = bucketHashes(largeArray, 100);
-		
+
 		expect(Object.keys(result)).toHaveLength(10); // 1000/100 = 10 buckets
-		expect(Object.values(result).every(h => typeof h === 'string')).toBe(true);
+		expect(Object.values(result).every((h) => typeof h === 'string')).toBe(
+			true,
+		);
 	});
 
 	it('should be efficient and reuse accumulateHashes logic', () => {
 		const hashes = ['a', 'b', 'c', 'd', 'e', 'f'];
 		const result = bucketHashes(hashes, 3);
-		
+
 		// Should produce same result as manually calling accumulateHashes on slices
 		const expected = {
 			0: accumulateHashes(['a', 'b', 'c']),
-			1: accumulateHashes(['d', 'e', 'f'])
+			1: accumulateHashes(['d', 'e', 'f']),
 		};
-		
+
 		expect(result).toEqual(expected);
 	});
 });
