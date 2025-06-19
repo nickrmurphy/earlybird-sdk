@@ -1,43 +1,38 @@
 import { useCallback, useEffect, useId, useState } from 'react';
-import type { InferStoreType, StoreRegistry, UseQueryOptions } from '../types';
+import type { InferStoreType, StoreRegistry } from '../types';
 
 export function createUseQuery<T extends StoreRegistry>(
 	useStore: <K extends keyof T>(collection: K) => T[K],
 ) {
-	const useQuery = <K extends keyof T>(
+	const useQuery = <
+		K extends keyof T,
+		TResult = Record<string, InferStoreType<T[K]>>,
+	>(
 		collection: K,
-		options: UseQueryOptions<K, T> = {},
+		transform?: (data: Record<string, InferStoreType<T[K]>>) => TResult,
 		deps: React.DependencyList = [],
 	) => {
-		const stableFilter = options.filter
-			? useCallback(options.filter, deps)
-			: undefined;
-		const stableSort = options.sort
-			? useCallback(options.sort, deps)
+		const stableTransform = transform
+			? useCallback(transform, deps)
 			: undefined;
 		const queryId = useId();
 		const store = useStore(collection);
-		const [data, setData] = useState<InferStoreType<T[K]>[]>([]);
+		const [data, setData] = useState<TResult | null>(null);
 		const [isLoading, setIsLoading] = useState(true);
 
 		const listenerFn = useCallback(async () => {
 			const result = await store.all();
-			let data: InferStoreType<T[K]>[] = [];
+			let data: TResult;
 
 			if (result) {
-				// Convert object to array
-				data = Object.values(result);
-				if (stableFilter) {
-					data = data.filter(stableFilter);
-				}
-				if (stableSort) {
-					data.sort(stableSort);
-				}
+				data = stableTransform ? stableTransform(result) : (result as TResult);
+			} else {
+				data = stableTransform ? stableTransform({}) : ({} as TResult);
 			}
 
 			setData(data);
 			setIsLoading(false);
-		}, [stableFilter, stableSort, store, ...deps]);
+		}, [stableTransform, store, ...deps]);
 
 		useEffect(() => {
 			listenerFn();

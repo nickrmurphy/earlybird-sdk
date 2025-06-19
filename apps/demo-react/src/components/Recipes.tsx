@@ -5,9 +5,9 @@ import { useQuery, useStore } from './StoreProvider';
 
 export function Recipes() {
 	const recipeStore = useStore('recipes');
-	const { data: recipes } = useQuery('recipes', {
-		filter: (r) => !r.isDeleted,
-	});
+	const { data: recipes } = useQuery('recipes', (data) =>
+		Object.values(data).filter((r) => !r.isDeleted),
+	);
 	const [selectedRecipe, setSelectedRecipe] = useSelectedRecipe();
 
 	const handleCreateRecipe = async () => {
@@ -15,7 +15,6 @@ export function Recipes() {
 		await recipeStore.create(id, {
 			id,
 			title: '',
-			description: '',
 			isDeleted: false,
 			ingredients: [],
 		});

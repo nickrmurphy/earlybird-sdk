@@ -23,6 +23,5 @@ export { createStoreProvider };
 export type { StoreRegistry, UseStore, UseStores };
 export type {
 	InferStoreType,
-	UseQueryOptions,
 	StoreProviderProps,
 } from '../../types';

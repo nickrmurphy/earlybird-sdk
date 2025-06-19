@@ -4,9 +4,10 @@ import { useQuery, useStore } from './StoreProvider';
 export function Ingredients() {
 	const recipeStore = useStore('recipes');
 	const ingredientStore = useStore('ingredients');
-	const { data: ingredients } = useQuery('ingredients', {
-		filter: (i) => !i.isDeleted,
-	});
+	const { data: ingredients } = useQuery(
+		'ingredients',
+		(data) => Object.values(data).filter((i) => !i.isDeleted),
+	);
 
 	const handleAddIngredient = async () => {
 		const id = crypto.randomUUID();

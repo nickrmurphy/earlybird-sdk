@@ -14,7 +14,3 @@ export interface StoreProviderProps<T extends StoreRegistry> {
 	children: ReactNode;
 }
 
-export interface UseQueryOptions<K extends keyof T, T extends StoreRegistry> {
-	filter?: (data: InferStoreType<T[K]>) => boolean;
-	sort?: (a: InferStoreType<T[K]>, b: InferStoreType<T[K]>) => number;
-}
