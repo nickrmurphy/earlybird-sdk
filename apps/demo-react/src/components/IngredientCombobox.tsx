@@ -49,7 +49,7 @@ export function IngredientCombobox({
 				anchor={{ to: 'bottom start', gap: '4px' }}
 				className="border w-[var(--input-width)] empty:invisible bg-white/5 border-white/5 backdrop-blur-sm rounded-2xl"
 			>
-				{options.length > 0 ? (
+				{options && options.length > 0 ? (
 					options.map((ingredient) => (
 						<ComboboxOption
 							key={ingredient.id}

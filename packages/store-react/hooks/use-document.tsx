@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { InferStoreType, StoreRegistry } from '../types';
 
+type UseDocumentResult<TResult> =
+	| { isLoading: true; data: null }
+	| { isLoading: false; data: TResult | null };
+
 export function createUseDocument<T extends StoreRegistry>(
 	useStore: <K extends keyof T>(collection: K) => T[K],
 ) {
 	const useDocument = <K extends keyof T>(
 		collection: K,
 		id: string | null | undefined,
-	) => {
+	): UseDocumentResult<InferStoreType<T[K]>> => {
 		const store = useStore(collection);
 		const queryId = `document-${String(collection)}-${id}`;
 		const [data, setData] = useState<InferStoreType<T[K]> | null>(null);
@@ -38,10 +42,11 @@ export function createUseDocument<T extends StoreRegistry>(
 			};
 		}, [listenerFn, store, queryId, id]);
 
-		return {
-			data,
-			isLoading,
-		};
+		if (isLoading) {
+			return { isLoading: true, data: null };
+		}
+
+		return { isLoading: false, data };
 	};
 
 	return useDocument;

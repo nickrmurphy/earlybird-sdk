@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import type { InferStoreType, StoreRegistry } from '../types';
 
+type UseQueryResult<TResult> =
+	| { isLoading: true; data: null }
+	| { isLoading: false; data: TResult };
+
 export function createUseQuery<T extends StoreRegistry>(
 	useStore: <K extends keyof T>(collection: K) => T[K],
 ) {
@@ -11,7 +15,7 @@ export function createUseQuery<T extends StoreRegistry>(
 		collection: K,
 		transform?: (data: Record<string, InferStoreType<T[K]>>) => TResult,
 		deps: React.DependencyList = [],
-	) => {
+	): UseQueryResult<TResult> => {
 		const stableTransform = transform
 			? useCallback(transform, deps)
 			: undefined;
@@ -22,15 +26,15 @@ export function createUseQuery<T extends StoreRegistry>(
 
 		const listenerFn = useCallback(async () => {
 			const result = await store.all();
-			let data: TResult;
+			let transformedData: TResult;
 
 			if (result) {
-				data = stableTransform ? stableTransform(result) : (result as TResult);
+				transformedData = stableTransform ? stableTransform(result) : (result as TResult);
 			} else {
-				data = stableTransform ? stableTransform({}) : ({} as TResult);
+				transformedData = stableTransform ? stableTransform({}) : ({} as TResult);
 			}
 
-			setData(data);
+			setData(transformedData);
 			setIsLoading(false);
 		}, [stableTransform, store, ...deps]);
 
@@ -46,10 +50,11 @@ export function createUseQuery<T extends StoreRegistry>(
 			};
 		}, [listenerFn, store, queryId]);
 
-		return {
-			data,
-			isLoading,
-		};
+		if (isLoading) {
+			return { isLoading: true, data: null };
+		}
+
+		return { isLoading: false, data: data as TResult };
 	};
 
 	return useQuery;
