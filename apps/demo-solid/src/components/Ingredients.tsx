@@ -1,4 +1,5 @@
 import { createSignal, Index, onMount } from 'solid-js';
+import { Card } from './Card';
 import { useStore } from './StoreProvider';
 
 export function Ingredients() {
@@ -59,16 +60,7 @@ export function Ingredients() {
 	};
 
 	return (
-		<div class="bg-white/30 shadow rounded-lg p-3 h-80 overflow-y-auto border border-white/10">
-			<div class="flex items-center justify-between mb-5">
-				<h3 class="font-bold text-white">All Ingredients</h3>
-				<button 
-					onClick={handleAddIngredient}
-					class="rounded-full active:scale-105 transition-all size-6 border border-white/10 flex items-center justify-center bg-white/10 shadow hover:bg-white/20"
-				>
-					<span class="text-white text-sm">+</span>
-				</button>
-			</div>
+		<Card title="All Ingredients" onAddClick={handleAddIngredient}>
 			<ul class="space-y-2">
 				<Index each={ingredients()}>
 					{(ingredient, i) => (
@@ -93,6 +85,6 @@ export function Ingredients() {
 					</p>
 				)}
 			</ul>
-		</div>
+		</Card>
 	);
 }

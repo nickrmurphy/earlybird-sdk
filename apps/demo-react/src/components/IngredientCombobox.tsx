@@ -40,31 +40,28 @@ export function IngredientCombobox({
 			}}
 		>
 			<ComboboxInput
-				className="bg-black/5 border border-black/5 rounded-2xl px-2 py-1 focus:outline-none text-sm w-1/2 focus:border-white/5 transition-all"
+				type="search"
+				className="rounded-lg border border-gray-200 px-2 py-1 focus:outline-none text-sm w-1/2 transition-all"
 				displayValue={() => query}
 				placeholder="Add an ingredient..."
 				onChange={(event) => setQuery(event.target.value)}
 			/>
 			<ComboboxOptions
 				anchor={{ to: 'bottom start', gap: '4px' }}
-				className="border w-[var(--input-width)] empty:invisible bg-white/5 border-white/5 backdrop-blur-sm rounded-2xl"
+				className="border border-gray-200 shadow-sm w-[var(--input-width)] empty:invisible rounded-lg p-1"
 			>
 				{options && options.length > 0 ? (
 					options.map((ingredient) => (
 						<ComboboxOption
 							key={ingredient.id}
 							value={ingredient}
-							className="p-2 text-sm data-focus:bg-black/5 "
+							className="px-2 py-1 text-sm hover:ring-2 hover:ring-amber-200 hover:bg-amber-200/10 transition-all rounded-md"
 						>
 							{ingredient.name}
 						</ComboboxOption>
 					))
 				) : (
-					<ComboboxOption
-						value={null}
-						disabled
-						className="p-2 text-sm data-focus:bg-black/5 text-white/70"
-					>
+					<ComboboxOption value={null} disabled className="px-2 py-1 text-sm">
 						No results found
 					</ComboboxOption>
 				)}

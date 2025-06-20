@@ -1,12 +1,11 @@
-import { PlusIcon } from '@heroicons/react/24/solid';
+import { Card } from './Card';
 import { useQuery, useStore } from './StoreProvider';
 
 export function Ingredients() {
 	const recipeStore = useStore('recipes');
 	const ingredientStore = useStore('ingredients');
-	const { data: ingredients } = useQuery(
-		'ingredients',
-		(data) => Object.values(data).filter((i) => !i.isDeleted),
+	const { data: ingredients } = useQuery('ingredients', (data) =>
+		Object.values(data).filter((i) => !i.isDeleted),
 	);
 
 	const handleAddIngredient = async () => {
@@ -41,25 +40,15 @@ export function Ingredients() {
 	};
 
 	return (
-		<div className="bg-white/30 shadow rounded-lg p-3 h-full border border-white/10">
-			<div className="flex items-center justify-between">
-				<h2 className="font-bold p-3">Ingredients</h2>
-				<button
-					type="button"
-					className="rounded-full active:scale-105 transition-all size-6 border border-white/10 flex items-center justify-center bg-white/10 shadow"
-					onClick={handleAddIngredient}
-				>
-					<PlusIcon className="size-4 m-auto" />
-				</button>
-			</div>
+		<Card title="Ingredients" onAddClick={handleAddIngredient}>
 			<ul>
 				{ingredients?.map((ingredient) => (
 					<>
 						<li
 							key={ingredient.id}
-							className="p-2.5 rounded-lg hover:bg-black/5 transition-all flex items-center gap-2 w-full focus-within:ring focus-within:ring-white/10 outline-none "
+							className="p-2.5 rounded-lg hover:ring-2 hover:ring-amber-200 hover:bg-amber-200/10 transition-all flex items-center gap-2 w-full focus-within:ring focus-within:ring-white/10 outline-none "
 						>
-							<span className="rounded-full bg-black/10 size-6 text-sm p-0.5 flex items-center justify-center uppercase font-medium">
+							<span className="rounded-full size-6 text-sm flex items-center justify-center uppercase font-medium border border-gray-200 flex-shrink-0">
 								{ingredient.name.slice(0, 1)}
 							</span>
 							<input
@@ -80,6 +69,6 @@ export function Ingredients() {
 					</>
 				))}
 			</ul>
-		</div>
+		</Card>
 	);
 }

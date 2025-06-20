@@ -11,15 +11,17 @@
 	},
 	"dependencies": {
 		"@byearlybird/demo-shared": "workspace:*",
-		"@byearlybird/demo-styles": "workspace:*",
 		"@byearlybird/store": "workspace:*",
 		"@byearlybird/store-react": "workspace:*",
 		"@heroicons/react": "^2.2.0",
+		
 		"react": "^19.1.0",
 		"react-dom": "^19.1.0",
 		"zod": "^3.25.56"
 	},
 	"devDependencies": {
+		"vite": "^6.3.5",
+		"typescript": "~5.8.3",
 		"@tailwindcss/vite": "^4.1.10",
 		"@types/react": "^19.1.2",
 		"@types/react-dom": "^19.1.2",

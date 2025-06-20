@@ -1,6 +1,6 @@
-import { PlusIcon } from '@heroicons/react/24/solid';
 import { cx } from 'cva';
 import { useSelectedRecipe } from '../hooks/useSelectedRecipe';
+import { Card } from './Card';
 import { useQuery, useStore } from './StoreProvider';
 
 export function Recipes() {
@@ -22,17 +22,7 @@ export function Recipes() {
 	};
 
 	return (
-		<div className="bg-white/30 p-2 shadow rounded-lg h-full border border-white/10">
-			<div className="flex items-center justify-between">
-				<h2 className="font-bold p-3">Recipes</h2>
-				<button
-					type="button"
-					className="rounded-full active:scale-105 transition-all size-6 border border-white/10 flex items-center justify-center bg-white/10 shadow"
-					onClick={handleCreateRecipe}
-				>
-					<PlusIcon className="size-4 m-auto" />
-				</button>
-			</div>
+		<Card title="Recipes" onAddClick={handleCreateRecipe}>
 			<ul>
 				{recipes?.map((recipe) => (
 					<>
@@ -49,7 +39,7 @@ export function Recipes() {
 									: 'hover:bg-black/5',
 							)}
 						>
-							<span className="rounded-full bg-black/10 size-6 text-sm p-0.5 flex items-center justify-center uppercase font-medium">
+							<span className="rounded-full size-6 text-sm p-0.5 flex items-center justify-center uppercase font-medium border border-gray-200">
 								{recipe.title.slice(0, 1)}
 							</span>
 							<span>{recipe.title}</span>
@@ -57,6 +47,6 @@ export function Recipes() {
 					</>
 				))}
 			</ul>
-		</div>
+		</Card>
 	);
 }
