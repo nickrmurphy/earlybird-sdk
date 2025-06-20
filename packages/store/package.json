@@ -17,11 +17,6 @@
 			"import": "./dist/memory-adapter.js",
 			"types": "./dist/memory-adapter.d.ts"
 		},
-		"./libsql-adapter": {
-			"development": "./lib/storage/libsql-adapter.ts",
-			"import": "./dist/libsql-adapter.js",
-			"types": "./dist/libsql-adapter.d.ts"
-		},
 		"./indexeddb-adapter": {
 			"development": "./lib/storage/indexeddb-adapter.ts",
 			"import": "./dist/indexeddb-adapter.js",
@@ -33,20 +28,11 @@
 	"license": "MIT",
 	"scripts": {
 		"build": "vite build",
-		"test": "vitest --config=vitest.browser.config.ts && vitest run --config=vitest.node.config.ts",
-		"test:coverage": "vitest run --coverage --config=vitest.browser.config.ts && vitest run --coverage --config=vitest.node.config.ts",
+		"test": "vitest --config=vitest.browser.config.ts",
+		"test:coverage": "vitest run --coverage --config=vitest.browser.config.ts",
 		"bench": "vitest bench --config=vitest.browser.config.ts"
 	},
-	"peerDependencies": {
-		"@libsql/client": "^0.15.0"
-	},
-	"peerDependenciesMeta": {
-		"@libsql/client": {
-			"optional": true
-		}
-	},
 	"devDependencies": {
-		"@libsql/client": "^0.15.9",
 		"@types/node": "^24.0.0",
 		"@vitest/browser": "^3.2.3",
 		"@vitest/coverage-v8": "^3.2.3",

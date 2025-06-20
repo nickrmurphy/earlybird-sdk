@@ -30,7 +30,6 @@ This is a monorepo SDK (`@byearlybird/sdk`) for cross-platform data storage with
 - **Adapter Pattern**: Abstract `StorageAdapter` interface with multiple implementations
   - Memory adapter (in-memory storage)
   - IndexedDB adapter (browser database)
-  - LibSQL adapter (SQLite/Turso database)
 - **Consistent API**: All adapters implement `loadData()`, `saveData()`, `loadHLC()`, `saveHLC()`, and listener methods
 - **Platform Abstraction**: Enables the same store logic to work across Node.js and browser
 
@@ -67,7 +66,7 @@ This is a monorepo SDK (`@byearlybird/sdk`) for cross-platform data storage with
 
 ### Dual Environment Testing
 - **Browser Tests**: Vitest with Playwright for browser-specific functionality (IndexedDB)
-- **Node.js Tests**: Vitest for server-side functionality (LibSQL, Memory adapter)
+- **Node.js Tests**: Vitest for server-side functionality (Memory adapter)
 - **Integration Tests**: End-to-end CRDT synchronization scenarios with multiple store instances
 - **Benchmarks**: Performance tracking for 10k+ operations across all adapters
 

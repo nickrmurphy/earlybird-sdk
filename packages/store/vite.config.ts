@@ -8,7 +8,6 @@ export default defineConfig({
 			entry: {
 				index: resolve(__dirname, 'index.ts'),
 				'memory-adapter': resolve(__dirname, 'lib/storage/memory-adapter.ts'),
-				'libsql-adapter': resolve(__dirname, 'lib/storage/libsql-adapter.ts'),
 				'indexeddb-adapter': resolve(
 					__dirname,
 					'lib/storage/indexeddb-adapter.ts',
@@ -17,7 +16,7 @@ export default defineConfig({
 			formats: ['es'],
 		},
 		rollupOptions: {
-			external: ['zod', 'valibot', '@libsql/client'],
+			external: ['zod', 'valibot'],
 		},
 	},
 	plugins: [

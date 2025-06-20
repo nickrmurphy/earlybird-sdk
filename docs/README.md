@@ -19,7 +19,7 @@ A simple, type-safe storage solution for local-first apps that works natively in
 
 Three simple layers:
 
-1. **Storage Adapter** - Filesystem abstraction (i.e. IndexedDB, LibSQL, Memory, etc.)
+1. **Storage Adapter** - Filesystem abstraction (i.e. IndexedDB, Memory, etc.)
 2. **CRDT Store** - Document store with conflict-free field updates
 3. **Sync Client** - High-level operations and sync coordination
 
