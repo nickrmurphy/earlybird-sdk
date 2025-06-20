@@ -12,11 +12,6 @@
 			"import": "./dist/index.js",
 			"types": "./dist/index.d.ts"
 		},
-		"./capacitor-adapter": {
-			"development": "./lib/storage/capacitor-adapter.ts",
-			"import": "./dist/capacitor-adapter.js",
-			"types": "./dist/capacitor-adapter.d.ts"
-		},
 		"./memory-adapter": {
 			"development": "./lib/storage/memory-adapter.ts",
 			"import": "./dist/memory-adapter.js",

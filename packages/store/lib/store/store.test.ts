@@ -4,10 +4,8 @@ import type { HLC } from '../crdt/hlc';
 import type { StorageAdapter } from '../storage/types';
 import type { CRDTStore } from './store';
 
-import { Directory, Filesystem } from '@capacitor/filesystem';
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
-import { createCapacitorAdapter } from '../storage/capacitor-adapter';
 import { createMemoryAdapter } from '../storage/memory-adapter';
 import { createStore } from './store';
 
@@ -422,12 +420,3 @@ const createStoreTests = (
 };
 
 createStoreTests('Memory Adapter', () => createMemoryAdapter());
-createStoreTests('Capacitor Adapter', () =>
-	createCapacitorAdapter(
-		`capacitor-test-${Math.random().toString(36).substring(2, 9)}`,
-		{
-			fs: Filesystem,
-			directory: Directory.Temporary,
-		},
-	),
-);

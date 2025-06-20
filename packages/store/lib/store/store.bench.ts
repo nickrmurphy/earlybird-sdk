@@ -2,10 +2,8 @@
 
 import type { StorageAdapter } from '../storage/types';
 
-import { Directory, Filesystem } from '@capacitor/filesystem';
 import { bench, describe } from 'vitest';
 import { z } from 'zod';
-import { createCapacitorAdapter } from '../storage/capacitor-adapter';
 import { createMemoryAdapter } from '../storage/memory-adapter';
 import { createStore } from './store';
 
@@ -484,12 +482,3 @@ const createStoreBenchmarks = (
 // Create benchmarks for different adapters
 createStoreBenchmarks('Memory Adapter', () => createMemoryAdapter());
 
-createStoreBenchmarks('Capacitor Adapter', () =>
-	createCapacitorAdapter(
-		`capacitor-bench-${Math.random().toString(36).substr(2, 9)}`,
-		{
-			fs: Filesystem,
-			directory: Directory.Temporary,
-		},
-	),
-);

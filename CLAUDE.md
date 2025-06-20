@@ -29,11 +29,10 @@ This is a monorepo SDK (`@byearlybird/sdk`) for cross-platform data storage with
 ### Storage Layer (`/packages/store/storage/`)
 - **Adapter Pattern**: Abstract `StorageAdapter` interface with multiple implementations
   - Memory adapter (in-memory storage)
-  - Capacitor adapter (mobile filesystem)
   - IndexedDB adapter (browser database)
   - LibSQL adapter (SQLite/Turso database)
 - **Consistent API**: All adapters implement `loadData()`, `saveData()`, `loadHLC()`, `saveHLC()`, and listener methods
-- **Platform Abstraction**: Enables the same store logic to work across Node.js, browser, and mobile
+- **Platform Abstraction**: Enables the same store logic to work across Node.js and browser
 
 ### Store Layer (`/packages/store/store/`)
 - **Factory Pattern**: `createStore(collection, config)` creates type-safe store instances
@@ -61,13 +60,13 @@ This is a monorepo SDK (`@byearlybird/sdk`) for cross-platform data storage with
 - **Type Safety**: Full TypeScript with strict configuration and runtime validation
 - **Performance**: Includes comprehensive benchmark suite tracking 10k+ operation performance
 - **Modularity**: Clean separation between storage adapters, CRDT logic, and business logic
-- **Cross-platform**: Single codebase works across Node.js, browser, and Capacitor mobile apps
+- **Cross-platform**: Single codebase works across Node.js and browser
 - **Conflict-Free**: CRDT architecture ensures data consistency across distributed instances
 
 ## Testing Strategy
 
 ### Dual Environment Testing
-- **Browser Tests**: Vitest with Playwright for browser-specific functionality (IndexedDB, Capacitor)
+- **Browser Tests**: Vitest with Playwright for browser-specific functionality (IndexedDB)
 - **Node.js Tests**: Vitest for server-side functionality (LibSQL, Memory adapter)
 - **Integration Tests**: End-to-end CRDT synchronization scenarios with multiple store instances
 - **Benchmarks**: Performance tracking for 10k+ operations across all adapters
