@@ -7,6 +7,8 @@ import {
 	createMany,
 	createOne,
 	getAll,
+	getDocumentsInBuckets,
+	getHashes,
 	getOne,
 	getWhere,
 	updateMany,
@@ -599,5 +601,306 @@ describe('updateMany', () => {
 		expect(updatedDoc2?.$timestamps).toBeDefined();
 		expect(updatedDoc1?.$timestamps).not.toEqual(originalDoc1?.$timestamps);
 		expect(updatedDoc2?.$timestamps).not.toEqual(originalDoc2?.$timestamps);
+	});
+});
+
+describe('getHashes', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+	let hlc: ReturnType<typeof createClock>;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema,
+			},
+		};
+		db = await openDatabase(config);
+		hlc = createClock();
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('returns empty root hash and no buckets for empty store', async () => {
+		const result = await getHashes(db, 'users');
+		expect(result.root).toBeDefined();
+		expect(typeof result.root).toBe('string');
+		expect(result.buckets).toEqual({});
+	});
+
+	it('generates hashes for single document', async () => {
+		const userData = { id: 'user-1', name: 'John Doe' };
+		await createOne(db, 'users', userSchema, hlc, userData);
+
+		const result = await getHashes(db, 'users');
+		expect(result.root).toBeDefined();
+		expect(typeof result.root).toBe('string');
+		expect(result.root.length).toBeGreaterThan(0);
+		expect(result.buckets).toEqual({ 0: expect.any(String) });
+	});
+
+	it('generates different hashes for different documents', async () => {
+		const userData1 = { id: 'user-1', name: 'John Doe' };
+		await createOne(db, 'users', userSchema, hlc, userData1);
+		const result1 = await getHashes(db, 'users');
+
+		const userData2 = { id: 'user-2', name: 'Jane Smith' };
+		await createOne(db, 'users', userSchema, hlc, userData2);
+		const result2 = await getHashes(db, 'users');
+
+		expect(result1.root).not.toEqual(result2.root);
+	});
+
+	it('creates multiple buckets with custom bucket size', async () => {
+		const userData = [
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-2', name: 'Jane Smith' },
+			{ id: 'user-3', name: 'Bob Johnson' },
+		];
+		await createMany(db, 'users', userSchema, hlc, userData);
+
+		const result = await getHashes(db, 'users', 2);
+		expect(Object.keys(result.buckets)).toHaveLength(2); // 3 documents with bucket size 2 = 2 buckets
+		expect(result.buckets[0]).toBeDefined();
+		expect(result.buckets[1]).toBeDefined();
+	});
+
+	it('orders documents by timestamp before hashing', async () => {
+		// Create documents with some delay to ensure different timestamps
+		const userData1 = { id: 'user-1', name: 'John Doe' };
+		await createOne(db, 'users', userSchema, hlc, userData1);
+
+		// Small delay to ensure different timestamps
+		await new Promise((resolve) => setTimeout(resolve, 1));
+
+		const userData2 = { id: 'user-2', name: 'Jane Smith' };
+		await createOne(db, 'users', userSchema, hlc, userData2);
+
+		const result = await getHashes(db, 'users');
+		expect(result.root).toBeDefined();
+		expect(typeof result.root).toBe('string');
+		expect(result.root.length).toBeGreaterThan(0);
+	});
+
+	it('handles large bucket sizes gracefully', async () => {
+		const userData = [
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-2', name: 'Jane Smith' },
+		];
+		await createMany(db, 'users', userSchema, hlc, userData);
+
+		const result = await getHashes(db, 'users', 1000); // Bucket size larger than document count
+		expect(Object.keys(result.buckets)).toHaveLength(1);
+		expect(result.buckets[0]).toBeDefined();
+	});
+});
+
+describe('getDocumentsInBuckets', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+	let hlc: ReturnType<typeof createClock>;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema,
+			},
+		};
+		db = await openDatabase(config);
+		hlc = createClock();
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('returns empty array for empty store', async () => {
+		const result = await getDocumentsInBuckets(db, 'users', [0]);
+		expect(result).toEqual([]);
+	});
+
+	it('returns documents from specific bucket', async () => {
+		const userData = [
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-2', name: 'Jane Smith' },
+			{ id: 'user-3', name: 'Bob Johnson' },
+		];
+		await createMany(db, 'users', userSchema, hlc, userData);
+
+		const result = await getDocumentsInBuckets(db, 'users', [0], 2);
+		expect(result).toHaveLength(2); // First bucket with bucket size 2
+		expect(result[0].$data).toBeDefined();
+		expect(result[1].$data).toBeDefined();
+	});
+
+	it('returns documents from multiple buckets', async () => {
+		const userData = [
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-2', name: 'Jane Smith' },
+			{ id: 'user-3', name: 'Bob Johnson' },
+			{ id: 'user-4', name: 'Alice Brown' },
+		];
+		await createMany(db, 'users', userSchema, hlc, userData);
+
+		const result = await getDocumentsInBuckets(db, 'users', [0, 1], 2);
+		expect(result).toHaveLength(4); // Both buckets with bucket size 2
+	});
+
+	it('handles non-existent buckets gracefully', async () => {
+		const userData = [
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-2', name: 'Jane Smith' },
+		];
+		await createMany(db, 'users', userSchema, hlc, userData);
+
+		const result = await getDocumentsInBuckets(db, 'users', [5], 2); // Bucket 5 doesn't exist
+		expect(result).toEqual([]);
+	});
+
+	it('returns documents sorted by timestamp', async () => {
+		const userData1 = { id: 'user-1', name: 'John Doe' };
+		await createOne(db, 'users', userSchema, hlc, userData1);
+
+		// Small delay to ensure different timestamps
+		await new Promise((resolve) => setTimeout(resolve, 1));
+
+		const userData2 = { id: 'user-2', name: 'Jane Smith' };
+		await createOne(db, 'users', userSchema, hlc, userData2);
+
+		const result = await getDocumentsInBuckets(db, 'users', [0], 10);
+		expect(result).toHaveLength(2);
+
+		// Verify they are sorted by timestamp (first document should have earlier timestamp)
+		expect(result[0].$timestamp <= result[1].$timestamp).toBe(true);
+	});
+
+	it('handles custom bucket sizes', async () => {
+		const userData = [
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-2', name: 'Jane Smith' },
+			{ id: 'user-3', name: 'Bob Johnson' },
+		];
+		await createMany(db, 'users', userSchema, hlc, userData);
+
+		const result = await getDocumentsInBuckets(db, 'users', [0], 1);
+		expect(result).toHaveLength(1); // Only first document with bucket size 1
+	});
+
+	it('returns correct document structure', async () => {
+		const userData = { id: 'user-1', name: 'John Doe' };
+		await createOne(db, 'users', userSchema, hlc, userData);
+
+		const result = await getDocumentsInBuckets(db, 'users', [0]);
+		expect(result).toHaveLength(1);
+		expect(result[0]).toHaveProperty('$id');
+		expect(result[0]).toHaveProperty('$data');
+		expect(result[0]).toHaveProperty('$timestamp');
+		expect(result[0]).toHaveProperty('$timestamps');
+		expect(result[0]).toHaveProperty('$hash');
+		expect(result[0].$data).toEqual(userData);
+	});
+});
+
+describe('$timestamp functionality', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+	let hlc: ReturnType<typeof createClock>;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema,
+			},
+		};
+		db = await openDatabase(config);
+		hlc = createClock();
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('sets $timestamp on document creation', async () => {
+		const userData = { id: 'user-1', name: 'John Doe' };
+		await createOne(db, 'users', userSchema, hlc, userData);
+
+		const doc = await getDocument(db, 'users', 'user-1');
+		expect(doc?.$timestamp).toBeDefined();
+		expect(typeof doc?.$timestamp).toBe('string');
+		expect(doc?.$timestamp.length).toBeGreaterThan(0);
+	});
+
+	it('updates $timestamp on document modification', async () => {
+		const userData = { id: 'user-1', name: 'John Doe' };
+		await createOne(db, 'users', userSchema, hlc, userData);
+
+		const originalDoc = await getDocument(db, 'users', 'user-1');
+		const originalTimestamp = originalDoc?.$timestamp;
+
+		// Small delay to ensure different timestamps
+		await new Promise((resolve) => setTimeout(resolve, 1));
+
+		await updateOne(db, 'users', userSchema, hlc, 'user-1', {
+			name: 'Jane Doe',
+		});
+
+		const updatedDoc = await getDocument(db, 'users', 'user-1');
+		expect(updatedDoc?.$timestamp).toBeDefined();
+		expect(updatedDoc?.$timestamp).not.toEqual(originalTimestamp);
+	});
+
+	it('$timestamp reflects latest mutation time', async () => {
+		const userData = { id: 'user-1', name: 'John Doe' };
+		await createOne(db, 'users', userSchema, hlc, userData);
+
+		const doc = await getDocument(db, 'users', 'user-1');
+		expect(doc?.$timestamp).toBeDefined();
+
+		// The document timestamp should be a valid HLC timestamp
+		expect(doc?.$timestamp).toMatch(/^\d+/); // Should start with digits (timestamp part)
 	});
 });

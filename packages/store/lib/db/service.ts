@@ -2,11 +2,13 @@ import { makeDocument, updateDocument } from '../crdt/document';
 import type {
 	DatabaseConfig,
 	HLC,
+	InferDocument,
 	StoreInput,
 	StoreKey,
 	StoreSchema,
 	TypedDatabase,
 } from '../types';
+import { accumulateHashes, bucketHashes } from '../utils';
 import { standardValidate } from '../utils/validate';
 import {
 	addDocument,
@@ -158,4 +160,43 @@ export async function updateMany<
 
 	// Update all documents in the store
 	await putDocuments(db, storeName, updatedDocuments);
+}
+
+export async function getHashes<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+>(
+	db: TypedDatabase<TConfig>,
+	storeName: TStoreName,
+	bucketSize = 100,
+): Promise<{ root: string; buckets: Record<number, string> }> {
+	const documents = (await getAllDocuments(db, storeName)).sort((a, b) =>
+		a.$timestamp.localeCompare(b.$timestamp),
+	);
+	const allHashes = documents.map((doc) => doc.$hash);
+	const root = accumulateHashes(allHashes);
+	const buckets = bucketHashes(allHashes, bucketSize);
+	return { root, buckets };
+}
+
+export async function getDocumentsInBuckets<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+>(
+	db: TypedDatabase<TConfig>,
+	storeName: TStoreName,
+	buckets: number[],
+	bucketSize = 100,
+): Promise<InferDocument<TConfig, TStoreName>[]> {
+	const getIndices = new Set<number>(
+		buckets.flatMap((bucket) => {
+			const start = bucket * bucketSize;
+			const end = start + bucketSize;
+			return Array.from({ length: end - start }, (_, i) => start + i);
+		}),
+	);
+
+	const documents = await getAllDocuments(db, storeName);
+	documents.sort((a, b) => a.$timestamp.localeCompare(b.$timestamp));
+	return documents.filter((_, index) => getIndices.has(index));
 }
