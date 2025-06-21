@@ -106,7 +106,7 @@ export function createDB<TConfig extends DatabaseConfig>(
 		) => {
 			const db = await getDb();
 			const hlc = await getOrCreateHLC(db, storeName);
-			return baseCreate(
+			await baseCreate(
 				{
 					db,
 					storeName,
@@ -115,6 +115,7 @@ export function createDB<TConfig extends DatabaseConfig>(
 				},
 				data,
 			);
+			await putHLC(db, storeName, hlc.current());
 		},
 		update: async <TStoreName extends StoreKey<TConfig>>(
 			storeName: TStoreName,
@@ -124,7 +125,7 @@ export function createDB<TConfig extends DatabaseConfig>(
 		) => {
 			const db = await getDb();
 			const hlc = await getOrCreateHLC(db, storeName);
-			return baseUpdate(
+			await baseUpdate(
 				{
 					db,
 					storeName,
@@ -133,6 +134,7 @@ export function createDB<TConfig extends DatabaseConfig>(
 				},
 				data,
 			);
+			await putHLC(db, storeName, hlc.current());
 		},
 		getHashes: async <TStoreName extends StoreKey<TConfig>>(
 			storeName: TStoreName,
