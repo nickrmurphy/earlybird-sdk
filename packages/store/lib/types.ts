@@ -40,16 +40,16 @@ export type TypedDatabase<TConfig extends DatabaseConfig> = IDBDatabase & {
 // Utility types for common patterns
 export type StoreKey<TConfig extends DatabaseConfig> = keyof TConfig['stores'] & string;
 
-export type StoreSchema<TConfig extends DatabaseConfig, TStoreName extends StoreKey<TConfig>> = 
+export type StoreSchema<TConfig extends DatabaseConfig, TStoreName extends StoreKey<TConfig>> =
     TConfig['stores'][TStoreName];
 
-export type InferDocument<TConfig extends DatabaseConfig, TStoreName extends StoreKey<TConfig>> = 
+export type InferDocument<TConfig extends DatabaseConfig, TStoreName extends StoreKey<TConfig>> =
     DocumentFromSchema<TConfig['stores'][TStoreName]>;
 
-export type StoreInput<TConfig extends DatabaseConfig, TStoreName extends StoreKey<TConfig>> = 
+export type StoreInput<TConfig extends DatabaseConfig, TStoreName extends StoreKey<TConfig>> =
     StandardSchemaV1.InferInput<TConfig['stores'][TStoreName]>;
 
-export type StoreOutput<TConfig extends DatabaseConfig, TStoreName extends StoreKey<TConfig>> = 
+export type StoreOutput<TConfig extends DatabaseConfig, TStoreName extends StoreKey<TConfig>> =
     StandardSchemaV1.InferOutput<TConfig['stores'][TStoreName]>;
 
 /**
