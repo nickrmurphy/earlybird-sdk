@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
-import { addDocument, getDocument, openDatabase, putDocument } from './operations';
+import { addDocument, getDocument, openDatabase, putDocument, getAllDocuments } from './operations';
 import type { DatabaseConfig, Document, TypedDatabase, EntitySchema } from '../types';
 
 const userSchema = z.object({
@@ -363,5 +363,69 @@ describe('putDocument', () => {
 		};
 		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 		await expect(putDocument(db, 'nonexistent-store' as any, doc)).rejects.toThrow();
+	});
+});
+describe('getAllDocuments', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema
+			}
+		};
+		db = await openDatabase(config);
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('should return all documents in the store', async () => {
+		const docs: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alice' },
+				$hash: 'hash-1',
+				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+			},
+			{
+				$id: 'user-2',
+				$data: { id: 'user-2', name: 'Bob' },
+				$hash: 'hash-2',
+				$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' }
+			}
+		];
+		for (const doc of docs) {
+			await addDocument(db, 'users', doc);
+		}
+		const allDocs = await getAllDocuments(db, 'users');
+		expect(allDocs).toHaveLength(2);
+		expect(allDocs).toEqual(expect.arrayContaining(docs));
+	});
+
+	it('should return an empty array if the store is empty', async () => {
+		const allDocs = await getAllDocuments(db, 'users');
+		expect(allDocs).toEqual([]);
+	});
+
+	it('should reject if the store does not exist', async () => {
+		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
+		await expect(getAllDocuments(db, 'nonexistent-store' as any)).rejects.toThrow();
 	});
 });
