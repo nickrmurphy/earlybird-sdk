@@ -16,10 +16,13 @@ export function makeDocument<
 	hlc: Pick<HLC, 'tick'>,
 	data: StoreOutput<TConfig, TStoreName>,
 ): DocumentFromSchema<TConfig['stores'][TStoreName]> {
+	const timestamps = makeTimestamps(hlc, data);
+	const timestamp = hlc.tick();
 	return {
 		$id: data.id,
 		$data: data,
-		$timestamps: makeTimestamps(hlc, data),
+		$timestamp: timestamp,
+		$timestamps: timestamps,
 		$hash: hashObject(data),
 	} as DocumentFromSchema<TConfig['stores'][TStoreName]>;
 }
@@ -34,9 +37,11 @@ export function updateDocument<T extends Entity>(
 		...makeTimestamps(hlc, data),
 	};
 	const updatedData = { ...doc.$data, ...data };
+	const timestamp = hlc.tick();
 	return {
 		$id: doc.$id,
 		$data: updatedData,
+		$timestamp: timestamp,
 		$timestamps: updatedTimestamps,
 		$hash: hashObject(updatedData),
 	};

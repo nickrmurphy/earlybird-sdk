@@ -13,6 +13,7 @@ describe('makeDocument', () => {
 
 		expect(doc.$id).toBe('user-1');
 		expect(doc.$data).toEqual(entity);
+		expect(doc.$timestamp).toBe('timestamp-1');
 		expect(doc.$timestamps).toEqual({
 			id: 'timestamp-1',
 			name: 'timestamp-1',
@@ -22,14 +23,14 @@ describe('makeDocument', () => {
 		expect(doc.$hash.length).toBeGreaterThan(0);
 	});
 
-	it('calls tick for each property', () => {
+	it('calls tick for each property plus document timestamp', () => {
 		const mockTick = vi.fn().mockReturnValue('ts');
 		const mockHLC: Pick<HLC, 'tick'> = { tick: mockTick };
 
 		const entity = { id: 'test', prop1: 'value1', prop2: 'value2' };
 		makeDocument(mockHLC, entity);
 
-		expect(mockTick).toHaveBeenCalledTimes(3);
+		expect(mockTick).toHaveBeenCalledTimes(4); // 3 for properties + 1 for document timestamp
 	});
 });
 
@@ -42,6 +43,7 @@ describe('updateDocument', () => {
 		const originalDoc = {
 			$id: 'user-1',
 			$data: { id: 'user-1', name: 'John', age: 30 },
+			$timestamp: 'timestamp-1',
 			$timestamps: {
 				id: 'timestamp-1',
 				name: 'timestamp-1',
@@ -59,6 +61,7 @@ describe('updateDocument', () => {
 			name: 'Jane',
 			age: 31,
 		});
+		expect(updatedDoc.$timestamp).toBe('timestamp-2');
 		expect(updatedDoc.$timestamps).toEqual({
 			id: 'timestamp-1',
 			name: 'timestamp-2',
@@ -75,6 +78,7 @@ describe('updateDocument', () => {
 		const originalDoc = {
 			$id: 'user-1',
 			$data: { id: 'user-1', name: 'John', age: 30 },
+			$timestamp: 'timestamp-1',
 			$timestamps: {
 				id: 'timestamp-1',
 				name: 'timestamp-1',
@@ -87,6 +91,7 @@ describe('updateDocument', () => {
 		const updatedDoc = updateDocument(mockHLC, originalDoc, updates);
 
 		expect(updatedDoc.$data.age).toBe(30);
+		expect(updatedDoc.$timestamp).toBe('timestamp-2');
 		expect(updatedDoc.$timestamps.id).toBe('timestamp-1');
 		expect(updatedDoc.$timestamps.age).toBe('timestamp-1');
 		expect(updatedDoc.$timestamps.name).toBe('timestamp-2');

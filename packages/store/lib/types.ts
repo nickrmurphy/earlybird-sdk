@@ -18,6 +18,7 @@ export type Document<T extends Entity> = {
 	$id: string;
 	$data: T;
 	$hash: string;
+	$timestamp: string;
 	$timestamps: {
 		[K in keyof T]: string;
 	};
