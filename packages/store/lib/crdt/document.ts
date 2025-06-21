@@ -5,7 +5,7 @@ import type {
 	Entity,
 	HLC,
 	StoreKey,
-	StoreOutput,
+	StoreData,
 } from '../types';
 import { hashObject, makeTimestamps } from '../utils';
 
@@ -14,7 +14,7 @@ export function makeDocument<
 	TStoreName extends StoreKey<TConfig>,
 >(
 	hlc: Pick<HLC, 'tick'>,
-	data: StoreOutput<TConfig, TStoreName>,
+	data: StoreData<TConfig, TStoreName>,
 ): DocumentFromSchema<TConfig['stores'][TStoreName]> {
 	const timestamps = makeTimestamps(hlc, data);
 	const timestamp = hlc.tick();

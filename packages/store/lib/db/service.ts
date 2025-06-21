@@ -1,12 +1,11 @@
 import { makeDocument, updateDocument } from '../crdt/document';
 import type {
 	DatabaseConfig,
-	HLC,
-	InferDocument,
-	StoreInput,
 	StoreKey,
-	StoreSchema,
-	TypedDatabase,
+	WriteContext,
+	ReadContext,
+	StoreData,
+	StoreDocument,
 } from '../types';
 import { accumulateHashes, bucketHashes } from '../utils';
 import { standardValidate } from '../utils/validate';
@@ -23,49 +22,42 @@ export async function createOne<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
-	schema: StoreSchema<TConfig, TStoreName>,
-	hlc: Pick<HLC, 'tick'>,
-	data: StoreInput<TConfig, TStoreName>,
+	ctx: WriteContext<TConfig, TStoreName>,
+	data: StoreData<TConfig, TStoreName>,
 ): Promise<void> {
 	// Validate the data using the schema
-	const validated = standardValidate(schema, data);
+	const validated = standardValidate(ctx.schema, data);
 	// Create a document from the validated data
-	const document = makeDocument(hlc, validated);
+	const document = makeDocument(ctx.hlc, validated);
 	// Add the document to the store
-	await addDocument(db, storeName, document);
+	await addDocument(ctx.db, ctx.storeName, document);
 }
 
 export async function createMany<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
-	schema: StoreSchema<TConfig, TStoreName>,
-	hlc: Pick<HLC, 'tick'>,
-	dataArray: StoreInput<TConfig, TStoreName>[],
+	ctx: WriteContext<TConfig, TStoreName>,
+	dataArray: StoreData<TConfig, TStoreName>[],
 ): Promise<void> {
 	// Validate each item in the array and create documents
 	const documents = dataArray.map((data) => {
-		const validated = standardValidate(schema, data);
-		return makeDocument(hlc, validated);
+		const validated = standardValidate(ctx.schema, data);
+		return makeDocument(ctx.hlc, validated);
 	});
 	// Add all documents to the store
-	await Promise.all(documents.map((doc) => addDocument(db, storeName, doc)));
+	await Promise.all(documents.map((doc) => addDocument(ctx.db, ctx.storeName, doc)));
 }
 
 export async function getOne<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	ctx: ReadContext<TConfig, TStoreName>,
 	id: string,
-): Promise<StoreInput<TConfig, TStoreName> | null> {
+): Promise<StoreData<TConfig, TStoreName> | null> {
 	// Fetch the document by ID from the store
-	const document = await getDocument(db, storeName, id);
+	const document = await getDocument(ctx.db, ctx.storeName, id);
 	// If the document exists, return its data; otherwise, return null
 	return document ? document.$data : null;
 }
@@ -74,11 +66,10 @@ export async function getAll<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
-): Promise<StoreInput<TConfig, TStoreName>[]> {
+	ctx: ReadContext<TConfig, TStoreName>,
+): Promise<StoreData<TConfig, TStoreName>[]> {
 	// Fetch all documents from the store
-	const documents = await getAllDocuments(db, storeName);
+	const documents = await getAllDocuments(ctx.db, ctx.storeName);
 	// Return an array of document data
 	return documents.map((doc) => doc.$data);
 }
@@ -87,12 +78,11 @@ export async function getWhere<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
-	predicate: (data: StoreInput<TConfig, TStoreName>) => boolean,
-): Promise<StoreInput<TConfig, TStoreName>[]> {
+	ctx: ReadContext<TConfig, TStoreName>,
+	predicate: (data: StoreData<TConfig, TStoreName>) => boolean,
+): Promise<StoreData<TConfig, TStoreName>[]> {
 	// Fetch all documents from the store
-	const documents = await queryDocuments(db, storeName, predicate);
+	const documents = await queryDocuments(ctx.db, ctx.storeName, predicate);
 	// Return an array of document data that match the predicate
 	return documents.map((doc) => doc.$data);
 }
@@ -101,46 +91,40 @@ export async function updateOne<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
-	schema: StoreSchema<TConfig, TStoreName>,
-	hlc: Pick<HLC, 'tick'>,
+	ctx: WriteContext<TConfig, TStoreName>,
 	id: string,
-	data: Partial<StoreInput<TConfig, TStoreName>>,
+	data: Partial<StoreData<TConfig, TStoreName>>,
 ): Promise<void> {
-	const existingDocument = await getDocument(db, storeName, id);
+	const existingDocument = await getDocument(ctx.db, ctx.storeName, id);
 	if (!existingDocument) {
 		throw new Error(
-			`Document with ID ${id} does not exist in store ${storeName}`,
+			`Document with ID ${id} does not exist in store ${ctx.storeName}`,
 		);
 	}
 
 	const updatedData = { ...existingDocument.$data, ...data };
 	// Validate the merged data using the schema
-	standardValidate(schema, updatedData);
+	standardValidate(ctx.schema, updatedData);
 	// Create a updated document, passing only the changed data
-	const document = updateDocument(hlc, existingDocument, data);
+	const document = updateDocument(ctx.hlc, existingDocument, data);
 	// Update the document in the store
-	await putDocument(db, storeName, document);
+	await putDocument(ctx.db, ctx.storeName, document);
 }
 
 export async function updateMany<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
-	schema: StoreSchema<TConfig, TStoreName>,
-	hlc: Pick<HLC, 'tick'>,
-	updates: { id: string; data: Partial<StoreInput<TConfig, TStoreName>> }[],
+	ctx: WriteContext<TConfig, TStoreName>,
+	updates: { id: string; data: Partial<StoreData<TConfig, TStoreName>> }[],
 ): Promise<void> {
 	// Fetch all existing documents first
 	const existingDocuments = await Promise.all(
 		updates.map(async (update) => {
-			const existingDocument = await getDocument(db, storeName, update.id);
+			const existingDocument = await getDocument(ctx.db, ctx.storeName, update.id);
 			if (!existingDocument) {
 				throw new Error(
-					`Document with ID ${update.id} does not exist in store ${storeName}`,
+					`Document with ID ${update.id} does not exist in store ${ctx.storeName}`,
 				);
 			}
 			return { existingDocument, update };
@@ -152,25 +136,24 @@ export async function updateMany<
 		({ existingDocument, update }) => {
 			const updatedData = { ...existingDocument.$data, ...update.data };
 			// Validate the merged data using the schema
-			standardValidate(schema, updatedData);
+			standardValidate(ctx.schema, updatedData);
 			// Create updated document, passing only the changed data
-			return updateDocument(hlc, existingDocument, update.data);
+			return updateDocument(ctx.hlc, existingDocument, update.data);
 		},
 	);
 
 	// Update all documents in the store
-	await putDocuments(db, storeName, updatedDocuments);
+	await putDocuments(ctx.db, ctx.storeName, updatedDocuments);
 }
 
 export async function getHashes<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	ctx: ReadContext<TConfig, TStoreName>,
 	bucketSize = 100,
 ): Promise<{ root: string; buckets: Record<number, string> }> {
-	const documents = (await getAllDocuments(db, storeName)).sort((a, b) =>
+	const documents = (await getAllDocuments(ctx.db, ctx.storeName)).sort((a, b) =>
 		a.$timestamp.localeCompare(b.$timestamp),
 	);
 	const allHashes = documents.map((doc) => doc.$hash);
@@ -183,11 +166,10 @@ export async function getDocumentsInBuckets<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	ctx: ReadContext<TConfig, TStoreName>,
 	buckets: number[],
 	bucketSize = 100,
-): Promise<InferDocument<TConfig, TStoreName>[]> {
+): Promise<StoreDocument<TConfig, TStoreName>[]> {
 	const getIndices = new Set<number>(
 		buckets.flatMap((bucket) => {
 			const start = bucket * bucketSize;
@@ -196,7 +178,7 @@ export async function getDocumentsInBuckets<
 		}),
 	);
 
-	const documents = await getAllDocuments(db, storeName);
+	const documents = await getAllDocuments(ctx.db, ctx.storeName);
 	documents.sort((a, b) => a.$timestamp.localeCompare(b.$timestamp));
 	return documents.filter((_, index) => getIndices.has(index));
 }
@@ -205,32 +187,26 @@ export async function create<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
-	schema: StoreSchema<TConfig, TStoreName>,
-	hlc: Pick<HLC, 'tick'>,
-	data: StoreInput<TConfig, TStoreName> | StoreInput<TConfig, TStoreName>[],
+	ctx: WriteContext<TConfig, TStoreName>,
+	data: StoreData<TConfig, TStoreName> | StoreData<TConfig, TStoreName>[],
 ): Promise<void> {
 	if (Array.isArray(data)) {
-		return createMany(db, storeName, schema, hlc, data);
+		return createMany(ctx, data);
 	}
-	return createOne(db, storeName, schema, hlc, data);
+	return createOne(ctx, data);
 }
 
 export async function update<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
-	schema: StoreSchema<TConfig, TStoreName>,
-	hlc: Pick<HLC, 'tick'>,
+	ctx: WriteContext<TConfig, TStoreName>,
 	data:
-		| { id: string; data: Partial<StoreInput<TConfig, TStoreName>> }
-		| { id: string; data: Partial<StoreInput<TConfig, TStoreName>> }[],
+		| { id: string; data: Partial<StoreData<TConfig, TStoreName>> }
+		| { id: string; data: Partial<StoreData<TConfig, TStoreName>> }[],
 ): Promise<void> {
 	if (Array.isArray(data)) {
-		return updateMany(db, storeName, schema, hlc, data);
+		return updateMany(ctx, data);
 	}
-	return updateOne(db, storeName, schema, hlc, data.id, data.data);
+	return updateOne(ctx, data.id, data.data);
 }

@@ -61,7 +61,10 @@ describe('createOne', () => {
 			name: 'John Doe',
 		};
 
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		const storedDoc = await getDocument(db, 'users', 'user-1');
 		expect(storedDoc).not.toBeNull();
@@ -109,7 +112,10 @@ describe('createMany', () => {
 			{ id: 'user-3', name: 'Bob Johnson' },
 		];
 
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		for (const user of userData) {
 			const storedDoc = await getDocument(db, 'users', user.id);
@@ -119,7 +125,7 @@ describe('createMany', () => {
 	});
 
 	it('handles empty array gracefully', async () => {
-		await createMany(db, 'users', userSchema, hlc, []);
+		await createMany({ db, storeName: 'users', schema: userSchema, hlc }, []);
 
 		const allUsers = await new Promise<unknown[]>((resolve) => {
 			const transaction = db.transaction(['users'], 'readonly');
@@ -140,10 +146,7 @@ describe('createMany', () => {
 
 		await expect(
 			createMany(
-				db,
-				'users',
-				userSchema,
-				hlc,
+				{ db, storeName: 'users', schema: userSchema, hlc },
 				userData as { id: string; name?: string }[],
 			),
 		).rejects.toThrow();
@@ -161,7 +164,10 @@ describe('createMany', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
 
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		const doc1 = await getDocument(db, 'users', 'user-1');
 		const doc2 = await getDocument(db, 'users', 'user-2');
@@ -175,7 +181,10 @@ describe('createMany', () => {
 	it('handles single item array', async () => {
 		const userData = [{ id: 'user-1', name: 'John Doe' }];
 
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		const storedDoc = await getDocument(db, 'users', 'user-1');
 		expect(storedDoc).not.toBeNull();
@@ -218,14 +227,17 @@ describe('getOne', () => {
 
 	it('retrieves a document by ID', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getOne(db, 'users', 'user-1');
+		const result = await getOne({ db, storeName: 'users' }, 'user-1');
 		expect(result).toEqual(userData);
 	});
 
 	it('returns null for non-existent document', async () => {
-		const result = await getOne(db, 'users', 'non-existent');
+		const result = await getOne({ db, storeName: 'users' }, 'non-existent');
 		expect(result).toBeNull();
 	});
 });
@@ -269,15 +281,18 @@ describe('getAll', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 			{ id: 'user-3', name: 'Bob Johnson' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getAll(db, 'users');
+		const result = await getAll({ db, storeName: 'users' });
 		expect(result).toHaveLength(3);
 		expect(result).toEqual(expect.arrayContaining(userData));
 	});
 
 	it('returns empty array for empty store', async () => {
-		const result = await getAll(db, 'users');
+		const result = await getAll({ db, storeName: 'users' });
 		expect(result).toEqual([]);
 	});
 });
@@ -321,9 +336,12 @@ describe('getWhere', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 			{ id: 'user-3', name: 'John Johnson' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getWhere(db, 'users', (user) =>
+		const result = await getWhere({ db, storeName: 'users' }, (user) =>
 			user.name.startsWith('John'),
 		);
 		expect(result).toHaveLength(2);
@@ -340,16 +358,19 @@ describe('getWhere', () => {
 			{ id: 'user-1', name: 'John Doe' },
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getWhere(db, 'users', (user) =>
+		const result = await getWhere({ db, storeName: 'users' }, (user) =>
 			user.name.startsWith('Bob'),
 		);
 		expect(result).toEqual([]);
 	});
 
 	it('returns empty array for empty store', async () => {
-		const result = await getWhere(db, 'users', (user) =>
+		const result = await getWhere({ db, storeName: 'users' }, (user) =>
 			user.name.startsWith('John'),
 		);
 		expect(result).toEqual([]);
@@ -391,34 +412,52 @@ describe('updateOne', () => {
 
 	it('updates a document with partial data', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		await updateOne(db, 'users', userSchema, hlc, 'user-1', {
-			name: 'Jane Doe',
-		});
+		await updateOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			'user-1',
+			{
+				name: 'Jane Doe',
+			},
+		);
 
-		const updatedUser = await getOne(db, 'users', 'user-1');
+		const updatedUser = await getOne({ db, storeName: 'users' }, 'user-1');
 		expect(updatedUser).toEqual({ id: 'user-1', name: 'Jane Doe' });
 	});
 
 	it('preserves unchanged fields when updating', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		await updateOne(db, 'users', userSchema, hlc, 'user-1', {
-			name: 'Jane Doe',
-		});
+		await updateOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			'user-1',
+			{
+				name: 'Jane Doe',
+			},
+		);
 
-		const updatedUser = await getOne(db, 'users', 'user-1');
+		const updatedUser = await getOne({ db, storeName: 'users' }, 'user-1');
 		expect(updatedUser?.id).toBe('user-1');
 		expect(updatedUser?.name).toBe('Jane Doe');
 	});
 
 	it('throws error for non-existent document', async () => {
 		await expect(
-			updateOne(db, 'users', userSchema, hlc, 'non-existent', {
-				name: 'Jane Doe',
-			}),
+			updateOne(
+				{ db, storeName: 'users', schema: userSchema, hlc },
+				'non-existent',
+				{
+					name: 'Jane Doe',
+				},
+			),
 		).rejects.toThrow(
 			'Document with ID non-existent does not exist in store users',
 		);
@@ -426,10 +465,13 @@ describe('updateOne', () => {
 
 	it('validates merged data', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		await expect(
-			updateOne(db, 'users', userSchema, hlc, 'user-1', {
+			updateOne({ db, storeName: 'users', schema: userSchema, hlc }, 'user-1', {
 				name: 123 as unknown as string,
 			}),
 		).rejects.toThrow();
@@ -437,7 +479,10 @@ describe('updateOne', () => {
 
 	it('updates document timestamps', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		const originalDoc = await getDocument(db, 'users', 'user-1');
 		const originalTimestamp = originalDoc?.$timestamps;
@@ -445,9 +490,13 @@ describe('updateOne', () => {
 		// Wait a bit to ensure timestamp difference
 		await new Promise((resolve) => setTimeout(resolve, 1));
 
-		await updateOne(db, 'users', userSchema, hlc, 'user-1', {
-			name: 'Jane Doe',
-		});
+		await updateOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			'user-1',
+			{
+				name: 'Jane Doe',
+			},
+		);
 
 		const updatedDoc = await getDocument(db, 'users', 'user-1');
 		expect(updatedDoc?.$timestamps).toBeDefined();
@@ -494,17 +543,23 @@ describe('updateMany', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 			{ id: 'user-3', name: 'Bob Johnson' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		const updates = [
 			{ id: 'user-1', data: { name: 'John Updated' } },
 			{ id: 'user-3', data: { name: 'Bob Updated' } },
 		];
-		await updateMany(db, 'users', userSchema, hlc, updates);
+		await updateMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			updates,
+		);
 
-		const user1 = await getOne(db, 'users', 'user-1');
-		const user2 = await getOne(db, 'users', 'user-2');
-		const user3 = await getOne(db, 'users', 'user-3');
+		const user1 = await getOne({ db, storeName: 'users' }, 'user-1');
+		const user2 = await getOne({ db, storeName: 'users' }, 'user-2');
+		const user3 = await getOne({ db, storeName: 'users' }, 'user-3');
 
 		expect(user1).toEqual({ id: 'user-1', name: 'John Updated' });
 		expect(user2).toEqual({ id: 'user-2', name: 'Jane Smith' }); // unchanged
@@ -516,7 +571,10 @@ describe('updateMany', () => {
 			{ id: 'user-1', name: 'John Doe' },
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		const updates = [
 			{ id: 'user-1', data: { name: 'John Updated' } },
@@ -525,32 +583,35 @@ describe('updateMany', () => {
 		];
 
 		await expect(
-			updateMany(db, 'users', userSchema, hlc, updates),
+			updateMany({ db, storeName: 'users', schema: userSchema, hlc }, updates),
 		).rejects.toThrow(
 			'Document with ID non-existent does not exist in store users',
 		);
 
 		// Verify no documents were updated
-		const user1 = await getOne(db, 'users', 'user-1');
-		const user2 = await getOne(db, 'users', 'user-2');
+		const user1 = await getOne({ db, storeName: 'users' }, 'user-1');
+		const user2 = await getOne({ db, storeName: 'users' }, 'user-2');
 		expect(user1).toEqual({ id: 'user-1', name: 'John Doe' });
 		expect(user2).toEqual({ id: 'user-2', name: 'Jane Smith' });
 	});
 
 	it('handles empty updates array', async () => {
-		await updateMany(db, 'users', userSchema, hlc, []);
+		await updateMany({ db, storeName: 'users', schema: userSchema, hlc }, []);
 		// Should not throw and should complete successfully
 	});
 
 	it('handles single document update', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		await updateMany(db, 'users', userSchema, hlc, [
+		await updateMany({ db, storeName: 'users', schema: userSchema, hlc }, [
 			{ id: 'user-1', data: { name: 'John Updated' } },
 		]);
 
-		const updatedUser = await getOne(db, 'users', 'user-1');
+		const updatedUser = await getOne({ db, storeName: 'users' }, 'user-1');
 		expect(updatedUser).toEqual({ id: 'user-1', name: 'John Updated' });
 	});
 
@@ -559,7 +620,10 @@ describe('updateMany', () => {
 			{ id: 'user-1', name: 'John Doe' },
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		const updates = [
 			{ id: 'user-1', data: { name: 'John Updated' } },
@@ -567,12 +631,12 @@ describe('updateMany', () => {
 		];
 
 		await expect(
-			updateMany(db, 'users', userSchema, hlc, updates),
+			updateMany({ db, storeName: 'users', schema: userSchema, hlc }, updates),
 		).rejects.toThrow();
 
 		// Verify no documents were updated
-		const user1 = await getOne(db, 'users', 'user-1');
-		const user2 = await getOne(db, 'users', 'user-2');
+		const user1 = await getOne({ db, storeName: 'users' }, 'user-1');
+		const user2 = await getOne({ db, storeName: 'users' }, 'user-2');
 		expect(user1).toEqual({ id: 'user-1', name: 'John Doe' });
 		expect(user2).toEqual({ id: 'user-2', name: 'Jane Smith' });
 	});
@@ -582,7 +646,10 @@ describe('updateMany', () => {
 			{ id: 'user-1', name: 'John Doe' },
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		const originalDoc1 = await getDocument(db, 'users', 'user-1');
 		const originalDoc2 = await getDocument(db, 'users', 'user-2');
@@ -594,7 +661,10 @@ describe('updateMany', () => {
 			{ id: 'user-1', data: { name: 'John Updated' } },
 			{ id: 'user-2', data: { name: 'Jane Updated' } },
 		];
-		await updateMany(db, 'users', userSchema, hlc, updates);
+		await updateMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			updates,
+		);
 
 		const updatedDoc1 = await getDocument(db, 'users', 'user-1');
 		const updatedDoc2 = await getDocument(db, 'users', 'user-2');
@@ -640,7 +710,7 @@ describe('getHashes', () => {
 	});
 
 	it('returns empty root hash and no buckets for empty store', async () => {
-		const result = await getHashes(db, 'users');
+		const result = await getHashes({ db, storeName: 'users' });
 		expect(result.root).toBeDefined();
 		expect(typeof result.root).toBe('string');
 		expect(result.buckets).toEqual({});
@@ -648,9 +718,12 @@ describe('getHashes', () => {
 
 	it('generates hashes for single document', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getHashes(db, 'users');
+		const result = await getHashes({ db, storeName: 'users' });
 		expect(result.root).toBeDefined();
 		expect(typeof result.root).toBe('string');
 		expect(result.root.length).toBeGreaterThan(0);
@@ -659,12 +732,18 @@ describe('getHashes', () => {
 
 	it('generates different hashes for different documents', async () => {
 		const userData1 = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData1);
-		const result1 = await getHashes(db, 'users');
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData1,
+		);
+		const result1 = await getHashes({ db, storeName: 'users' });
 
 		const userData2 = { id: 'user-2', name: 'Jane Smith' };
-		await createOne(db, 'users', userSchema, hlc, userData2);
-		const result2 = await getHashes(db, 'users');
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData2,
+		);
+		const result2 = await getHashes({ db, storeName: 'users' });
 
 		expect(result1.root).not.toEqual(result2.root);
 	});
@@ -675,9 +754,12 @@ describe('getHashes', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 			{ id: 'user-3', name: 'Bob Johnson' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getHashes(db, 'users', 2);
+		const result = await getHashes({ db, storeName: 'users' }, 2);
 		expect(Object.keys(result.buckets)).toHaveLength(2); // 3 documents with bucket size 2 = 2 buckets
 		expect(result.buckets[0]).toBeDefined();
 		expect(result.buckets[1]).toBeDefined();
@@ -686,15 +768,21 @@ describe('getHashes', () => {
 	it('orders documents by timestamp before hashing', async () => {
 		// Create documents with some delay to ensure different timestamps
 		const userData1 = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData1);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData1,
+		);
 
 		// Small delay to ensure different timestamps
 		await new Promise((resolve) => setTimeout(resolve, 1));
 
 		const userData2 = { id: 'user-2', name: 'Jane Smith' };
-		await createOne(db, 'users', userSchema, hlc, userData2);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData2,
+		);
 
-		const result = await getHashes(db, 'users');
+		const result = await getHashes({ db, storeName: 'users' });
 		expect(result.root).toBeDefined();
 		expect(typeof result.root).toBe('string');
 		expect(result.root.length).toBeGreaterThan(0);
@@ -705,9 +793,12 @@ describe('getHashes', () => {
 			{ id: 'user-1', name: 'John Doe' },
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getHashes(db, 'users', 1000); // Bucket size larger than document count
+		const result = await getHashes({ db, storeName: 'users' }, 1000); // Bucket size larger than document count
 		expect(Object.keys(result.buckets)).toHaveLength(1);
 		expect(result.buckets[0]).toBeDefined();
 	});
@@ -747,7 +838,7 @@ describe('getDocumentsInBuckets', () => {
 	});
 
 	it('returns empty array for empty store', async () => {
-		const result = await getDocumentsInBuckets(db, 'users', [0]);
+		const result = await getDocumentsInBuckets({ db, storeName: 'users' }, [0]);
 		expect(result).toEqual([]);
 	});
 
@@ -757,9 +848,16 @@ describe('getDocumentsInBuckets', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 			{ id: 'user-3', name: 'Bob Johnson' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getDocumentsInBuckets(db, 'users', [0], 2);
+		const result = await getDocumentsInBuckets(
+			{ db, storeName: 'users' },
+			[0],
+			2,
+		);
 		expect(result).toHaveLength(2); // First bucket with bucket size 2
 		expect(result[0].$data).toBeDefined();
 		expect(result[1].$data).toBeDefined();
@@ -772,9 +870,16 @@ describe('getDocumentsInBuckets', () => {
 			{ id: 'user-3', name: 'Bob Johnson' },
 			{ id: 'user-4', name: 'Alice Brown' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getDocumentsInBuckets(db, 'users', [0, 1], 2);
+		const result = await getDocumentsInBuckets(
+			{ db, storeName: 'users' },
+			[0, 1],
+			2,
+		);
 		expect(result).toHaveLength(4); // Both buckets with bucket size 2
 	});
 
@@ -783,23 +888,40 @@ describe('getDocumentsInBuckets', () => {
 			{ id: 'user-1', name: 'John Doe' },
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getDocumentsInBuckets(db, 'users', [5], 2); // Bucket 5 doesn't exist
+		const result = await getDocumentsInBuckets(
+			{ db, storeName: 'users' },
+			[5],
+			2,
+		); // Bucket 5 doesn't exist
 		expect(result).toEqual([]);
 	});
 
 	it('returns documents sorted by timestamp', async () => {
 		const userData1 = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData1);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData1,
+		);
 
 		// Small delay to ensure different timestamps
 		await new Promise((resolve) => setTimeout(resolve, 1));
 
 		const userData2 = { id: 'user-2', name: 'Jane Smith' };
-		await createOne(db, 'users', userSchema, hlc, userData2);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData2,
+		);
 
-		const result = await getDocumentsInBuckets(db, 'users', [0], 10);
+		const result = await getDocumentsInBuckets(
+			{ db, storeName: 'users' },
+			[0],
+			10,
+		);
 		expect(result).toHaveLength(2);
 
 		// Verify they are sorted by timestamp (first document should have earlier timestamp)
@@ -812,17 +934,27 @@ describe('getDocumentsInBuckets', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 			{ id: 'user-3', name: 'Bob Johnson' },
 		];
-		await createMany(db, 'users', userSchema, hlc, userData);
+		await createMany(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getDocumentsInBuckets(db, 'users', [0], 1);
+		const result = await getDocumentsInBuckets(
+			{ db, storeName: 'users' },
+			[0],
+			1,
+		);
 		expect(result).toHaveLength(1); // Only first document with bucket size 1
 	});
 
 	it('returns correct document structure', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
-		const result = await getDocumentsInBuckets(db, 'users', [0]);
+		const result = await getDocumentsInBuckets({ db, storeName: 'users' }, [0]);
 		expect(result).toHaveLength(1);
 		expect(result[0]).toHaveProperty('$id');
 		expect(result[0]).toHaveProperty('$data');
@@ -868,7 +1000,10 @@ describe('$timestamp functionality', () => {
 
 	it('sets $timestamp on document creation', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		const doc = await getDocument(db, 'users', 'user-1');
 		expect(doc?.$timestamp).toBeDefined();
@@ -878,7 +1013,10 @@ describe('$timestamp functionality', () => {
 
 	it('updates $timestamp on document modification', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		const originalDoc = await getDocument(db, 'users', 'user-1');
 		const originalTimestamp = originalDoc?.$timestamp;
@@ -886,9 +1024,13 @@ describe('$timestamp functionality', () => {
 		// Small delay to ensure different timestamps
 		await new Promise((resolve) => setTimeout(resolve, 1));
 
-		await updateOne(db, 'users', userSchema, hlc, 'user-1', {
-			name: 'Jane Doe',
-		});
+		await updateOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			'user-1',
+			{
+				name: 'Jane Doe',
+			},
+		);
 
 		const updatedDoc = await getDocument(db, 'users', 'user-1');
 		expect(updatedDoc?.$timestamp).toBeDefined();
@@ -897,7 +1039,10 @@ describe('$timestamp functionality', () => {
 
 	it('$timestamp reflects latest mutation time', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await createOne(db, 'users', userSchema, hlc, userData);
+		await createOne(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			userData,
+		);
 
 		const doc = await getDocument(db, 'users', 'user-1');
 		expect(doc?.$timestamp).toBeDefined();
@@ -942,10 +1087,10 @@ describe('create ergonomic function', () => {
 
 	it('handles single object', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		
-		await create(db, 'users', userSchema, hlc, userData);
-		
-		const result = await getOne(db, 'users', 'user-1');
+
+		await create({ db, storeName: 'users', schema: userSchema, hlc }, userData);
+
+		const result = await getOne({ db, storeName: 'users' }, 'user-1');
 		expect(result).toEqual(userData);
 	});
 
@@ -954,10 +1099,10 @@ describe('create ergonomic function', () => {
 			{ id: 'user-1', name: 'John Doe' },
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
-		
-		await create(db, 'users', userSchema, hlc, userData);
-		
-		const result = await getAll(db, 'users');
+
+		await create({ db, storeName: 'users', schema: userSchema, hlc }, userData);
+
+		const result = await getAll({ db, storeName: 'users' });
 		expect(result).toHaveLength(2);
 		expect(result).toEqual(expect.arrayContaining(userData));
 	});
@@ -998,14 +1143,17 @@ describe('update ergonomic function', () => {
 
 	it('handles single update', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await create(db, 'users', userSchema, hlc, userData);
-		
-		await update(db, 'users', userSchema, hlc, {
-			id: 'user-1',
-			data: { name: 'Jane Doe' },
-		});
-		
-		const result = await getOne(db, 'users', 'user-1');
+		await create({ db, storeName: 'users', schema: userSchema, hlc }, userData);
+
+		await update(
+			{ db, storeName: 'users', schema: userSchema, hlc },
+			{
+				id: 'user-1',
+				data: { name: 'Jane Doe' },
+			},
+		);
+
+		const result = await getOne({ db, storeName: 'users' }, 'user-1');
 		expect(result).toEqual({ id: 'user-1', name: 'Jane Doe' });
 	});
 
@@ -1014,17 +1162,19 @@ describe('update ergonomic function', () => {
 			{ id: 'user-1', name: 'John Doe' },
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
-		await create(db, 'users', userSchema, hlc, userData);
-		
-		await update(db, 'users', userSchema, hlc, [
+		await create({ db, storeName: 'users', schema: userSchema, hlc }, userData);
+
+		await update({ db, storeName: 'users', schema: userSchema, hlc }, [
 			{ id: 'user-1', data: { name: 'John Updated' } },
 			{ id: 'user-2', data: { name: 'Jane Updated' } },
 		]);
-		
-		const result = await getAll(db, 'users');
-		expect(result).toEqual(expect.arrayContaining([
-			{ id: 'user-1', name: 'John Updated' },
-			{ id: 'user-2', name: 'Jane Updated' },
-		]));
+
+		const result = await getAll({ db, storeName: 'users' });
+		expect(result).toEqual(
+			expect.arrayContaining([
+				{ id: 'user-1', name: 'John Updated' },
+				{ id: 'user-2', name: 'Jane Updated' },
+			]),
+		);
 	});
 });

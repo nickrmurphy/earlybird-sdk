@@ -39,35 +39,46 @@ export type TypedDatabase<TConfig extends DatabaseConfig> = IDBDatabase & {
 	_config?: TConfig; // Phantom type for compile-time type checking only
 };
 
-// Utility types for common patterns
-export type StoreKey<TConfig extends DatabaseConfig> = keyof TConfig['stores'] &
-	string;
+// Core utility types
+export type StoreKey<TConfig extends DatabaseConfig> = keyof TConfig['stores'] & string;
 
 export type StoreSchema<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 > = TConfig['stores'][TStoreName];
 
-export type InferDocument<
-	TConfig extends DatabaseConfig,
-	TStoreName extends StoreKey<TConfig>,
-> = DocumentFromSchema<TConfig['stores'][TStoreName]>;
-
-export type StoreInput<
+// Data types (input/output from schemas)
+export type StoreData<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 > = StandardSchemaV1.InferInput<TConfig['stores'][TStoreName]>;
 
-export type StoreOutput<
+// Document types (wrapped with CRDT metadata)
+export type StoreDocument<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
-> = StandardSchemaV1.InferOutput<TConfig['stores'][TStoreName]>;
+> = DocumentFromSchema<TConfig['stores'][TStoreName]>;
+
+// Context types for different use cases
+export type WriteContext<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+> = {
+	db: TypedDatabase<TConfig>;
+	storeName: TStoreName;
+	schema: StoreSchema<TConfig, TStoreName>;
+	hlc: Pick<HLC, 'tick'>;
+};
+
+export type ReadContext<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+> = {
+	db: TypedDatabase<TConfig>;
+	storeName: TStoreName;
+};
 
 /**
  * Extracts the entity type from an EntitySchema.
  */
-export type EntityFromSchema<S extends EntitySchema> = S extends EntitySchema<
-	infer T
->
-	? T
-	: never;
+export type EntityFromSchema<S extends EntitySchema> = S extends EntitySchema<infer T> ? T : never;
