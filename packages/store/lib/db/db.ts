@@ -1,47 +1,166 @@
-import type { DatabaseConfig, TypedDatabase, StoreKey, WriteContext, StoreData, StoreDocument } from '../types';
-import { openDatabase } from './operations';
+import { createClock, generateHLC } from '../crdt';
+import type {
+	DatabaseConfig,
+	TypedDatabase,
+	StoreKey,
+	StoreSchema,
+	StoreData,
+} from '../types';
 
-export interface IDB<TConfig extends DatabaseConfig> {
-	get<TStoreName extends StoreKey<TConfig>>(
-		storeName: TStoreName,
-		id: string,
-	): Promise<StoreData<TConfig, TStoreName> | null>;
+import type { IDB } from './db.types';
+import { openDatabase, getHLC, putHLC } from './operations';
+import {
+	create as baseCreate,
+	update as baseUpdate,
+	getAll,
+	getOne,
+	getWhere,
+	getHashes as baseGetHashes,
+	getDocumentsInBuckets,
+} from './service';
 
-	all<TStoreName extends StoreKey<TConfig>>(
-		storeName: TStoreName,
-	): Promise<StoreData<TConfig, TStoreName>[]>;
-
-	where<TStoreName extends StoreKey<TConfig>>(
-		storeName: TStoreName,
-		predicate: (data: StoreData<TConfig, TStoreName>) => boolean,
-	): Promise<StoreData<TConfig, TStoreName>[]>;
-
-	create<TStoreName extends StoreKey<TConfig>>(
-		ctx: WriteContext<TConfig, TStoreName>,
-		data: StoreData<TConfig, TStoreName> | StoreData<TConfig, TStoreName>[],
-	): Promise<void>;
-
-	update<TStoreName extends StoreKey<TConfig>>(
-		ctx: WriteContext<TConfig, TStoreName>,
-		data:
-			| { id: string; data: Partial<StoreData<TConfig, TStoreName>> }
-			| { id: string; data: Partial<StoreData<TConfig, TStoreName>> }[],
-	): Promise<void>;
-
-	getHashes<TStoreName extends StoreKey<TConfig>>(
-		storeName: TStoreName,
-		bucketSize?: number,
-	): Promise<{ root: string; buckets: Record<number, string> }>;
-
-	getBuckets<TStoreName extends StoreKey<TConfig>>(
-		storeName: TStoreName,
-		buckets: number[],
-		bucketSize?: number,
-	): Promise<StoreDocument<TConfig, TStoreName>[]>;
-}
-
-export async function createDB<TConfig extends DatabaseConfig>(
+export function createDB<TConfig extends DatabaseConfig>(
 	config: TConfig,
-): Promise<TypedDatabase<TConfig>> {
-	return await openDatabase(config);
+): IDB<TConfig> {
+	const dbPromise = openDatabase(config);
+	let db: TypedDatabase<TConfig> | null = null;
+	const hlcCache = new Map<StoreKey<TConfig>, ReturnType<typeof createClock>>();
+
+	const getDb = async (): Promise<TypedDatabase<TConfig>> => {
+		if (db) {
+			return db;
+		}
+		db = await dbPromise;
+		if (!db) {
+			throw new Error('Database not initialized');
+		}
+		return db;
+	};
+
+	const getSchema = <TStoreName extends StoreKey<TConfig>>(
+		storeName: TStoreName,
+	): StoreSchema<TConfig, TStoreName> => {
+		const schema = config.stores[storeName];
+		if (!schema) {
+			throw new Error(`Schema not found for store: ${storeName}`);
+		}
+		return schema as StoreSchema<TConfig, TStoreName>;
+	};
+
+	const getOrCreateHLC = async <TStoreName extends StoreKey<TConfig>>(
+		db: TypedDatabase<TConfig>,
+		storeName: TStoreName,
+	) => {
+		// Check if we already have an HLC for this store
+		let hlc = hlcCache.get(storeName);
+
+		if (!hlc) {
+			// Load from database or generate new one
+			const timestamp = (await getHLC(db, storeName)) || generateHLC();
+			hlc = createClock(timestamp);
+			hlcCache.set(storeName, hlc);
+		}
+
+		return hlc;
+	};
+
+	return {
+		get: async <TStoreName extends StoreKey<TConfig>>(
+			storeName: TStoreName,
+			id: string,
+		) => {
+			const db = await getDb();
+			return getOne(
+				{
+					db,
+					storeName,
+				},
+				id,
+			);
+		},
+		all: async <TStoreName extends StoreKey<TConfig>>(
+			storeName: TStoreName,
+		) => {
+			const db = await getDb();
+			return getAll({
+				db,
+				storeName,
+			});
+		},
+		where: async <TStoreName extends StoreKey<TConfig>>(
+			storeName: TStoreName,
+			predicate: (data: StoreData<TConfig, TStoreName>) => boolean,
+		) => {
+			const db = await getDb();
+			return getWhere(
+				{
+					db,
+					storeName,
+				},
+				predicate,
+			);
+		},
+		create: async <TStoreName extends StoreKey<TConfig>>(
+			storeName: TStoreName,
+			data: StoreData<TConfig, TStoreName> | StoreData<TConfig, TStoreName>[],
+		) => {
+			const db = await getDb();
+			const hlc = await getOrCreateHLC(db, storeName);
+			return baseCreate(
+				{
+					db,
+					storeName,
+					hlc,
+					schema: getSchema(storeName),
+				},
+				data,
+			);
+		},
+		update: async <TStoreName extends StoreKey<TConfig>>(
+			storeName: TStoreName,
+			data:
+				| { id: string; data: Partial<StoreData<TConfig, TStoreName>> }
+				| { id: string; data: Partial<StoreData<TConfig, TStoreName>> }[],
+		) => {
+			const db = await getDb();
+			const hlc = await getOrCreateHLC(db, storeName);
+			return baseUpdate(
+				{
+					db,
+					storeName,
+					hlc,
+					schema: getSchema(storeName),
+				},
+				data,
+			);
+		},
+		getHashes: async <TStoreName extends StoreKey<TConfig>>(
+			storeName: TStoreName,
+			bucketSize?: number,
+		) => {
+			const db = await getDb();
+			return baseGetHashes(
+				{
+					db,
+					storeName,
+				},
+				bucketSize,
+			);
+		},
+		getBuckets: async <TStoreName extends StoreKey<TConfig>>(
+			storeName: TStoreName,
+			buckets: number[],
+			bucketSize?: number,
+		) => {
+			const db = await getDb();
+			return getDocumentsInBuckets(
+				{
+					db,
+					storeName,
+				},
+				buckets,
+				bucketSize,
+			);
+		},
+	};
 }
