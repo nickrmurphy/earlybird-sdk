@@ -3,14 +3,14 @@ import { z } from 'zod';
 import { createClock } from '../crdt/hlc';
 import type { EntitySchema, TypedDatabase } from '../types';
 import { getDocument, openDatabase } from './operations';
-import { create, createMany } from './service';
+import { createOne, createMany } from './service';
 
 const userSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 }) as EntitySchema<{ id: string; name: string }>;
 
-describe('create', () => {
+describe('createOne', () => {
 	let db: TypedDatabase<{
 		name: string;
 		version: 1;
@@ -49,7 +49,7 @@ describe('create', () => {
 			name: 'John Doe',
 		};
 
-		await create(db, 'users', userSchema, hlc, userData);
+		await createOne(db, 'users', userSchema, hlc, userData);
 
 		const storedDoc = await getDocument(db, 'users', 'user-1');
 		expect(storedDoc).not.toBeNull();

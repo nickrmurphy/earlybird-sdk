@@ -3,7 +3,7 @@ import { makeDocument } from '../crdt/document';
 import { addDocument } from './operations';
 import { standardValidate } from '../utils/validate';
 
-export async function create<
+export async function createOne<
     TConfig extends DatabaseConfig,
     TStoreName extends StoreKey<TConfig>
 >(
