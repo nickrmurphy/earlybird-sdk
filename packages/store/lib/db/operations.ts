@@ -1,7 +1,9 @@
 import type { DatabaseConfig, DocumentFromSchema, StandardSchemaV1, TypedDatabase } from '../types';
 
-// biome-ignore lint/suspicious/noExplicitAny: Generic constraint requires any for StandardSchemaV1
-const setUpStores = (db: IDBDatabase, stores: Record<string, StandardSchemaV1<any, any>>): void => {
+export function setUpStores<TConfig extends DatabaseConfig>(
+    db: IDBDatabase,
+    stores: TConfig['stores']
+): void {
     // Create object stores for each schema
     for (const [storeName] of Object.entries(stores)) {
         if (!db.objectStoreNames.contains(storeName)) {
@@ -29,12 +31,8 @@ export async function openDatabase<TConfig extends DatabaseConfig>(config: TConf
         };
 
         request.onupgradeneeded = (event) => {
-            if (!(event.target instanceof IDBOpenDBRequest)) {
-                reject(new Error('Invalid event target'));
-                return;
-            }
-
-            const db = event.target.result;
+            // Typecast is safe: IndexedDB spec guarantees this type
+            const db = (event.target as IDBOpenDBRequest).result;
 
             setUpStores(db, config.stores);
         };
