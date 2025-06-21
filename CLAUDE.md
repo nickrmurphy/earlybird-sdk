@@ -2,82 +2,92 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Commands
+## Development Commands
 
-### Development
-- `pnpm test` - Run tests across all packages
-- `pnpm test:coverage` - Generate coverage reports for all packages
-- `pnpm bench` - Run performance benchmarks across all packages
-- `pnpm build` - Build all packages
-- `pnpm lint` - Check code with Biome
-- `pnpm lint:fix` - Auto-fix linting issues
+**Package Manager**: Use `pnpm` (not npm/yarn)
 
-### Package-specific (from package directories)
-- `pnpm test` - Run Vitest tests for specific package
-- `pnpm test:coverage` - Generate coverage report for specific package
-- `pnpm bench` - Run Vitest benchmarks for specific package
-- `pnpm dev` - Start Vite dev server (demo client only)
+### Common Commands
+```bash
+# Install dependencies
+pnpm install
 
-### Testing individual files
-- `pnpm test <file-pattern>` - Run specific test files
-- `pnpm bench <file-pattern>` - Run specific benchmark files
+# Build all packages
+pnpm build
+
+# Run tests across all packages
+pnpm test
+
+# Run tests with coverage
+pnpm test:coverage
+
+# Run benchmarks
+pnpm bench
+
+# Lint with Biome
+pnpm lint
+
+# Auto-fix linting issues
+pnpm lint:fix
+```
+
+### Package-Specific Commands
+```bash
+# Work with specific packages
+pnpm --filter @byearlybird/store test
+pnpm --filter @byearlybird/store build
+
+# Run demo applications
+cd apps/demo-react && pnpm dev
+cd apps/demo-solid && pnpm dev
+```
+
+### Testing
+- **Framework**: Vitest
+- **Core store package**: Uses browser-based testing with Playwright
+- **Location**: `*.test.ts` files alongside source code
+- **Coverage**: 80% lines/functions, 70% branches required
 
 ## Architecture
 
-This is a monorepo SDK (`@byearlybird/sdk`) for cross-platform data storage with the following key architectural patterns:
+**Early Bird SDK** is a local-first data storage solution using CRDTs (Conflict-free Replicated Data Types).
 
-### Storage Layer (`/packages/store/storage/`)
-- **Adapter Pattern**: Abstract `StorageAdapter` interface with multiple implementations
-  - Memory adapter (in-memory storage)
-  - IndexedDB adapter (browser database)
-- **Consistent API**: All adapters implement `loadData()`, `saveData()`, `loadHLC()`, `saveHLC()`, and listener methods
-- **Platform Abstraction**: Enables the same store logic to work across Node.js and browser
+### Monorepo Structure
+- `packages/store/` - Core CRDT document store (zero runtime dependencies)
+- `packages/store-react/` - React hooks and components
+- `packages/demo-shared/` - Shared schemas and configuration
+- `packages/demo-styles/` - Reusable CSS components
+- `apps/demo-react/` - React demo application
+- `apps/demo-solid/` - SolidJS demo application
 
-### Store Layer (`/packages/store/store/`)
-- **Factory Pattern**: `createStore(collection, config)` creates type-safe store instances
-- **Schema Validation**: Uses Zod schemas with `StandardSchemaV1` interface for runtime type checking
-- **CRUD Operations**: `get()`, `all()`, `create()`, `update()`, `merge()` methods with consistent error handling
+### Key Technologies
+- **Build**: Vite for all packages and apps
+- **Linting**: Biome (not ESLint/Prettier)
+- **TypeScript**: Strict mode, ESNext modules
+- **Styling**: TailwindCSS v4
+- **Schema Validation**: Supports Zod and Valibot
 
-### CRDT Implementation (`/packages/store/lib/crdt/`)
-- **Hybrid Logical Clock (HLC)**: Provides total ordering for conflict resolution across distributed instances
-- **Last-Writer-Wins**: Field-level conflict resolution using HLC timestamps
-- **Document Hashing**: Each document has a content hash for efficient change detection
-- **Merge Logic**: Pure functions for merging conflicting CRDT documents
+### CRDT Implementation
+Three-layer architecture:
+1. **Storage Adapters**: IndexedDB, Memory (`/packages/store/lib/storage/`)
+2. **CRDT Store**: Document store with Hybrid Logical Clocks (`/packages/store/lib/crdt/`)
+3. **Sync Client**: High-level operations (`/packages/store/lib/client/`)
 
-### Synchronization System
-- **Hash-Based Sync**: Root hash and bucket hashes enable efficient change detection
-- **Bucket System**: Documents are organized into buckets (100 docs per bucket) for selective synchronization
-- **Document Exchange**: `getDocumentsByBucket()` returns `Record<string, CRDTDoc<T>>` for merging
-- **Integration Tests**: Comprehensive test suite covers conflict resolution, empty store sync, and incremental synchronization
-
-### React Bindings (`/packages/store-react/`)
-- **Store Provider**: Context-based store management for React applications
-- **Custom Hooks**: `useStore()`, `useDocument()`, `useQuery()` for reactive data access
-- **Type Safety**: Full TypeScript integration with schema validation
-
-### Key Design Principles
-- **Type Safety**: Full TypeScript with strict configuration and runtime validation
-- **Performance**: Includes comprehensive benchmark suite tracking 10k+ operation performance
-- **Modularity**: Clean separation between storage adapters, CRDT logic, and business logic
-- **Cross-platform**: Single codebase works across Node.js and browser
-- **Conflict-Free**: CRDT architecture ensures data consistency across distributed instances
-
-## Testing Strategy
-
-### Dual Environment Testing
-- **Browser Tests**: Vitest with Playwright for browser-specific functionality (IndexedDB)
-- **Node.js Tests**: Vitest for server-side functionality (Memory adapter)
-- **Integration Tests**: End-to-end CRDT synchronization scenarios with multiple store instances
-- **Benchmarks**: Performance tracking for 10k+ operations across all adapters
-
-### Test Patterns
-- **Adapter Testing**: Consistent test suite across all storage adapters
-- **CRDT Conflict Resolution**: Tests for concurrent modifications and merge scenarios
-- **Hash Synchronization**: Tests for bucket-based document exchange and hash comparison
-- **Empty Store Sync**: Tests for new client onboarding scenarios
+### Important Files
+- `packages/store/lib/crdt/document.ts` - Core CRDT document operations
+- `packages/store/lib/crdt/hlc.ts` - Hybrid Logical Clock implementation
+- `packages/store/lib/utils/timestamps.ts` - Timestamp utilities for conflict resolution
 
 ## Code Style
-- **Formatter**: Biome with tab indentation and single quotes
-- **Import Organization**: Auto-organized imports enabled
-- **TypeScript**: Strict configuration with ESNext target
-- **Workspace Dependencies**: Use `workspace:*` for internal package references
+
+Enforced by Biome:
+- Tab indentation
+- Single quotes
+- Recommended rules enabled
+- Organizes imports automatically
+
+## Development Workflow
+
+1. **Local Development**: Use development exports that point directly to TypeScript files
+2. **Building**: ES modules only, with TypeScript declaration files
+3. **Testing**: Browser-based testing for core store, regular Vitest for other packages
+4. **Dependencies**: Zero runtime dependencies for core store package
