@@ -1,8 +1,8 @@
 import type {
 	DatabaseConfig,
-	StoreKey,
 	StoreData,
 	StoreDocument,
+	StoreKey,
 } from '../types';
 
 export interface IDB<TConfig extends DatabaseConfig> {

@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { z } from 'zod';
-import type {
-	DatabaseConfig,
-	Document,
-	EntitySchema,
-	TypedDatabase,
-} from '../types';
+import {
+	createTestDatabaseConfig,
+	testPostSchema,
+	testUserSchema,
+} from '../testing/factories';
+import type { DatabaseConfig, Document, TypedDatabase } from '../types';
 import {
 	addDocument,
 	addDocuments,
@@ -18,16 +17,6 @@ import {
 	putHLC,
 	queryDocuments,
 } from './operations';
-
-const userSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-}) as EntitySchema<{ id: string; name: string }>;
-
-const postSchema = z.object({
-	id: z.string(),
-	title: z.string(),
-}) as EntitySchema<{ id: string; title: string }>;
 
 describe('openDatabase', () => {
 	let dbName: string;
@@ -50,7 +39,7 @@ describe('openDatabase', () => {
 			name: dbName,
 			version: 1,
 			stores: {
-				users: userSchema,
+				users: testUserSchema,
 			},
 		};
 
@@ -67,8 +56,8 @@ describe('openDatabase', () => {
 			name: dbName,
 			version: 1,
 			stores: {
-				users: userSchema,
-				posts: postSchema,
+				users: testUserSchema,
+				posts: testPostSchema,
 			},
 		};
 
@@ -86,7 +75,7 @@ describe('openDatabase', () => {
 			name: dbName,
 			version: 1,
 			stores: {
-				users: userSchema,
+				users: testUserSchema,
 			},
 		};
 
@@ -108,7 +97,7 @@ describe('openDatabase', () => {
 			name: dbName,
 			version: 1,
 			stores: {
-				users: userSchema,
+				users: testUserSchema,
 			},
 		};
 
@@ -126,7 +115,7 @@ describe('addDocument', () => {
 		name: string;
 		version: 1;
 		stores: {
-			users: typeof userSchema;
+			users: typeof testUserSchema;
 		};
 	}>;
 	let dbName: string;
@@ -137,7 +126,7 @@ describe('addDocument', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema,
+				users: testUserSchema,
 			},
 		};
 		db = await openDatabase(config);
@@ -262,7 +251,7 @@ describe('addDocument', () => {
 			name: string;
 			version: 1;
 			stores: {
-				users: typeof userSchema;
+				users: typeof testUserSchema;
 			};
 		}>;
 		let dbName: string;
@@ -273,7 +262,7 @@ describe('addDocument', () => {
 				name: dbName,
 				version: 1 as const,
 				stores: {
-					users: userSchema,
+					users: testUserSchema,
 				},
 			};
 			db = await openDatabase(config);
@@ -326,7 +315,7 @@ describe('putDocument', () => {
 		name: string;
 		version: 1;
 		stores: {
-			users: typeof userSchema;
+			users: typeof testUserSchema;
 		};
 	}>;
 	let dbName: string;
@@ -337,7 +326,7 @@ describe('putDocument', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema,
+				users: testUserSchema,
 			},
 		};
 		db = await openDatabase(config);
@@ -407,7 +396,7 @@ describe('getAllDocuments', () => {
 		name: string;
 		version: 1;
 		stores: {
-			users: typeof userSchema;
+			users: typeof testUserSchema;
 		};
 	}>;
 	let dbName: string;
@@ -418,7 +407,7 @@ describe('getAllDocuments', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema,
+				users: testUserSchema,
 			},
 		};
 		db = await openDatabase(config);
@@ -481,7 +470,7 @@ describe('addDocuments', () => {
 		name: string;
 		version: 1;
 		stores: {
-			users: typeof userSchema;
+			users: typeof testUserSchema;
 		};
 	}>;
 	let dbName: string;
@@ -492,7 +481,7 @@ describe('addDocuments', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema,
+				users: testUserSchema,
 			},
 		};
 		db = await openDatabase(config);
@@ -568,7 +557,7 @@ describe('putDocuments', () => {
 		name: string;
 		version: 1;
 		stores: {
-			users: typeof userSchema;
+			users: typeof testUserSchema;
 		};
 	}>;
 	let dbName: string;
@@ -579,7 +568,7 @@ describe('putDocuments', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema,
+				users: testUserSchema,
 			},
 		};
 		db = await openDatabase(config);
@@ -668,7 +657,7 @@ describe('queryDocuments', () => {
 		name: string;
 		version: 1;
 		stores: {
-			users: typeof userSchema;
+			users: typeof testUserSchema;
 		};
 	}>;
 	let dbName: string;
@@ -679,7 +668,7 @@ describe('queryDocuments', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema,
+				users: testUserSchema,
 			},
 		};
 		db = await openDatabase(config);
@@ -771,7 +760,7 @@ describe('HLC operations', () => {
 		name: string;
 		version: 1;
 		stores: {
-			users: typeof userSchema;
+			users: typeof testUserSchema;
 		};
 	}>;
 	let dbName: string;
@@ -782,7 +771,7 @@ describe('HLC operations', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema,
+				users: testUserSchema,
 			},
 		};
 		db = await openDatabase(config);
@@ -800,9 +789,9 @@ describe('HLC operations', () => {
 	describe('putHLC and getHLC', () => {
 		it('should store and retrieve HLC timestamp for a store', async () => {
 			const timestamp = '2024-01-01T00:00:00.000Z';
-			
+
 			await expect(putHLC(db, 'users', timestamp)).resolves.toBeUndefined();
-			
+
 			const retrieved = await getHLC(db, 'users');
 			expect(retrieved).toBe(timestamp);
 		});
@@ -815,10 +804,10 @@ describe('HLC operations', () => {
 		it('should update existing HLC timestamp', async () => {
 			const initialTimestamp = '2024-01-01T00:00:00.000Z';
 			const updatedTimestamp = '2024-01-01T00:01:00.000Z';
-			
+
 			await putHLC(db, 'users', initialTimestamp);
 			await putHLC(db, 'users', updatedTimestamp);
-			
+
 			const result = await getHLC(db, 'users');
 			expect(result).toBe(updatedTimestamp);
 		});
@@ -830,22 +819,22 @@ describe('HLC operations', () => {
 				name: dbName2,
 				version: 1 as const,
 				stores: {
-					users: userSchema,
-					posts: postSchema,
+					users: testUserSchema,
+					posts: testPostSchema,
 				},
 			};
 			const db2 = await openDatabase(config2);
-			
+
 			try {
 				const timestamp1 = '2024-01-01T00:00:00.000Z';
 				const timestamp2 = '2024-01-01T00:01:00.000Z';
-				
+
 				await putHLC(db2, 'users', timestamp1);
 				await putHLC(db2, 'posts', timestamp2);
-				
+
 				const result1 = await getHLC(db2, 'users');
 				const result2 = await getHLC(db2, 'posts');
-				
+
 				expect(result1).toBe(timestamp1);
 				expect(result2).toBe(timestamp2);
 			} finally {

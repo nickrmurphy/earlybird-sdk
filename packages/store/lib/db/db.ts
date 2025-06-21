@@ -1,22 +1,22 @@
 import { createClock, generateHLC } from '../crdt';
 import type {
 	DatabaseConfig,
-	TypedDatabase,
+	StoreData,
 	StoreKey,
 	StoreSchema,
-	StoreData,
+	TypedDatabase,
 } from '../types';
 
 import type { IDB } from './db.types';
-import { openDatabase, getHLC, putHLC } from './operations';
+import { getHLC, openDatabase, putHLC } from './operations';
 import {
 	create as baseCreate,
+	getHashes as baseGetHashes,
 	update as baseUpdate,
 	getAll,
+	getDocumentsInBuckets,
 	getOne,
 	getWhere,
-	getHashes as baseGetHashes,
-	getDocumentsInBuckets,
 } from './service';
 
 export function createDB<TConfig extends DatabaseConfig>(

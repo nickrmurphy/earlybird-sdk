@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { z } from 'zod';
 import { createClock } from '../crdt/hlc';
-import type { EntitySchema, TypedDatabase } from '../types';
+import {
+	createTestDatabaseConfig,
+	createTestUser,
+	createTestUsers,
+	testUserSchema,
+} from '../testing/factories';
+import type { TypedDatabase } from '../types';
 import { getDocument, openDatabase } from './operations';
 import {
 	create,
@@ -17,31 +22,14 @@ import {
 	updateOne,
 } from './service';
 
-const userSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-}) as EntitySchema<{ id: string; name: string }>;
-
 describe('createOne', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -56,42 +44,27 @@ describe('createOne', () => {
 	});
 
 	it('creates a document and stores it in the database', async () => {
-		const userData = {
-			id: 'user-1',
-			name: 'John Doe',
-		};
+		const userData = createTestUser();
 
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
-		const storedDoc = await getDocument(db, 'users', 'user-1');
+		const storedDoc = await getDocument(db, 'users', userData.id);
 		expect(storedDoc).not.toBeNull();
 		expect(storedDoc?.$data).toEqual(userData);
 	});
 });
 
 describe('createMany', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -106,14 +79,10 @@ describe('createMany', () => {
 	});
 
 	it('creates multiple documents and stores them in the database', async () => {
-		const userData = [
-			{ id: 'user-1', name: 'John Doe' },
-			{ id: 'user-2', name: 'Jane Smith' },
-			{ id: 'user-3', name: 'Bob Johnson' },
-		];
+		const userData = createTestUsers(3);
 
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -125,7 +94,10 @@ describe('createMany', () => {
 	});
 
 	it('handles empty array gracefully', async () => {
-		await createMany({ db, storeName: 'users', schema: userSchema, hlc }, []);
+		await createMany(
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
+			[],
+		);
 
 		const allUsers = await new Promise<unknown[]>((resolve) => {
 			const transaction = db.transaction(['users'], 'readonly');
@@ -146,7 +118,7 @@ describe('createMany', () => {
 
 		await expect(
 			createMany(
-				{ db, storeName: 'users', schema: userSchema, hlc },
+				{ db, storeName: 'users', schema: testUserSchema, hlc },
 				userData as { id: string; name?: string }[],
 			),
 		).rejects.toThrow();
@@ -165,7 +137,7 @@ describe('createMany', () => {
 		];
 
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -182,7 +154,7 @@ describe('createMany', () => {
 		const userData = [{ id: 'user-1', name: 'John Doe' }];
 
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -193,25 +165,13 @@ describe('createMany', () => {
 });
 
 describe('getOne', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -226,13 +186,13 @@ describe('getOne', () => {
 	});
 
 	it('retrieves a document by ID', async () => {
-		const userData = { id: 'user-1', name: 'John Doe' };
+		const userData = createTestUser();
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
-		const result = await getOne({ db, storeName: 'users' }, 'user-1');
+		const result = await getOne({ db, storeName: 'users' }, userData.id);
 		expect(result).toEqual(userData);
 	});
 
@@ -243,25 +203,13 @@ describe('getOne', () => {
 });
 
 describe('getAll', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -276,13 +224,9 @@ describe('getAll', () => {
 	});
 
 	it('retrieves all documents from store', async () => {
-		const userData = [
-			{ id: 'user-1', name: 'John Doe' },
-			{ id: 'user-2', name: 'Jane Smith' },
-			{ id: 'user-3', name: 'Bob Johnson' },
-		];
+		const userData = createTestUsers(3);
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -298,25 +242,13 @@ describe('getAll', () => {
 });
 
 describe('getWhere', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -337,7 +269,7 @@ describe('getWhere', () => {
 			{ id: 'user-3', name: 'John Johnson' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -359,7 +291,7 @@ describe('getWhere', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -378,25 +310,13 @@ describe('getWhere', () => {
 });
 
 describe('updateOne', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -413,12 +333,12 @@ describe('updateOne', () => {
 	it('updates a document with partial data', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
 		await updateOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			'user-1',
 			{
 				name: 'Jane Doe',
@@ -432,12 +352,12 @@ describe('updateOne', () => {
 	it('preserves unchanged fields when updating', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
 		await updateOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			'user-1',
 			{
 				name: 'Jane Doe',
@@ -452,7 +372,7 @@ describe('updateOne', () => {
 	it('throws error for non-existent document', async () => {
 		await expect(
 			updateOne(
-				{ db, storeName: 'users', schema: userSchema, hlc },
+				{ db, storeName: 'users', schema: testUserSchema, hlc },
 				'non-existent',
 				{
 					name: 'Jane Doe',
@@ -466,21 +386,25 @@ describe('updateOne', () => {
 	it('validates merged data', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
 		await expect(
-			updateOne({ db, storeName: 'users', schema: userSchema, hlc }, 'user-1', {
-				name: 123 as unknown as string,
-			}),
+			updateOne(
+				{ db, storeName: 'users', schema: testUserSchema, hlc },
+				'user-1',
+				{
+					name: 123 as unknown as string,
+				},
+			),
 		).rejects.toThrow();
 	});
 
 	it('updates document timestamps', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -491,7 +415,7 @@ describe('updateOne', () => {
 		await new Promise((resolve) => setTimeout(resolve, 1));
 
 		await updateOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			'user-1',
 			{
 				name: 'Jane Doe',
@@ -505,25 +429,13 @@ describe('updateOne', () => {
 });
 
 describe('updateMany', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -544,7 +456,7 @@ describe('updateMany', () => {
 			{ id: 'user-3', name: 'Bob Johnson' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -553,7 +465,7 @@ describe('updateMany', () => {
 			{ id: 'user-3', data: { name: 'Bob Updated' } },
 		];
 		await updateMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			updates,
 		);
 
@@ -572,7 +484,7 @@ describe('updateMany', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -583,7 +495,10 @@ describe('updateMany', () => {
 		];
 
 		await expect(
-			updateMany({ db, storeName: 'users', schema: userSchema, hlc }, updates),
+			updateMany(
+				{ db, storeName: 'users', schema: testUserSchema, hlc },
+				updates,
+			),
 		).rejects.toThrow(
 			'Document with ID non-existent does not exist in store users',
 		);
@@ -596,18 +511,21 @@ describe('updateMany', () => {
 	});
 
 	it('handles empty updates array', async () => {
-		await updateMany({ db, storeName: 'users', schema: userSchema, hlc }, []);
+		await updateMany(
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
+			[],
+		);
 		// Should not throw and should complete successfully
 	});
 
 	it('handles single document update', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
-		await updateMany({ db, storeName: 'users', schema: userSchema, hlc }, [
+		await updateMany({ db, storeName: 'users', schema: testUserSchema, hlc }, [
 			{ id: 'user-1', data: { name: 'John Updated' } },
 		]);
 
@@ -621,7 +539,7 @@ describe('updateMany', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -631,7 +549,10 @@ describe('updateMany', () => {
 		];
 
 		await expect(
-			updateMany({ db, storeName: 'users', schema: userSchema, hlc }, updates),
+			updateMany(
+				{ db, storeName: 'users', schema: testUserSchema, hlc },
+				updates,
+			),
 		).rejects.toThrow();
 
 		// Verify no documents were updated
@@ -647,7 +568,7 @@ describe('updateMany', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -662,7 +583,7 @@ describe('updateMany', () => {
 			{ id: 'user-2', data: { name: 'Jane Updated' } },
 		];
 		await updateMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			updates,
 		);
 
@@ -677,25 +598,13 @@ describe('updateMany', () => {
 });
 
 describe('getHashes', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -719,7 +628,7 @@ describe('getHashes', () => {
 	it('generates hashes for single document', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -733,14 +642,14 @@ describe('getHashes', () => {
 	it('generates different hashes for different documents', async () => {
 		const userData1 = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData1,
 		);
 		const result1 = await getHashes({ db, storeName: 'users' });
 
 		const userData2 = { id: 'user-2', name: 'Jane Smith' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData2,
 		);
 		const result2 = await getHashes({ db, storeName: 'users' });
@@ -755,7 +664,7 @@ describe('getHashes', () => {
 			{ id: 'user-3', name: 'Bob Johnson' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -769,7 +678,7 @@ describe('getHashes', () => {
 		// Create documents with some delay to ensure different timestamps
 		const userData1 = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData1,
 		);
 
@@ -778,7 +687,7 @@ describe('getHashes', () => {
 
 		const userData2 = { id: 'user-2', name: 'Jane Smith' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData2,
 		);
 
@@ -794,7 +703,7 @@ describe('getHashes', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -805,25 +714,13 @@ describe('getHashes', () => {
 });
 
 describe('getDocumentsInBuckets', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -849,7 +746,7 @@ describe('getDocumentsInBuckets', () => {
 			{ id: 'user-3', name: 'Bob Johnson' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -871,7 +768,7 @@ describe('getDocumentsInBuckets', () => {
 			{ id: 'user-4', name: 'Alice Brown' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -889,7 +786,7 @@ describe('getDocumentsInBuckets', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -904,7 +801,7 @@ describe('getDocumentsInBuckets', () => {
 	it('returns documents sorted by timestamp', async () => {
 		const userData1 = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData1,
 		);
 
@@ -913,7 +810,7 @@ describe('getDocumentsInBuckets', () => {
 
 		const userData2 = { id: 'user-2', name: 'Jane Smith' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData2,
 		);
 
@@ -935,7 +832,7 @@ describe('getDocumentsInBuckets', () => {
 			{ id: 'user-3', name: 'Bob Johnson' },
 		];
 		await createMany(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -950,7 +847,7 @@ describe('getDocumentsInBuckets', () => {
 	it('returns correct document structure', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -966,25 +863,13 @@ describe('getDocumentsInBuckets', () => {
 });
 
 describe('$timestamp functionality', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -1001,7 +886,7 @@ describe('$timestamp functionality', () => {
 	it('sets $timestamp on document creation', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -1014,7 +899,7 @@ describe('$timestamp functionality', () => {
 	it('updates $timestamp on document modification', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -1025,7 +910,7 @@ describe('$timestamp functionality', () => {
 		await new Promise((resolve) => setTimeout(resolve, 1));
 
 		await updateOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			'user-1',
 			{
 				name: 'Jane Doe',
@@ -1040,7 +925,7 @@ describe('$timestamp functionality', () => {
 	it('$timestamp reflects latest mutation time', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
 		await createOne(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			userData,
 		);
 
@@ -1053,25 +938,13 @@ describe('$timestamp functionality', () => {
 });
 
 describe('create ergonomic function', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -1088,7 +961,10 @@ describe('create ergonomic function', () => {
 	it('handles single object', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
 
-		await create({ db, storeName: 'users', schema: userSchema, hlc }, userData);
+		await create(
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
+			userData,
+		);
 
 		const result = await getOne({ db, storeName: 'users' }, 'user-1');
 		expect(result).toEqual(userData);
@@ -1100,7 +976,10 @@ describe('create ergonomic function', () => {
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
 
-		await create({ db, storeName: 'users', schema: userSchema, hlc }, userData);
+		await create(
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
+			userData,
+		);
 
 		const result = await getAll({ db, storeName: 'users' });
 		expect(result).toHaveLength(2);
@@ -1109,25 +988,13 @@ describe('create ergonomic function', () => {
 });
 
 describe('update ergonomic function', () => {
-	let db: TypedDatabase<{
-		name: string;
-		version: 1;
-		stores: {
-			users: typeof userSchema;
-		};
-	}>;
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
 	let hlc: ReturnType<typeof createClock>;
 
 	beforeEach(async () => {
-		dbName = `test-db-${Date.now()}-${Math.random()}`;
-		const config = {
-			name: dbName,
-			version: 1 as const,
-			stores: {
-				users: userSchema,
-			},
-		};
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
 		db = await openDatabase(config);
 		hlc = createClock();
 	});
@@ -1143,10 +1010,13 @@ describe('update ergonomic function', () => {
 
 	it('handles single update', async () => {
 		const userData = { id: 'user-1', name: 'John Doe' };
-		await create({ db, storeName: 'users', schema: userSchema, hlc }, userData);
+		await create(
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
+			userData,
+		);
 
 		await update(
-			{ db, storeName: 'users', schema: userSchema, hlc },
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
 			{
 				id: 'user-1',
 				data: { name: 'Jane Doe' },
@@ -1162,9 +1032,12 @@ describe('update ergonomic function', () => {
 			{ id: 'user-1', name: 'John Doe' },
 			{ id: 'user-2', name: 'Jane Smith' },
 		];
-		await create({ db, storeName: 'users', schema: userSchema, hlc }, userData);
+		await create(
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
+			userData,
+		);
 
-		await update({ db, storeName: 'users', schema: userSchema, hlc }, [
+		await update({ db, storeName: 'users', schema: testUserSchema, hlc }, [
 			{ id: 'user-1', data: { name: 'John Updated' } },
 			{ id: 'user-2', data: { name: 'Jane Updated' } },
 		]);

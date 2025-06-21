@@ -1,22 +1,27 @@
 import type { HLC } from '../types';
-
-const generateNonce = () => {
-	return Math.random().toString(36).substring(2, 8);
-};
+import type { NonceProvider, TimeProvider } from '../utils/providers';
+import { defaultNonceProvider, defaultTimeProvider } from '../utils/providers';
 
 const padLogical = (logical: number): string => {
 	return logical.toString().padStart(6, '0');
 };
 
-export const generateHLC = (): string => {
-	const timestamp = new Date().toISOString();
+export const generateHLC = (
+	timeProvider: TimeProvider = defaultTimeProvider,
+	nonceProvider: NonceProvider = defaultNonceProvider,
+): string => {
+	const timestamp = timeProvider.now().toISOString();
 	const logical = padLogical(0);
-	const nonce = generateNonce();
+	const nonce = nonceProvider.generate();
 	return `${timestamp}-${logical}-${nonce}`;
 };
 
-export const advanceHLC = (hlc: string): string => {
-	const now = new Date();
+export const advanceHLC = (
+	hlc: string,
+	timeProvider: TimeProvider = defaultTimeProvider,
+	nonceProvider: NonceProvider = defaultNonceProvider,
+): string => {
+	const now = timeProvider.now();
 	const nowISO = now.toISOString();
 	const nowTime = now.getTime();
 
@@ -45,15 +50,19 @@ export const advanceHLC = (hlc: string): string => {
 	}
 
 	const logical = padLogical(newLogical);
-	const nonce = generateNonce();
+	const nonce = nonceProvider.generate();
 	return `${newTimestamp}-${logical}-${nonce}`;
 };
 
-export const createClock = (seedHLC = generateHLC()): HLC => {
-	let hlc = seedHLC;
+export const createClock = (
+	seedHLC?: string,
+	timeProvider: TimeProvider = defaultTimeProvider,
+	nonceProvider: NonceProvider = defaultNonceProvider,
+): HLC => {
+	let hlc = seedHLC ?? generateHLC(timeProvider, nonceProvider);
 
 	const tick = (): string => {
-		const newHLC = advanceHLC(hlc);
+		const newHLC = advanceHLC(hlc, timeProvider, nonceProvider);
 		hlc = newHLC;
 		return hlc;
 	};

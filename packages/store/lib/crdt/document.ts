@@ -4,8 +4,8 @@ import type {
 	DocumentFromSchema,
 	Entity,
 	HLC,
-	StoreKey,
 	StoreData,
+	StoreKey,
 } from '../types';
 import { hashObject, makeTimestamps } from '../utils';
 

@@ -1,11 +1,11 @@
 import { makeDocument, updateDocument } from '../crdt/document';
 import type {
 	DatabaseConfig,
-	StoreKey,
-	WriteContext,
 	ReadContext,
 	StoreData,
 	StoreDocument,
+	StoreKey,
+	WriteContext,
 } from '../types';
 import { accumulateHashes, bucketHashes } from '../utils';
 import { standardValidate } from '../utils/validate';
@@ -46,7 +46,9 @@ export async function createMany<
 		return makeDocument(ctx.hlc, validated);
 	});
 	// Add all documents to the store
-	await Promise.all(documents.map((doc) => addDocument(ctx.db, ctx.storeName, doc)));
+	await Promise.all(
+		documents.map((doc) => addDocument(ctx.db, ctx.storeName, doc)),
+	);
 }
 
 export async function getOne<
@@ -121,7 +123,11 @@ export async function updateMany<
 	// Fetch all existing documents first
 	const existingDocuments = await Promise.all(
 		updates.map(async (update) => {
-			const existingDocument = await getDocument(ctx.db, ctx.storeName, update.id);
+			const existingDocument = await getDocument(
+				ctx.db,
+				ctx.storeName,
+				update.id,
+			);
 			if (!existingDocument) {
 				throw new Error(
 					`Document with ID ${update.id} does not exist in store ${ctx.storeName}`,
@@ -153,8 +159,8 @@ export async function getHashes<
 	ctx: ReadContext<TConfig, TStoreName>,
 	bucketSize = 100,
 ): Promise<{ root: string; buckets: Record<number, string> }> {
-	const documents = (await getAllDocuments(ctx.db, ctx.storeName)).sort((a, b) =>
-		a.$timestamp.localeCompare(b.$timestamp),
+	const documents = (await getAllDocuments(ctx.db, ctx.storeName)).sort(
+		(a, b) => a.$timestamp.localeCompare(b.$timestamp),
 	);
 	const allHashes = documents.map((doc) => doc.$hash);
 	const root = accumulateHashes(allHashes);

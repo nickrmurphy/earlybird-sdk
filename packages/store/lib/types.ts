@@ -40,7 +40,8 @@ export type TypedDatabase<TConfig extends DatabaseConfig> = IDBDatabase & {
 };
 
 // Core utility types
-export type StoreKey<TConfig extends DatabaseConfig> = keyof TConfig['stores'] & string;
+export type StoreKey<TConfig extends DatabaseConfig> = keyof TConfig['stores'] &
+	string;
 
 export type StoreSchema<
 	TConfig extends DatabaseConfig,
@@ -81,4 +82,8 @@ export type ReadContext<
 /**
  * Extracts the entity type from an EntitySchema.
  */
-export type EntityFromSchema<S extends EntitySchema> = S extends EntitySchema<infer T> ? T : never;
+export type EntityFromSchema<S extends EntitySchema> = S extends EntitySchema<
+	infer T
+>
+	? T
+	: never;
