@@ -198,8 +198,8 @@ describe('addDocument', () => {
 			$timestamps: { id: '2024-01-01T00:02:00Z', name: '2024-01-01T00:02:00Z' },
 		};
 
-		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 		await expect(
+			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 			addDocument(db, 'nonexistent-store' as any, testDocument),
 		).rejects.toThrow();
 	});
@@ -305,8 +305,8 @@ describe('addDocument', () => {
 		});
 
 		it('should reject if the store does not exist', async () => {
-			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 			await expect(
+				// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 				getDocument(db, 'nonexistent-store' as any, 'user-1'),
 			).rejects.toThrow();
 		});
@@ -384,8 +384,8 @@ describe('putDocument', () => {
 			$hash: 'put-hash-3',
 			$timestamps: { id: '2024-01-01T00:12:00Z', name: '2024-01-01T00:12:00Z' },
 		};
-		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 		await expect(
+			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 			putDocument(db, 'nonexistent-store' as any, doc),
 		).rejects.toThrow();
 	});
@@ -456,8 +456,8 @@ describe('getAllDocuments', () => {
 	});
 
 	it('should reject if the store does not exist', async () => {
-		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 		await expect(
+			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 			getAllDocuments(db, 'nonexistent-store' as any),
 		).rejects.toThrow();
 	});
@@ -635,8 +635,9 @@ describe('putDocuments', () => {
 				},
 			},
 		];
-		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
+
 		await expect(
+			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 			putDocuments(db, 'nonexistent-store' as any, docs),
 		).rejects.toThrow();
 	});
@@ -733,8 +734,8 @@ describe('queryDocuments', () => {
 
 	it('should reject if the store does not exist', async () => {
 		const predicate = () => true;
-		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 		await expect(
+			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 			queryDocuments(db, 'nonexistent-store' as any, predicate),
 		).rejects.toThrow();
 	});
