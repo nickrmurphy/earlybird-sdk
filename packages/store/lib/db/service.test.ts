@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createClock } from '../crdt/hlc';
 import type { EntitySchema, TypedDatabase } from '../types';
 import { getDocument, openDatabase } from './operations';
-import { createOne, createMany } from './service';
+import { createOne, createMany, getOne, getAll, getWhere } from './service';
 
 const userSchema = z.object({
 	id: z.string(),
@@ -168,5 +168,170 @@ describe('createMany', () => {
 		const storedDoc = await getDocument(db, 'users', 'user-1');
 		expect(storedDoc).not.toBeNull();
 		expect(storedDoc?.$data).toEqual(userData[0]);
+	});
+});
+
+describe('getOne', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+	let hlc: ReturnType<typeof createClock>;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema,
+			},
+		};
+		db = await openDatabase(config);
+		hlc = createClock();
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('retrieves a document by ID', async () => {
+		const userData = { id: 'user-1', name: 'John Doe' };
+		await createOne(db, 'users', userSchema, hlc, userData);
+
+		const result = await getOne(db, 'users', 'user-1');
+		expect(result).toEqual(userData);
+	});
+
+	it('returns null for non-existent document', async () => {
+		const result = await getOne(db, 'users', 'non-existent');
+		expect(result).toBeNull();
+	});
+});
+
+describe('getAll', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+	let hlc: ReturnType<typeof createClock>;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema,
+			},
+		};
+		db = await openDatabase(config);
+		hlc = createClock();
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('retrieves all documents from store', async () => {
+		const userData = [
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-2', name: 'Jane Smith' },
+			{ id: 'user-3', name: 'Bob Johnson' },
+		];
+		await createMany(db, 'users', userSchema, hlc, userData);
+
+		const result = await getAll(db, 'users');
+		expect(result).toHaveLength(3);
+		expect(result).toEqual(expect.arrayContaining(userData));
+	});
+
+	it('returns empty array for empty store', async () => {
+		const result = await getAll(db, 'users');
+		expect(result).toEqual([]);
+	});
+});
+
+describe('getWhere', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+	let hlc: ReturnType<typeof createClock>;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema,
+			},
+		};
+		db = await openDatabase(config);
+		hlc = createClock();
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('filters documents by predicate', async () => {
+		const userData = [
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-2', name: 'Jane Smith' },
+			{ id: 'user-3', name: 'John Johnson' },
+		];
+		await createMany(db, 'users', userSchema, hlc, userData);
+
+		const result = await getWhere(db, 'users', (user) => user.name.startsWith('John'));
+		expect(result).toHaveLength(2);
+		expect(result).toEqual(expect.arrayContaining([
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-3', name: 'John Johnson' },
+		]));
+	});
+
+	it('returns empty array when no documents match predicate', async () => {
+		const userData = [
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-2', name: 'Jane Smith' },
+		];
+		await createMany(db, 'users', userSchema, hlc, userData);
+
+		const result = await getWhere(db, 'users', (user) => user.name.startsWith('Bob'));
+		expect(result).toEqual([]);
+	});
+
+	it('returns empty array for empty store', async () => {
+		const result = await getWhere(db, 'users', (user) => user.name.startsWith('John'));
+		expect(result).toEqual([]);
 	});
 });
