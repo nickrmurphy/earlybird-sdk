@@ -1,6 +1,6 @@
-import { createContext, useContext, type ParentComponent } from 'solid-js';
-import { createDemoStores, type StoreAdapters } from '@byearlybird/demo-shared';
+import { type StoreAdapters, createDemoStores } from '@byearlybird/demo-shared';
 import { createMemoryAdapter } from '@byearlybird/store/memory-adapter';
+import { type ParentComponent, createContext, useContext } from 'solid-js';
 
 // Create storage adapters (using memory for now)
 const recipeAdapter = createMemoryAdapter('recipes');

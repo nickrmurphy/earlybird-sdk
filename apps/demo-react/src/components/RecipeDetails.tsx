@@ -8,7 +8,10 @@ interface RecipeDetailsProps {
 	onRecipeDeleted: () => void;
 }
 
-export function RecipeDetails({ selectedRecipeId, onRecipeDeleted }: RecipeDetailsProps) {
+export function RecipeDetails({
+	selectedRecipeId,
+	onRecipeDeleted,
+}: RecipeDetailsProps) {
 	const recipeStore = useStore('recipes');
 	const { data: recipe, isLoading } = useDocument('recipes', selectedRecipeId);
 
@@ -56,9 +59,7 @@ export function RecipeDetails({ selectedRecipeId, onRecipeDeleted }: RecipeDetai
 							<h2 className="font-medium px-2">Ingredients</h2>
 							<IngredientCombobox
 								onSelect={handleIngredientSelect}
-								exclude={recipe.ingredients.map(
-									(ingredient) => ingredient.id,
-								)}
+								exclude={recipe.ingredients.map((ingredient) => ingredient.id)}
 							/>
 						</div>
 						<div className="rounded-lg flex flex-col gap-3 p-3">

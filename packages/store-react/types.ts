@@ -13,4 +13,3 @@ export interface StoreProviderProps<T extends StoreRegistry> {
 	stores: T;
 	children: ReactNode;
 }
-

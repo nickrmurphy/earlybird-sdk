@@ -12,9 +12,9 @@ function App() {
 				<Recipes />
 				<Ingredients />
 			</section>
-			<RecipeDetails 
-				selectedRecipeId={selectedRecipeId} 
-				onRecipeDeleted={() => setSelectedRecipeId(null)} 
+			<RecipeDetails
+				selectedRecipeId={selectedRecipeId}
+				onRecipeDeleted={() => setSelectedRecipeId(null)}
 			/>
 		</main>
 	);

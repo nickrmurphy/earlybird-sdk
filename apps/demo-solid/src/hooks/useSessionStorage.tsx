@@ -1,4 +1,4 @@
-import { createSignal, createEffect } from 'solid-js';
+import { createEffect, createSignal } from 'solid-js';
 
 export function useSessionStorage<T>(key: string, initialValue: T) {
 	const [storedValue, setStoredValue] = createSignal<T>(() => {
@@ -16,7 +16,10 @@ export function useSessionStorage<T>(key: string, initialValue: T) {
 
 	const setValue = (value: T | ((val: T) => T)) => {
 		try {
-			const valueToStore = typeof value === 'function' ? (value as (val: T) => T)(storedValue()) : value;
+			const valueToStore =
+				typeof value === 'function'
+					? (value as (val: T) => T)(storedValue())
+					: value;
 			setStoredValue(valueToStore);
 			window.sessionStorage.setItem(key, JSON.stringify(valueToStore));
 

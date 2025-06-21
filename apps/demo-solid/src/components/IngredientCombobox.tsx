@@ -1,6 +1,6 @@
-import { createSignal, For, onMount, createEffect } from 'solid-js';
-import { useStore } from './StoreProvider';
 import type { Ingredient } from '@byearlybird/demo-shared';
+import { For, createEffect, createSignal, onMount } from 'solid-js';
+import { useStore } from './StoreProvider';
 
 interface IngredientComboboxProps {
 	onSelect: (ingredient: Ingredient) => void;
@@ -10,24 +10,26 @@ interface IngredientComboboxProps {
 export function IngredientCombobox(props: IngredientComboboxProps) {
 	const ingredientStore = useStore('ingredients');
 	const [allIngredients, setAllIngredients] = createSignal<Ingredient[]>([]);
-	const [availableIngredients, setAvailableIngredients] = createSignal<Ingredient[]>([]);
+	const [availableIngredients, setAvailableIngredients] = createSignal<
+		Ingredient[]
+	>([]);
 	const [selectedId, setSelectedId] = createSignal('');
 
 	const loadAllIngredients = async () => {
 		const data = await ingredientStore.all();
 		if (data) {
-			const ingredients = Object.values(data).filter(i => !i.isDeleted);
+			const ingredients = Object.values(data).filter((i) => !i.isDeleted);
 			setAllIngredients(ingredients);
 		}
 	};
 
 	// Filter available ingredients when exclude list changes
 	createEffect(() => {
-		const available = allIngredients().filter(i => 
-			!props.exclude?.includes(i.id)
+		const available = allIngredients().filter(
+			(i) => !props.exclude?.includes(i.id),
 		);
 		setAvailableIngredients(available);
-		
+
 		// Reset selection if current selection is now excluded
 		if (selectedId() && props.exclude?.includes(selectedId())) {
 			setSelectedId('');
@@ -39,7 +41,9 @@ export function IngredientCombobox(props: IngredientComboboxProps) {
 	});
 
 	const handleSelect = () => {
-		const ingredient = availableIngredients().find(i => i.id === selectedId());
+		const ingredient = availableIngredients().find(
+			(i) => i.id === selectedId(),
+		);
 		if (ingredient) {
 			props.onSelect(ingredient);
 			setSelectedId(''); // Reset selection
@@ -53,7 +57,9 @@ export function IngredientCombobox(props: IngredientComboboxProps) {
 				value={selectedId()}
 				onInput={(e) => setSelectedId(e.target.value)}
 			>
-				<option value="" disabled>Add an ingredient...</option>
+				<option value="" disabled>
+					Add an ingredient...
+				</option>
 				<For each={availableIngredients()}>
 					{(ingredient) => (
 						<option value={ingredient.id}>{ingredient.name}</option>

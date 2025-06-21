@@ -29,9 +29,13 @@ export function createUseQuery<T extends StoreRegistry>(
 			let transformedData: TResult;
 
 			if (result) {
-				transformedData = stableTransform ? stableTransform(result) : (result as TResult);
+				transformedData = stableTransform
+					? stableTransform(result)
+					: (result as TResult);
 			} else {
-				transformedData = stableTransform ? stableTransform({}) : ({} as TResult);
+				transformedData = stableTransform
+					? stableTransform({})
+					: ({} as TResult);
 			}
 
 			setData(transformedData);

@@ -1,16 +1,30 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { addDocument, getDocument, openDatabase, putDocument, getAllDocuments, addDocuments, putDocuments, queryDocuments } from './operations';
-import type { DatabaseConfig, Document, TypedDatabase, EntitySchema } from '../types';
+import type {
+	DatabaseConfig,
+	Document,
+	EntitySchema,
+	TypedDatabase,
+} from '../types';
+import {
+	addDocument,
+	addDocuments,
+	getAllDocuments,
+	getDocument,
+	openDatabase,
+	putDocument,
+	putDocuments,
+	queryDocuments,
+} from './operations';
 
 const userSchema = z.object({
 	id: z.string(),
-	name: z.string()
+	name: z.string(),
 }) as EntitySchema<{ id: string; name: string }>;
 
 const postSchema = z.object({
 	id: z.string(),
-	title: z.string()
+	title: z.string(),
 }) as EntitySchema<{ id: string; title: string }>;
 
 describe('openDatabase', () => {
@@ -34,8 +48,8 @@ describe('openDatabase', () => {
 			name: dbName,
 			version: 1,
 			stores: {
-				users: userSchema
-			}
+				users: userSchema,
+			},
 		};
 
 		const db = await openDatabase(config);
@@ -52,8 +66,8 @@ describe('openDatabase', () => {
 			version: 1,
 			stores: {
 				users: userSchema,
-				posts: postSchema
-			}
+				posts: postSchema,
+			},
 		};
 
 		const db = await openDatabase(config);
@@ -70,8 +84,8 @@ describe('openDatabase', () => {
 			name: dbName,
 			version: 1,
 			stores: {
-				users: userSchema
-			}
+				users: userSchema,
+			},
 		};
 
 		const db = await openDatabase(config);
@@ -92,8 +106,8 @@ describe('openDatabase', () => {
 			name: dbName,
 			version: 1,
 			stores: {
-				users: userSchema
-			}
+				users: userSchema,
+			},
 		};
 
 		const db = await openDatabase(config);
@@ -121,8 +135,8 @@ describe('addDocument', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema
-			}
+				users: userSchema,
+			},
 		};
 		db = await openDatabase(config);
 	});
@@ -141,13 +155,15 @@ describe('addDocument', () => {
 			$id: 'user-1',
 			$data: { id: 'user-1', name: 'John Doe' },
 			$hash: 'test-hash-1',
-			$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+			$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' },
 		};
 
 		// Uncomment line below to test TypeScript error for invalid store name:
 		// await expect(addDocument(db, 'invalid_store_name', testDocument)).resolves.toBeUndefined();
 
-		await expect(addDocument(db, 'users', testDocument)).resolves.toBeUndefined();
+		await expect(
+			addDocument(db, 'users', testDocument),
+		).resolves.toBeUndefined();
 	});
 
 	it('should store document with correct structure', async () => {
@@ -155,7 +171,7 @@ describe('addDocument', () => {
 			$id: 'user-2',
 			$data: { id: 'user-2', name: 'Jane Smith' },
 			$hash: 'test-hash-2',
-			$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' }
+			$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' },
 		};
 
 		await addDocument(db, 'users', testDocument);
@@ -163,11 +179,13 @@ describe('addDocument', () => {
 		// Verify document was stored correctly
 		const transaction = db.transaction('users', 'readonly');
 		const store = transaction.objectStore('users');
-		const result = await new Promise<Document<{ id: string; name: string }>>((resolve, reject) => {
-			const request = store.get('user-2');
-			request.onsuccess = () => resolve(request.result);
-			request.onerror = () => reject(request.error);
-		});
+		const result = await new Promise<Document<{ id: string; name: string }>>(
+			(resolve, reject) => {
+				const request = store.get('user-2');
+				request.onsuccess = () => resolve(request.result);
+				request.onerror = () => reject(request.error);
+			},
+		);
 
 		expect(result).toEqual(testDocument);
 	});
@@ -177,13 +195,13 @@ describe('addDocument', () => {
 			$id: 'user-3',
 			$data: { id: 'user-3', name: 'Bob Wilson' },
 			$hash: 'test-hash-3',
-			$timestamps: { id: '2024-01-01T00:02:00Z', name: '2024-01-01T00:02:00Z' }
+			$timestamps: { id: '2024-01-01T00:02:00Z', name: '2024-01-01T00:02:00Z' },
 		};
 
 		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-		await expect(addDocument(db, 'nonexistent-store' as any, testDocument))
-			.rejects
-			.toThrow();
+		await expect(
+			addDocument(db, 'nonexistent-store' as any, testDocument),
+		).rejects.toThrow();
 	});
 
 	it('should reject when adding duplicate document with same $id', async () => {
@@ -191,21 +209,21 @@ describe('addDocument', () => {
 			$id: 'duplicate-user',
 			$data: { id: 'duplicate-user', name: 'First User' },
 			$hash: 'hash-1',
-			$timestamps: { id: '2024-01-01T00:03:00Z', name: '2024-01-01T00:03:00Z' }
+			$timestamps: { id: '2024-01-01T00:03:00Z', name: '2024-01-01T00:03:00Z' },
 		};
 
 		const secondDocument: Document<{ id: string; name: string }> = {
 			$id: 'duplicate-user',
 			$data: { id: 'duplicate-user', name: 'Second User' },
 			$hash: 'hash-2',
-			$timestamps: { id: '2024-01-01T00:04:00Z', name: '2024-01-01T00:04:00Z' }
+			$timestamps: { id: '2024-01-01T00:04:00Z', name: '2024-01-01T00:04:00Z' },
 		};
 
 		await addDocument(db, 'users' as const, firstDocument);
 
-		await expect(addDocument(db, 'users' as const, secondDocument))
-			.rejects
-			.toThrow();
+		await expect(
+			addDocument(db, 'users' as const, secondDocument),
+		).rejects.toThrow();
 	});
 
 	it('should handle documents with all required CRDT fields', async () => {
@@ -213,7 +231,7 @@ describe('addDocument', () => {
 			$id: 'user-with-fields',
 			$data: { id: 'user-with-fields', name: 'Complete User' },
 			$hash: 'complete-hash',
-			$timestamps: { id: '2024-01-01T00:05:00Z', name: '2024-01-01T00:05:00Z' }
+			$timestamps: { id: '2024-01-01T00:05:00Z', name: '2024-01-01T00:05:00Z' },
 		};
 
 		await addDocument(db, 'users' as const, testDocument);
@@ -247,8 +265,8 @@ describe('addDocument', () => {
 				name: dbName,
 				version: 1 as const,
 				stores: {
-					users: userSchema
-				}
+					users: userSchema,
+				},
 			};
 			db = await openDatabase(config);
 		});
@@ -267,7 +285,10 @@ describe('addDocument', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'John Doe' },
 				$hash: 'test-hash-1',
-				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+				$timestamps: {
+					id: '2024-01-01T00:00:00Z',
+					name: '2024-01-01T00:00:00Z',
+				},
 			};
 
 			await addDocument(db, 'users', testDocument);
@@ -285,7 +306,9 @@ describe('addDocument', () => {
 
 		it('should reject if the store does not exist', async () => {
 			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-			await expect(getDocument(db, 'nonexistent-store' as any, 'user-1')).rejects.toThrow();
+			await expect(
+				getDocument(db, 'nonexistent-store' as any, 'user-1'),
+			).rejects.toThrow();
 		});
 	});
 });
@@ -305,8 +328,8 @@ describe('putDocument', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema
-			}
+				users: userSchema,
+			},
 		};
 		db = await openDatabase(config);
 	});
@@ -325,7 +348,7 @@ describe('putDocument', () => {
 			$id: 'put-user-1',
 			$data: { id: 'put-user-1', name: 'Put User' },
 			$hash: 'put-hash-1',
-			$timestamps: { id: '2024-01-01T00:10:00Z', name: '2024-01-01T00:10:00Z' }
+			$timestamps: { id: '2024-01-01T00:10:00Z', name: '2024-01-01T00:10:00Z' },
 		};
 
 		await expect(putDocument(db, 'users', doc)).resolves.toBeUndefined();
@@ -339,14 +362,14 @@ describe('putDocument', () => {
 			$id: 'put-user-2',
 			$data: { id: 'put-user-2', name: 'Original Name' },
 			$hash: 'put-hash-2',
-			$timestamps: { id: '2024-01-01T00:11:00Z', name: '2024-01-01T00:11:00Z' }
+			$timestamps: { id: '2024-01-01T00:11:00Z', name: '2024-01-01T00:11:00Z' },
 		};
 		await putDocument(db, 'users', doc);
 
 		const updatedDoc: Document<{ id: string; name: string }> = {
 			...doc,
 			$data: { id: 'put-user-2', name: 'Updated Name' },
-			$hash: 'put-hash-2b'
+			$hash: 'put-hash-2b',
 		};
 		await expect(putDocument(db, 'users', updatedDoc)).resolves.toBeUndefined();
 
@@ -359,10 +382,12 @@ describe('putDocument', () => {
 			$id: 'put-user-3',
 			$data: { id: 'put-user-3', name: 'No Store' },
 			$hash: 'put-hash-3',
-			$timestamps: { id: '2024-01-01T00:12:00Z', name: '2024-01-01T00:12:00Z' }
+			$timestamps: { id: '2024-01-01T00:12:00Z', name: '2024-01-01T00:12:00Z' },
 		};
 		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-		await expect(putDocument(db, 'nonexistent-store' as any, doc)).rejects.toThrow();
+		await expect(
+			putDocument(db, 'nonexistent-store' as any, doc),
+		).rejects.toThrow();
 	});
 });
 describe('getAllDocuments', () => {
@@ -381,8 +406,8 @@ describe('getAllDocuments', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema
-			}
+				users: userSchema,
+			},
 		};
 		db = await openDatabase(config);
 	});
@@ -402,14 +427,20 @@ describe('getAllDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
-				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+				$timestamps: {
+					id: '2024-01-01T00:00:00Z',
+					name: '2024-01-01T00:00:00Z',
+				},
 			},
 			{
 				$id: 'user-2',
 				$data: { id: 'user-2', name: 'Bob' },
 				$hash: 'hash-2',
-				$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' }
-			}
+				$timestamps: {
+					id: '2024-01-01T00:01:00Z',
+					name: '2024-01-01T00:01:00Z',
+				},
+			},
 		];
 		for (const doc of docs) {
 			await addDocument(db, 'users', doc);
@@ -426,7 +457,9 @@ describe('getAllDocuments', () => {
 
 	it('should reject if the store does not exist', async () => {
 		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-		await expect(getAllDocuments(db, 'nonexistent-store' as any)).rejects.toThrow();
+		await expect(
+			getAllDocuments(db, 'nonexistent-store' as any),
+		).rejects.toThrow();
 	});
 });
 describe('addDocuments', () => {
@@ -445,8 +478,8 @@ describe('addDocuments', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema
-			}
+				users: userSchema,
+			},
 		};
 		db = await openDatabase(config);
 	});
@@ -466,14 +499,20 @@ describe('addDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
-				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+				$timestamps: {
+					id: '2024-01-01T00:00:00Z',
+					name: '2024-01-01T00:00:00Z',
+				},
 			},
 			{
 				$id: 'user-2',
 				$data: { id: 'user-2', name: 'Bob' },
 				$hash: 'hash-2',
-				$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' }
-			}
+				$timestamps: {
+					id: '2024-01-01T00:01:00Z',
+					name: '2024-01-01T00:01:00Z',
+				},
+			},
 		];
 		await expect(addDocuments(db, 'users', docs)).resolves.toBeUndefined();
 		const allDocs = await getAllDocuments(db, 'users');
@@ -487,14 +526,20 @@ describe('addDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
-				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+				$timestamps: {
+					id: '2024-01-01T00:00:00Z',
+					name: '2024-01-01T00:00:00Z',
+				},
 			},
 			{
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Duplicate' },
 				$hash: 'hash-dup',
-				$timestamps: { id: '2024-01-01T00:02:00Z', name: '2024-01-01T00:02:00Z' }
-			}
+				$timestamps: {
+					id: '2024-01-01T00:02:00Z',
+					name: '2024-01-01T00:02:00Z',
+				},
+			},
 		];
 		await expect(addDocuments(db, 'users', docs)).rejects.toThrow();
 	});
@@ -516,8 +561,8 @@ describe('putDocuments', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema
-			}
+				users: userSchema,
+			},
 		};
 		db = await openDatabase(config);
 	});
@@ -537,14 +582,20 @@ describe('putDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
-				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+				$timestamps: {
+					id: '2024-01-01T00:00:00Z',
+					name: '2024-01-01T00:00:00Z',
+				},
 			},
 			{
 				$id: 'user-2',
 				$data: { id: 'user-2', name: 'Bob' },
 				$hash: 'hash-2',
-				$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' }
-			}
+				$timestamps: {
+					id: '2024-01-01T00:01:00Z',
+					name: '2024-01-01T00:01:00Z',
+				},
+			},
 		];
 		await expect(putDocuments(db, 'users', docs)).resolves.toBeUndefined();
 		const allDocs = await getAllDocuments(db, 'users');
@@ -553,10 +604,20 @@ describe('putDocuments', () => {
 
 		// Update one document
 		const updatedDocs = [
-			{ ...docs[0], $data: { id: 'user-1', name: 'Alice Updated' }, $hash: 'hash-1b' },
-			{ ...docs[1], $data: { id: 'user-2', name: 'Bob Updated' }, $hash: 'hash-2b' }
+			{
+				...docs[0],
+				$data: { id: 'user-1', name: 'Alice Updated' },
+				$hash: 'hash-1b',
+			},
+			{
+				...docs[1],
+				$data: { id: 'user-2', name: 'Bob Updated' },
+				$hash: 'hash-2b',
+			},
 		];
-		await expect(putDocuments(db, 'users', updatedDocs)).resolves.toBeUndefined();
+		await expect(
+			putDocuments(db, 'users', updatedDocs),
+		).resolves.toBeUndefined();
 		const updatedAll = await getAllDocuments(db, 'users');
 		expect(updatedAll).toHaveLength(2);
 		expect(updatedAll).toEqual(expect.arrayContaining(updatedDocs));
@@ -568,11 +629,16 @@ describe('putDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
-				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
-			}
+				$timestamps: {
+					id: '2024-01-01T00:00:00Z',
+					name: '2024-01-01T00:00:00Z',
+				},
+			},
 		];
 		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-		await expect(putDocuments(db, 'nonexistent-store' as any, docs)).rejects.toThrow();
+		await expect(
+			putDocuments(db, 'nonexistent-store' as any, docs),
+		).rejects.toThrow();
 	});
 });
 describe('queryDocuments', () => {
@@ -591,8 +657,8 @@ describe('queryDocuments', () => {
 			name: dbName,
 			version: 1 as const,
 			stores: {
-				users: userSchema
-			}
+				users: userSchema,
+			},
 		};
 		db = await openDatabase(config);
 	});
@@ -612,23 +678,34 @@ describe('queryDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
-				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+				$timestamps: {
+					id: '2024-01-01T00:00:00Z',
+					name: '2024-01-01T00:00:00Z',
+				},
 			},
 			{
 				$id: 'user-2',
 				$data: { id: 'user-2', name: 'Bob' },
 				$hash: 'hash-2',
-				$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' }
+				$timestamps: {
+					id: '2024-01-01T00:01:00Z',
+					name: '2024-01-01T00:01:00Z',
+				},
 			},
 			{
 				$id: 'user-3',
 				$data: { id: 'user-3', name: 'Carol' },
 				$hash: 'hash-3',
-				$timestamps: { id: '2024-01-01T00:02:00Z', name: '2024-01-01T00:02:00Z' }
-			}
+				$timestamps: {
+					id: '2024-01-01T00:02:00Z',
+					name: '2024-01-01T00:02:00Z',
+				},
+			},
 		];
 		await addDocuments(db, 'users', docs);
-		const result = await queryDocuments(db, 'users', data => data.name.startsWith('A'));
+		const result = await queryDocuments(db, 'users', (data) =>
+			data.name.startsWith('A'),
+		);
 		expect(result).toHaveLength(1);
 		expect(result[0].$data.name).toBe('Alice');
 	});
@@ -639,17 +716,26 @@ describe('queryDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
-				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
-			}
+				$timestamps: {
+					id: '2024-01-01T00:00:00Z',
+					name: '2024-01-01T00:00:00Z',
+				},
+			},
 		];
 		await addDocuments(db, 'users', docs);
-		const result = await queryDocuments(db, 'users', data => data.name === 'Nonexistent');
+		const result = await queryDocuments(
+			db,
+			'users',
+			(data) => data.name === 'Nonexistent',
+		);
 		expect(result).toEqual([]);
 	});
 
 	it('should reject if the store does not exist', async () => {
 		const predicate = () => true;
 		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-		await expect(queryDocuments(db, 'nonexistent-store' as any, predicate)).rejects.toThrow();
+		await expect(
+			queryDocuments(db, 'nonexistent-store' as any, predicate),
+		).rejects.toThrow();
 	});
 });

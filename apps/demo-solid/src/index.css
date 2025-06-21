@@ -1,10 +1,10 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 body {
-  margin: 0;
-  font-family: system-ui, Arial, sans-serif;
+	margin: 0;
+	font-family: system-ui, Arial, sans-serif;
 }
 
 #root {
-  height: 100vh;
+	height: 100vh;
 }

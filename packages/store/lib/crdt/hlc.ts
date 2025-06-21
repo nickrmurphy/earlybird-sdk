@@ -1,4 +1,4 @@
-import type { HLC } from "../types";
+import type { HLC } from '../types';
 
 const generateNonce = () => {
 	return Math.random().toString(36).substring(2, 8);

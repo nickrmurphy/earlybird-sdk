@@ -1,4 +1,4 @@
-import { createSignal, Index, onMount } from 'solid-js';
+import { Index, createSignal, onMount } from 'solid-js';
 import { Card } from './Card';
 import { useStore } from './StoreProvider';
 
@@ -10,7 +10,7 @@ export function Ingredients() {
 	const loadIngredients = async () => {
 		const data = await ingredientStore.all();
 		if (data) {
-			setIngredients(Object.values(data).filter(i => !i.isDeleted));
+			setIngredients(Object.values(data).filter((i) => !i.isDeleted));
 		}
 	};
 
@@ -31,7 +31,7 @@ export function Ingredients() {
 
 	const handleUpdateIngredient = async (id: string, name: string) => {
 		await ingredientStore.update(id, { name });
-		
+
 		// Update ingredient names in all recipes that use this ingredient
 		const allRecipes = await recipeStore.all();
 		if (!allRecipes) return;
@@ -45,7 +45,7 @@ export function Ingredients() {
 				ingredients: recipe.ingredients.map((i) =>
 					i.id === id ? { ...i, name } : i,
 				),
-			})
+			}),
 		);
 
 		await Promise.all(updatePromises);
@@ -71,8 +71,12 @@ export function Ingredients() {
 							<input
 								class="w-full focus:outline-none bg-transparent text-white placeholder-white/50"
 								value={ingredient().name}
-								onInput={(e) => handleUpdateIngredient(ingredient().id, e.target.value)}
-								onBlur={(e) => handleIngredientBlur(ingredient().id, e.target.value)}
+								onInput={(e) =>
+									handleUpdateIngredient(ingredient().id, e.target.value)
+								}
+								onBlur={(e) =>
+									handleIngredientBlur(ingredient().id, e.target.value)
+								}
 								placeholder="Ingredient name"
 								autofocus={ingredient().name === ''}
 							/>
