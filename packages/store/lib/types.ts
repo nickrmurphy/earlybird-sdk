@@ -104,3 +104,10 @@ export type DocumentFromSchema<S extends StandardSchemaV1<any, any>> =
     }
     : never
     : never;
+
+export type DatabaseConfig = {
+    name: string;
+    version: number;
+    // biome-ignore lint/suspicious/noExplicitAny: Generic constraint requires any for StandardSchemaV1
+    stores: Record<string, StandardSchemaV1<any, any>>;
+}
