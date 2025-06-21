@@ -20,3 +20,22 @@ export async function create<
     // Add the document to the store
     await addDocument(db, storeName, document);
 }
+
+export async function createMany<
+    TConfig extends DatabaseConfig,
+    TStoreName extends StoreKey<TConfig>
+>(
+    db: TypedDatabase<TConfig>,
+    storeName: TStoreName,
+    schema: StoreSchema<TConfig, TStoreName>,
+    hlc: Pick<HLC, 'tick'>,
+    dataArray: StoreInput<TConfig, TStoreName>[]
+): Promise<void> {
+    // Validate each item in the array and create documents
+    const documents = dataArray.map(data => {
+        const validated = standardValidate(schema, data);
+        return makeDocument(hlc, validated);
+    });
+    // Add all documents to the store
+    await Promise.all(documents.map(doc => addDocument(db, storeName, doc)));
+}
