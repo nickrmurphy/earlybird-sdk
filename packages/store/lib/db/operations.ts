@@ -61,3 +61,40 @@ export async function addDocument<
     });
 }
 
+export async function getDocument<
+    TConfig extends DatabaseConfig,
+    TStoreName extends keyof TConfig['stores'] & string
+>(
+    db: TypedDatabase<TConfig>,
+    storeName: TStoreName,
+    id: string
+): Promise<DocumentFromSchema<TConfig['stores'][TStoreName]> | null> {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readonly');
+        const store = transaction.objectStore(storeName);
+
+        const request = store.get(id);
+
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+export async function putDocument<
+    TConfig extends DatabaseConfig,
+    TStoreName extends keyof TConfig['stores'] & string
+>(
+    db: TypedDatabase<TConfig>,
+    storeName: TStoreName,
+    document: DocumentFromSchema<TConfig['stores'][TStoreName]>
+): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+
+        const request = store.put(document);
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}

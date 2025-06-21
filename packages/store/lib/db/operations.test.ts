@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
-import { addDocument, openDatabase } from './operations';
+import { addDocument, getDocument, openDatabase, putDocument } from './operations';
 import type { DatabaseConfig, Document, TypedDatabase, EntitySchema } from '../types';
 
 const userSchema = z.object({
@@ -231,5 +231,137 @@ describe('addDocument', () => {
 
 		expect(hashResult).toEqual(testDocument);
 	});
+	describe('getDocument', () => {
+		let db: TypedDatabase<{
+			name: string;
+			version: 1;
+			stores: {
+				users: typeof userSchema;
+			};
+		}>;
+		let dbName: string;
 
+		beforeEach(async () => {
+			dbName = `test-db-${Date.now()}-${Math.random()}`;
+			const config = {
+				name: dbName,
+				version: 1 as const,
+				stores: {
+					users: userSchema
+				}
+			};
+			db = await openDatabase(config);
+		});
+
+		afterEach(async () => {
+			db.close();
+			const deleteRequest = indexedDB.deleteDatabase(dbName);
+			await new Promise<void>((resolve) => {
+				deleteRequest.onsuccess = () => resolve();
+				deleteRequest.onerror = () => resolve();
+			});
+		});
+
+		it('should retrieve a document by its ID', async () => {
+			const testDocument: Document<{ id: string; name: string }> = {
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'John Doe' },
+				$hash: 'test-hash-1',
+				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+			};
+
+			await addDocument(db, 'users', testDocument);
+
+			const result = await getDocument(db, 'users', 'user-1');
+
+			expect(result).toEqual(testDocument);
+		});
+
+		it('should return null if the document does not exist', async () => {
+			const result = await getDocument(db, 'users', 'nonexistent-id');
+
+			expect(result).toBeNull();
+		});
+
+		it('should reject if the store does not exist', async () => {
+			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
+			await expect(getDocument(db, 'nonexistent-store' as any, 'user-1')).rejects.toThrow();
+		});
+	});
+});
+describe('putDocument', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema
+			}
+		};
+		db = await openDatabase(config);
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('should insert a new document if it does not exist', async () => {
+		const doc: Document<{ id: string; name: string }> = {
+			$id: 'put-user-1',
+			$data: { id: 'put-user-1', name: 'Put User' },
+			$hash: 'put-hash-1',
+			$timestamps: { id: '2024-01-01T00:10:00Z', name: '2024-01-01T00:10:00Z' }
+		};
+
+		await expect(putDocument(db, 'users', doc)).resolves.toBeUndefined();
+
+		const stored = await getDocument(db, 'users', 'put-user-1');
+		expect(stored).toEqual(doc);
+	});
+
+	it('should update an existing document', async () => {
+		const doc: Document<{ id: string; name: string }> = {
+			$id: 'put-user-2',
+			$data: { id: 'put-user-2', name: 'Original Name' },
+			$hash: 'put-hash-2',
+			$timestamps: { id: '2024-01-01T00:11:00Z', name: '2024-01-01T00:11:00Z' }
+		};
+		await putDocument(db, 'users', doc);
+
+		const updatedDoc: Document<{ id: string; name: string }> = {
+			...doc,
+			$data: { id: 'put-user-2', name: 'Updated Name' },
+			$hash: 'put-hash-2b'
+		};
+		await expect(putDocument(db, 'users', updatedDoc)).resolves.toBeUndefined();
+
+		const stored = await getDocument(db, 'users', 'put-user-2');
+		expect(stored).toEqual(updatedDoc);
+	});
+
+	it('should reject if the store does not exist', async () => {
+		const doc: Document<{ id: string; name: string }> = {
+			$id: 'put-user-3',
+			$data: { id: 'put-user-3', name: 'No Store' },
+			$hash: 'put-hash-3',
+			$timestamps: { id: '2024-01-01T00:12:00Z', name: '2024-01-01T00:12:00Z' }
+		};
+		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
+		await expect(putDocument(db, 'nonexistent-store' as any, doc)).rejects.toThrow();
+	});
 });
