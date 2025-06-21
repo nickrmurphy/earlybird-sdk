@@ -167,4 +167,34 @@ export async function putDocuments<
     });
 }
 
+export async function queryDocuments<
+    TConfig extends DatabaseConfig,
+    TStoreName extends keyof TConfig['stores'] & string
+>(
+    db: TypedDatabase<TConfig>,
+    storeName: TStoreName,
+    predicate: (data: DocumentFromSchema<TConfig['stores'][TStoreName]>['$data']) => boolean
+): Promise<DocumentFromSchema<TConfig['stores'][TStoreName]>[]> {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readonly');
+        const store = transaction.objectStore(storeName);
+        const results: DocumentFromSchema<TConfig['stores'][TStoreName]>[] = [];
+        const request = store.openCursor();
+
+        request.onsuccess = (event) => {
+            const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+            if (cursor) {
+                const doc = cursor.value as DocumentFromSchema<TConfig['stores'][TStoreName]>;
+                if (predicate(doc.$data)) {
+                    results.push(doc);
+                }
+                cursor.continue();
+            } else {
+                resolve(results);
+            }
+        };
+        request.onerror = () => reject(request.error);
+    });
+}
+
 

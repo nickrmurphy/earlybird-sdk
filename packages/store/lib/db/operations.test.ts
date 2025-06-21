@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
-import { addDocument, getDocument, openDatabase, putDocument, getAllDocuments, addDocuments, putDocuments } from './operations';
+import { addDocument, getDocument, openDatabase, putDocument, getAllDocuments, addDocuments, putDocuments, queryDocuments } from './operations';
 import type { DatabaseConfig, Document, TypedDatabase, EntitySchema } from '../types';
 
 const userSchema = z.object({
@@ -573,5 +573,83 @@ describe('putDocuments', () => {
 		];
 		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 		await expect(putDocuments(db, 'nonexistent-store' as any, docs)).rejects.toThrow();
+	});
+});
+describe('queryDocuments', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema
+			}
+		};
+		db = await openDatabase(config);
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('should return only documents matching the predicate', async () => {
+		const docs: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alice' },
+				$hash: 'hash-1',
+				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+			},
+			{
+				$id: 'user-2',
+				$data: { id: 'user-2', name: 'Bob' },
+				$hash: 'hash-2',
+				$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' }
+			},
+			{
+				$id: 'user-3',
+				$data: { id: 'user-3', name: 'Carol' },
+				$hash: 'hash-3',
+				$timestamps: { id: '2024-01-01T00:02:00Z', name: '2024-01-01T00:02:00Z' }
+			}
+		];
+		await addDocuments(db, 'users', docs);
+		const result = await queryDocuments(db, 'users', data => data.name.startsWith('A'));
+		expect(result).toHaveLength(1);
+		expect(result[0].$data.name).toBe('Alice');
+	});
+
+	it('should return an empty array if no documents match', async () => {
+		const docs: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alice' },
+				$hash: 'hash-1',
+				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+			}
+		];
+		await addDocuments(db, 'users', docs);
+		const result = await queryDocuments(db, 'users', data => data.name === 'Nonexistent');
+		expect(result).toEqual([]);
+	});
+
+	it('should reject if the store does not exist', async () => {
+		const predicate = () => true;
+		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
+		await expect(queryDocuments(db, 'nonexistent-store' as any, predicate)).rejects.toThrow();
 	});
 });
