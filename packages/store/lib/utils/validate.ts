@@ -1,4 +1,4 @@
-import type { StandardSchemaV1 } from '../../standard-schema.types';
+import type { StandardSchemaV1 } from '../types';
 
 export function standardValidate<T extends StandardSchemaV1>(
 	schema: T,
