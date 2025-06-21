@@ -4,8 +4,8 @@ export function makeTimestamps<T extends object>(
     hlc: Pick<HLC, "tick">,
     data: T
 ): { [K in keyof T]: string } {
-    const $timestamps = Object.fromEntries(
+    return Object.fromEntries(
         Object.keys(data).map(key => [key, hlc.tick()])
     ) as { [K in keyof T]: string };
-    return $timestamps;
 }
+

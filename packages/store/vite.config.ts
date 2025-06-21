@@ -5,14 +5,7 @@ import dts from 'vite-plugin-dts';
 export default defineConfig({
 	build: {
 		lib: {
-			entry: {
-				index: resolve(__dirname, 'index.ts'),
-				'memory-adapter': resolve(__dirname, 'lib/storage/memory-adapter.ts'),
-				'indexeddb-adapter': resolve(
-					__dirname,
-					'lib/storage/indexeddb-adapter.ts',
-				),
-			},
+			entry: resolve(__dirname, 'index.ts'),
 			formats: ['es'],
 		},
 		rollupOptions: {

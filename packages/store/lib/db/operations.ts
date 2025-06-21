@@ -1,4 +1,4 @@
-import type { DatabaseConfig, DocumentFromSchema, StandardSchemaV1, TypedDatabase } from '../types';
+import type { DatabaseConfig, StoreKey, InferDocument, TypedDatabase } from '../types';
 
 export function setUpStores<TConfig extends DatabaseConfig>(
     db: IDBDatabase,
@@ -41,11 +41,11 @@ export async function openDatabase<TConfig extends DatabaseConfig>(config: TConf
 
 export async function addDocument<
     TConfig extends DatabaseConfig,
-    TStoreName extends keyof TConfig['stores'] & string
+    TStoreName extends StoreKey<TConfig>
 >(
     db: TypedDatabase<TConfig>,
     storeName: TStoreName,
-    document: DocumentFromSchema<TConfig['stores'][TStoreName]>
+    document: InferDocument<TConfig, TStoreName>
 ): Promise<void> {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readwrite');
@@ -60,11 +60,11 @@ export async function addDocument<
 
 export async function addDocuments<
     TConfig extends DatabaseConfig,
-    TStoreName extends keyof TConfig['stores'] & string
+    TStoreName extends StoreKey<TConfig>
 >(
     db: TypedDatabase<TConfig>,
     storeName: TStoreName,
-    documents: DocumentFromSchema<TConfig['stores'][TStoreName]>[]
+    documents: InferDocument<TConfig, TStoreName>[]
 ): Promise<void> {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readwrite');
@@ -85,12 +85,12 @@ export async function addDocuments<
 
 export async function getDocument<
     TConfig extends DatabaseConfig,
-    TStoreName extends keyof TConfig['stores'] & string
+    TStoreName extends StoreKey<TConfig>
 >(
     db: TypedDatabase<TConfig>,
     storeName: TStoreName,
     id: string
-): Promise<DocumentFromSchema<TConfig['stores'][TStoreName]> | null> {
+): Promise<InferDocument<TConfig, TStoreName> | null> {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readonly');
         const store = transaction.objectStore(storeName);
@@ -104,11 +104,11 @@ export async function getDocument<
 
 export async function getAllDocuments<
     TConfig extends DatabaseConfig,
-    TStoreName extends keyof TConfig['stores'] & string
+    TStoreName extends StoreKey<TConfig>
 >(
     db: TypedDatabase<TConfig>,
     storeName: TStoreName
-): Promise<DocumentFromSchema<TConfig['stores'][TStoreName]>[]> {
+): Promise<InferDocument<TConfig, TStoreName>[]> {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readonly');
         const store = transaction.objectStore(storeName);
@@ -122,11 +122,11 @@ export async function getAllDocuments<
 
 export async function putDocument<
     TConfig extends DatabaseConfig,
-    TStoreName extends keyof TConfig['stores'] & string
+    TStoreName extends StoreKey<TConfig>
 >(
     db: TypedDatabase<TConfig>,
     storeName: TStoreName,
-    document: DocumentFromSchema<TConfig['stores'][TStoreName]>
+    document: InferDocument<TConfig, TStoreName>
 ): Promise<void> {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readwrite');
@@ -141,11 +141,11 @@ export async function putDocument<
 
 export async function putDocuments<
     TConfig extends DatabaseConfig,
-    TStoreName extends keyof TConfig['stores'] & string
+    TStoreName extends StoreKey<TConfig>
 >(
     db: TypedDatabase<TConfig>,
     storeName: TStoreName,
-    documents: DocumentFromSchema<TConfig['stores'][TStoreName]>[]
+    documents: InferDocument<TConfig, TStoreName>[]
 ): Promise<void> {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readwrite');
@@ -167,22 +167,22 @@ export async function putDocuments<
 
 export async function queryDocuments<
     TConfig extends DatabaseConfig,
-    TStoreName extends keyof TConfig['stores'] & string
+    TStoreName extends StoreKey<TConfig>
 >(
     db: TypedDatabase<TConfig>,
     storeName: TStoreName,
-    predicate: (data: DocumentFromSchema<TConfig['stores'][TStoreName]>['$data']) => boolean
-): Promise<DocumentFromSchema<TConfig['stores'][TStoreName]>[]> {
+    predicate: (data: InferDocument<TConfig, TStoreName>['$data']) => boolean
+): Promise<InferDocument<TConfig, TStoreName>[]> {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(storeName, 'readonly');
         const store = transaction.objectStore(storeName);
-        const results: DocumentFromSchema<TConfig['stores'][TStoreName]>[] = [];
+        const results: InferDocument<TConfig, TStoreName>[] = [];
         const request = store.openCursor();
 
         request.onsuccess = (event) => {
             const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
             if (cursor) {
-                const doc = cursor.value as DocumentFromSchema<TConfig['stores'][TStoreName]>;
+                const doc = cursor.value as InferDocument<TConfig, TStoreName>;
                 if (predicate(doc.$data)) {
                     results.push(doc);
                 }
