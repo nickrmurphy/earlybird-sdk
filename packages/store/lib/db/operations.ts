@@ -5,6 +5,8 @@ import type {
 	TypedDatabase,
 } from '../types';
 
+const HLC_STORE_NAME = 'hlc';
+
 export function setUpStores<TConfig extends DatabaseConfig>(
 	db: IDBDatabase,
 	stores: TConfig['stores'],
@@ -23,6 +25,10 @@ export function setUpStores<TConfig extends DatabaseConfig>(
 			});
 			store.createIndex('$data', '$data', { unique: false });
 		}
+	}
+
+	if (!db.objectStoreNames.contains(HLC_STORE_NAME)) {
+		db.createObjectStore(HLC_STORE_NAME);
 	}
 }
 
@@ -201,6 +207,40 @@ export async function queryDocuments<
 				resolve(results);
 			}
 		};
+		request.onerror = () => reject(request.error);
+	});
+}
+
+export async function putHLC<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+>(
+	db: TypedDatabase<TConfig>,
+	storeName: TStoreName,
+	timestamp: string,
+): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const transaction = db.transaction(HLC_STORE_NAME, 'readwrite');
+		const store = transaction.objectStore(HLC_STORE_NAME);
+
+		const request = store.put(timestamp, storeName);
+
+		request.onsuccess = () => resolve();
+		request.onerror = () => reject(request.error);
+	});
+}
+
+export async function getHLC<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+>(db: TypedDatabase<TConfig>, storeName: TStoreName): Promise<string | null> {
+	return new Promise((resolve, reject) => {
+		const transaction = db.transaction(HLC_STORE_NAME, 'readonly');
+		const store = transaction.objectStore(HLC_STORE_NAME);
+
+		const request = store.get(storeName);
+
+		request.onsuccess = () => resolve(request.result || null);
 		request.onerror = () => reject(request.error);
 	});
 }

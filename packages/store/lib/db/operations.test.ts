@@ -11,9 +11,11 @@ import {
 	addDocuments,
 	getAllDocuments,
 	getDocument,
+	getHLC,
 	openDatabase,
 	putDocument,
 	putDocuments,
+	putHLC,
 	queryDocuments,
 } from './operations';
 
@@ -74,7 +76,7 @@ describe('openDatabase', () => {
 
 		expect(db.objectStoreNames.contains('users')).toBe(true);
 		expect(db.objectStoreNames.contains('posts')).toBe(true);
-		expect(db.objectStoreNames.length).toBe(2);
+		expect(db.objectStoreNames.length).toBe(3);
 
 		db.close();
 	});
@@ -112,7 +114,7 @@ describe('openDatabase', () => {
 
 		const db = await openDatabase(config);
 
-		expect(db.objectStoreNames.length).toBe(1);
+		expect(db.objectStoreNames.length).toBe(2);
 		expect(db.objectStoreNames.contains('users')).toBe(true);
 
 		db.close();
@@ -155,6 +157,7 @@ describe('addDocument', () => {
 			$id: 'user-1',
 			$data: { id: 'user-1', name: 'John Doe' },
 			$hash: 'test-hash-1',
+			$timestamp: '2024-01-01T00:00:00Z',
 			$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' },
 		};
 
@@ -171,6 +174,7 @@ describe('addDocument', () => {
 			$id: 'user-2',
 			$data: { id: 'user-2', name: 'Jane Smith' },
 			$hash: 'test-hash-2',
+			$timestamp: '2024-01-01T00:01:00Z',
 			$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' },
 		};
 
@@ -195,6 +199,7 @@ describe('addDocument', () => {
 			$id: 'user-3',
 			$data: { id: 'user-3', name: 'Bob Wilson' },
 			$hash: 'test-hash-3',
+			$timestamp: '2024-01-01T00:02:00Z',
 			$timestamps: { id: '2024-01-01T00:02:00Z', name: '2024-01-01T00:02:00Z' },
 		};
 
@@ -209,6 +214,7 @@ describe('addDocument', () => {
 			$id: 'duplicate-user',
 			$data: { id: 'duplicate-user', name: 'First User' },
 			$hash: 'hash-1',
+			$timestamp: '2024-01-01T00:03:00Z',
 			$timestamps: { id: '2024-01-01T00:03:00Z', name: '2024-01-01T00:03:00Z' },
 		};
 
@@ -216,6 +222,7 @@ describe('addDocument', () => {
 			$id: 'duplicate-user',
 			$data: { id: 'duplicate-user', name: 'Second User' },
 			$hash: 'hash-2',
+			$timestamp: '2024-01-01T00:04:00Z',
 			$timestamps: { id: '2024-01-01T00:04:00Z', name: '2024-01-01T00:04:00Z' },
 		};
 
@@ -231,6 +238,7 @@ describe('addDocument', () => {
 			$id: 'user-with-fields',
 			$data: { id: 'user-with-fields', name: 'Complete User' },
 			$hash: 'complete-hash',
+			$timestamp: '2024-01-01T00:05:00Z',
 			$timestamps: { id: '2024-01-01T00:05:00Z', name: '2024-01-01T00:05:00Z' },
 		};
 
@@ -285,6 +293,7 @@ describe('addDocument', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'John Doe' },
 				$hash: 'test-hash-1',
+				$timestamp: '2024-01-01T00:00:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:00:00Z',
 					name: '2024-01-01T00:00:00Z',
@@ -348,6 +357,7 @@ describe('putDocument', () => {
 			$id: 'put-user-1',
 			$data: { id: 'put-user-1', name: 'Put User' },
 			$hash: 'put-hash-1',
+			$timestamp: '2024-01-01T00:10:00Z',
 			$timestamps: { id: '2024-01-01T00:10:00Z', name: '2024-01-01T00:10:00Z' },
 		};
 
@@ -362,6 +372,7 @@ describe('putDocument', () => {
 			$id: 'put-user-2',
 			$data: { id: 'put-user-2', name: 'Original Name' },
 			$hash: 'put-hash-2',
+			$timestamp: '2024-01-01T00:11:00Z',
 			$timestamps: { id: '2024-01-01T00:11:00Z', name: '2024-01-01T00:11:00Z' },
 		};
 		await putDocument(db, 'users', doc);
@@ -382,6 +393,7 @@ describe('putDocument', () => {
 			$id: 'put-user-3',
 			$data: { id: 'put-user-3', name: 'No Store' },
 			$hash: 'put-hash-3',
+			$timestamp: '2024-01-01T00:12:00Z',
 			$timestamps: { id: '2024-01-01T00:12:00Z', name: '2024-01-01T00:12:00Z' },
 		};
 		await expect(
@@ -427,6 +439,7 @@ describe('getAllDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
+				$timestamp: '2024-01-01T00:00:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:00:00Z',
 					name: '2024-01-01T00:00:00Z',
@@ -436,6 +449,7 @@ describe('getAllDocuments', () => {
 				$id: 'user-2',
 				$data: { id: 'user-2', name: 'Bob' },
 				$hash: 'hash-2',
+				$timestamp: '2024-01-01T00:01:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:01:00Z',
 					name: '2024-01-01T00:01:00Z',
@@ -499,6 +513,7 @@ describe('addDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
+				$timestamp: '2024-01-01T00:00:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:00:00Z',
 					name: '2024-01-01T00:00:00Z',
@@ -508,6 +523,7 @@ describe('addDocuments', () => {
 				$id: 'user-2',
 				$data: { id: 'user-2', name: 'Bob' },
 				$hash: 'hash-2',
+				$timestamp: '2024-01-01T00:01:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:01:00Z',
 					name: '2024-01-01T00:01:00Z',
@@ -526,6 +542,7 @@ describe('addDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
+				$timestamp: '2024-01-01T00:00:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:00:00Z',
 					name: '2024-01-01T00:00:00Z',
@@ -535,6 +552,7 @@ describe('addDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Duplicate' },
 				$hash: 'hash-dup',
+				$timestamp: '2024-01-01T00:02:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:02:00Z',
 					name: '2024-01-01T00:02:00Z',
@@ -582,6 +600,7 @@ describe('putDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
+				$timestamp: '2024-01-01T00:00:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:00:00Z',
 					name: '2024-01-01T00:00:00Z',
@@ -591,6 +610,7 @@ describe('putDocuments', () => {
 				$id: 'user-2',
 				$data: { id: 'user-2', name: 'Bob' },
 				$hash: 'hash-2',
+				$timestamp: '2024-01-01T00:01:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:01:00Z',
 					name: '2024-01-01T00:01:00Z',
@@ -629,6 +649,7 @@ describe('putDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
+				$timestamp: '2024-01-01T00:00:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:00:00Z',
 					name: '2024-01-01T00:00:00Z',
@@ -679,6 +700,7 @@ describe('queryDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
+				$timestamp: '2024-01-01T00:00:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:00:00Z',
 					name: '2024-01-01T00:00:00Z',
@@ -688,6 +710,7 @@ describe('queryDocuments', () => {
 				$id: 'user-2',
 				$data: { id: 'user-2', name: 'Bob' },
 				$hash: 'hash-2',
+				$timestamp: '2024-01-01T00:01:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:01:00Z',
 					name: '2024-01-01T00:01:00Z',
@@ -697,6 +720,7 @@ describe('queryDocuments', () => {
 				$id: 'user-3',
 				$data: { id: 'user-3', name: 'Carol' },
 				$hash: 'hash-3',
+				$timestamp: '2024-01-01T00:02:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:02:00Z',
 					name: '2024-01-01T00:02:00Z',
@@ -717,6 +741,7 @@ describe('queryDocuments', () => {
 				$id: 'user-1',
 				$data: { id: 'user-1', name: 'Alice' },
 				$hash: 'hash-1',
+				$timestamp: '2024-01-01T00:00:00Z',
 				$timestamps: {
 					id: '2024-01-01T00:00:00Z',
 					name: '2024-01-01T00:00:00Z',
@@ -738,5 +763,99 @@ describe('queryDocuments', () => {
 			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 			queryDocuments(db, 'nonexistent-store' as any, predicate),
 		).rejects.toThrow();
+	});
+});
+
+describe('HLC operations', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema,
+			},
+		};
+		db = await openDatabase(config);
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	describe('putHLC and getHLC', () => {
+		it('should store and retrieve HLC timestamp for a store', async () => {
+			const timestamp = '2024-01-01T00:00:00.000Z';
+			
+			await expect(putHLC(db, 'users', timestamp)).resolves.toBeUndefined();
+			
+			const retrieved = await getHLC(db, 'users');
+			expect(retrieved).toBe(timestamp);
+		});
+
+		it('should return null if no HLC timestamp exists for a store', async () => {
+			const result = await getHLC(db, 'users');
+			expect(result).toBeNull();
+		});
+
+		it('should update existing HLC timestamp', async () => {
+			const initialTimestamp = '2024-01-01T00:00:00.000Z';
+			const updatedTimestamp = '2024-01-01T00:01:00.000Z';
+			
+			await putHLC(db, 'users', initialTimestamp);
+			await putHLC(db, 'users', updatedTimestamp);
+			
+			const result = await getHLC(db, 'users');
+			expect(result).toBe(updatedTimestamp);
+		});
+
+		it('should handle multiple stores independently', async () => {
+			// Create a second store for testing
+			const dbName2 = `test-db-${Date.now()}-${Math.random()}`;
+			const config2 = {
+				name: dbName2,
+				version: 1 as const,
+				stores: {
+					users: userSchema,
+					posts: postSchema,
+				},
+			};
+			const db2 = await openDatabase(config2);
+			
+			try {
+				const timestamp1 = '2024-01-01T00:00:00.000Z';
+				const timestamp2 = '2024-01-01T00:01:00.000Z';
+				
+				await putHLC(db2, 'users', timestamp1);
+				await putHLC(db2, 'posts', timestamp2);
+				
+				const result1 = await getHLC(db2, 'users');
+				const result2 = await getHLC(db2, 'posts');
+				
+				expect(result1).toBe(timestamp1);
+				expect(result2).toBe(timestamp2);
+			} finally {
+				db2.close();
+				const deleteRequest = indexedDB.deleteDatabase(dbName2);
+				await new Promise<void>((resolve) => {
+					deleteRequest.onsuccess = () => resolve();
+					deleteRequest.onerror = () => resolve();
+				});
+			}
+		});
 	});
 });
