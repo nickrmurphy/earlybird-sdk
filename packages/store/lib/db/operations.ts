@@ -1,4 +1,3 @@
-
 import type { DatabaseConfig, DocumentFromSchema, StandardSchemaV1, TypedDatabase } from '../types';
 
 // biome-ignore lint/suspicious/noExplicitAny: Generic constraint requires any for StandardSchemaV1
@@ -61,6 +60,31 @@ export async function addDocument<
     });
 }
 
+export async function addDocuments<
+    TConfig extends DatabaseConfig,
+    TStoreName extends keyof TConfig['stores'] & string
+>(
+    db: TypedDatabase<TConfig>,
+    storeName: TStoreName,
+    documents: DocumentFromSchema<TConfig['stores'][TStoreName]>[]
+): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+
+        Promise.all(
+            documents.map(doc =>
+                new Promise<void>((res, rej) => {
+                    const request = store.add(doc);
+                    request.onsuccess = () => res();
+                    request.onerror = () => rej(request.error);
+                }))
+        )
+            .then(() => resolve())
+            .catch(reject);
+    });
+}
+
 export async function getDocument<
     TConfig extends DatabaseConfig,
     TStoreName extends keyof TConfig['stores'] & string
@@ -114,6 +138,32 @@ export async function putDocument<
 
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
+    });
+}
+
+export async function putDocuments<
+    TConfig extends DatabaseConfig,
+    TStoreName extends keyof TConfig['stores'] & string
+>(
+    db: TypedDatabase<TConfig>,
+    storeName: TStoreName,
+    documents: DocumentFromSchema<TConfig['stores'][TStoreName]>[]
+): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+
+        Promise.all(
+            documents.map(doc =>
+                new Promise<void>((res, rej) => {
+                    const request = store.put(doc);
+                    request.onsuccess = () => res();
+                    request.onerror = () => rej(request.error);
+                })
+            )
+        )
+            .then(() => resolve())
+            .catch(reject);
     });
 }
 

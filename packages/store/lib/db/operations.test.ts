@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { z } from 'zod';
-import { addDocument, getDocument, openDatabase, putDocument, getAllDocuments } from './operations';
+import { addDocument, getDocument, openDatabase, putDocument, getAllDocuments, addDocuments, putDocuments } from './operations';
 import type { DatabaseConfig, Document, TypedDatabase, EntitySchema } from '../types';
 
 const userSchema = z.object({
@@ -427,5 +427,151 @@ describe('getAllDocuments', () => {
 	it('should reject if the store does not exist', async () => {
 		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
 		await expect(getAllDocuments(db, 'nonexistent-store' as any)).rejects.toThrow();
+	});
+});
+describe('addDocuments', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema
+			}
+		};
+		db = await openDatabase(config);
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('should add multiple documents to the store', async () => {
+		const docs: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alice' },
+				$hash: 'hash-1',
+				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+			},
+			{
+				$id: 'user-2',
+				$data: { id: 'user-2', name: 'Bob' },
+				$hash: 'hash-2',
+				$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' }
+			}
+		];
+		await expect(addDocuments(db, 'users', docs)).resolves.toBeUndefined();
+		const allDocs = await getAllDocuments(db, 'users');
+		expect(allDocs).toHaveLength(2);
+		expect(allDocs).toEqual(expect.arrayContaining(docs));
+	});
+
+	it('should reject if any document is a duplicate', async () => {
+		const docs: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alice' },
+				$hash: 'hash-1',
+				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+			},
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Duplicate' },
+				$hash: 'hash-dup',
+				$timestamps: { id: '2024-01-01T00:02:00Z', name: '2024-01-01T00:02:00Z' }
+			}
+		];
+		await expect(addDocuments(db, 'users', docs)).rejects.toThrow();
+	});
+});
+
+describe('putDocuments', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema
+			}
+		};
+		db = await openDatabase(config);
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('should insert or update multiple documents', async () => {
+		const docs: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alice' },
+				$hash: 'hash-1',
+				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+			},
+			{
+				$id: 'user-2',
+				$data: { id: 'user-2', name: 'Bob' },
+				$hash: 'hash-2',
+				$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' }
+			}
+		];
+		await expect(putDocuments(db, 'users', docs)).resolves.toBeUndefined();
+		const allDocs = await getAllDocuments(db, 'users');
+		expect(allDocs).toHaveLength(2);
+		expect(allDocs).toEqual(expect.arrayContaining(docs));
+
+		// Update one document
+		const updatedDocs = [
+			{ ...docs[0], $data: { id: 'user-1', name: 'Alice Updated' }, $hash: 'hash-1b' },
+			{ ...docs[1], $data: { id: 'user-2', name: 'Bob Updated' }, $hash: 'hash-2b' }
+		];
+		await expect(putDocuments(db, 'users', updatedDocs)).resolves.toBeUndefined();
+		const updatedAll = await getAllDocuments(db, 'users');
+		expect(updatedAll).toHaveLength(2);
+		expect(updatedAll).toEqual(expect.arrayContaining(updatedDocs));
+	});
+
+	it('should reject if the store does not exist', async () => {
+		const docs: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alice' },
+				$hash: 'hash-1',
+				$timestamps: { id: '2024-01-01T00:00:00Z', name: '2024-01-01T00:00:00Z' }
+			}
+		];
+		// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
+		await expect(putDocuments(db, 'nonexistent-store' as any, docs)).rejects.toThrow();
 	});
 });
