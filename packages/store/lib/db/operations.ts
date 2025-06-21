@@ -1,5 +1,5 @@
 
-import type { DatabaseConfig, StandardSchemaV1 } from '../types';
+import type { DatabaseConfig, DocumentFromSchema, StandardSchemaV1, TypedDatabase } from '../types';
 
 // biome-ignore lint/suspicious/noExplicitAny: Generic constraint requires any for StandardSchemaV1
 const setUpStores = (db: IDBDatabase, stores: Record<string, StandardSchemaV1<any, any>>): void => {
@@ -7,7 +7,7 @@ const setUpStores = (db: IDBDatabase, stores: Record<string, StandardSchemaV1<an
     for (const [storeName] of Object.entries(stores)) {
         if (!db.objectStoreNames.contains(storeName)) {
             const store = db.createObjectStore(storeName, {
-                keyPath: '$id'
+                keyPath: '$id',
             });
 
             // Create indexes for common CRDT fields
@@ -20,12 +20,14 @@ const setUpStores = (db: IDBDatabase, stores: Record<string, StandardSchemaV1<an
     }
 };
 
-export async function openDatabase(config: DatabaseConfig): Promise<IDBDatabase> {
+export async function openDatabase<TConfig extends DatabaseConfig>(config: TConfig): Promise<TypedDatabase<TConfig>> {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(config.name, config.version);
 
         request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => {
+            resolve(request.result as TypedDatabase<TConfig>);
+        };
 
         request.onupgradeneeded = (event) => {
             if (!(event.target instanceof IDBOpenDBRequest)) {
@@ -37,6 +39,25 @@ export async function openDatabase(config: DatabaseConfig): Promise<IDBDatabase>
 
             setUpStores(db, config.stores);
         };
+    });
+}
+
+export async function addDocument<
+    TConfig extends DatabaseConfig,
+    TStoreName extends keyof TConfig['stores'] & string
+>(
+    db: TypedDatabase<TConfig>,
+    storeName: TStoreName,
+    document: DocumentFromSchema<TConfig['stores'][TStoreName]>
+): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+
+        const request = store.add(document);
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
     });
 }
 

@@ -11,8 +11,8 @@ describe("assignTimestamps", () => {
 
         const result = makeTimestamps(hlc, data);
 
-        expect(result).toEqual({ a: mockTimestamp, b: mockTimestamp, c: mockTimestamp });
-        expect(hlc.tick).toHaveBeenCalledTimes(3);
+        expect(result).toEqual({ id: mockTimestamp, a: mockTimestamp, b: mockTimestamp, c: mockTimestamp });
+        expect(hlc.tick).toHaveBeenCalledTimes(4);
     });
 
     it("calls hlc.tick for each key", () => {
@@ -21,7 +21,7 @@ describe("assignTimestamps", () => {
 
         makeTimestamps(hlc, data);
 
-        expect(hlc.tick).toHaveBeenCalledTimes(2);
+        expect(hlc.tick).toHaveBeenCalledTimes(3);
     });
 
     it("works with different types of values in data", () => {
@@ -30,6 +30,6 @@ describe("assignTimestamps", () => {
 
         const result = makeTimestamps(hlc, data);
 
-        expect(result).toEqual({ foo: "now", num: "now", bool: "now" });
+        expect(result).toEqual({ id: "now", foo: "now", num: "now", bool: "now" });
     });
 });

@@ -81,6 +81,10 @@ export type HLC = {
 
 export type Entity = { id: string };
 
+// Schema that validates to Entity-compatible output
+// biome-ignore lint/suspicious/noExplicitAny: True any use-case
+export type EntitySchema<T extends Entity = Entity> = StandardSchemaV1<any, T>;
+
 export type Document<T extends Entity> = {
     $id: string;
     $data: T;
@@ -90,19 +94,9 @@ export type Document<T extends Entity> = {
     }
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: True any use-case
-export type DocumentFromSchema<S extends StandardSchemaV1<any, any>> =
-    S extends StandardSchemaV1<infer Input, infer Output>
-    ? Output extends Entity
-    ? {
-        $id: string;
-        $data: Output;
-        $hash: string;
-        $timestamps: {
-            [K in keyof Output]: string;
-        };
-    }
-    : never
+export type DocumentFromSchema<S extends EntitySchema> =
+    S extends EntitySchema<infer T>
+    ? Document<T>
     : never;
 
 export type DatabaseConfig = {
@@ -111,3 +105,7 @@ export type DatabaseConfig = {
     // biome-ignore lint/suspicious/noExplicitAny: Generic constraint requires any for StandardSchemaV1
     stores: Record<string, StandardSchemaV1<any, any>>;
 }
+
+export type TypedDatabase<TConfig extends DatabaseConfig> = IDBDatabase & {
+    _config?: TConfig; // Phantom type for compile-time type checking only
+};
