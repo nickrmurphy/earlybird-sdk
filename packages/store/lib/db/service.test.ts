@@ -4,6 +4,7 @@ import { createClock } from '../crdt/hlc';
 import type { EntitySchema, TypedDatabase } from '../types';
 import { getDocument, openDatabase } from './operations';
 import {
+	create,
 	createMany,
 	createOne,
 	getAll,
@@ -11,6 +12,7 @@ import {
 	getHashes,
 	getOne,
 	getWhere,
+	update,
 	updateMany,
 	updateOne,
 } from './service';
@@ -902,5 +904,127 @@ describe('$timestamp functionality', () => {
 
 		// The document timestamp should be a valid HLC timestamp
 		expect(doc?.$timestamp).toMatch(/^\d+/); // Should start with digits (timestamp part)
+	});
+});
+
+describe('create ergonomic function', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+	let hlc: ReturnType<typeof createClock>;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema,
+			},
+		};
+		db = await openDatabase(config);
+		hlc = createClock();
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('handles single object', async () => {
+		const userData = { id: 'user-1', name: 'John Doe' };
+		
+		await create(db, 'users', userSchema, hlc, userData);
+		
+		const result = await getOne(db, 'users', 'user-1');
+		expect(result).toEqual(userData);
+	});
+
+	it('handles array of objects', async () => {
+		const userData = [
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-2', name: 'Jane Smith' },
+		];
+		
+		await create(db, 'users', userSchema, hlc, userData);
+		
+		const result = await getAll(db, 'users');
+		expect(result).toHaveLength(2);
+		expect(result).toEqual(expect.arrayContaining(userData));
+	});
+});
+
+describe('update ergonomic function', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof userSchema;
+		};
+	}>;
+	let dbName: string;
+	let hlc: ReturnType<typeof createClock>;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: userSchema,
+			},
+		};
+		db = await openDatabase(config);
+		hlc = createClock();
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('handles single update', async () => {
+		const userData = { id: 'user-1', name: 'John Doe' };
+		await create(db, 'users', userSchema, hlc, userData);
+		
+		await update(db, 'users', userSchema, hlc, {
+			id: 'user-1',
+			data: { name: 'Jane Doe' },
+		});
+		
+		const result = await getOne(db, 'users', 'user-1');
+		expect(result).toEqual({ id: 'user-1', name: 'Jane Doe' });
+	});
+
+	it('handles array of updates', async () => {
+		const userData = [
+			{ id: 'user-1', name: 'John Doe' },
+			{ id: 'user-2', name: 'Jane Smith' },
+		];
+		await create(db, 'users', userSchema, hlc, userData);
+		
+		await update(db, 'users', userSchema, hlc, [
+			{ id: 'user-1', data: { name: 'John Updated' } },
+			{ id: 'user-2', data: { name: 'Jane Updated' } },
+		]);
+		
+		const result = await getAll(db, 'users');
+		expect(result).toEqual(expect.arrayContaining([
+			{ id: 'user-1', name: 'John Updated' },
+			{ id: 'user-2', name: 'Jane Updated' },
+		]));
 	});
 });

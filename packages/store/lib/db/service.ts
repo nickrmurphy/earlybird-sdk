@@ -200,3 +200,37 @@ export async function getDocumentsInBuckets<
 	documents.sort((a, b) => a.$timestamp.localeCompare(b.$timestamp));
 	return documents.filter((_, index) => getIndices.has(index));
 }
+
+export async function create<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+>(
+	db: TypedDatabase<TConfig>,
+	storeName: TStoreName,
+	schema: StoreSchema<TConfig, TStoreName>,
+	hlc: Pick<HLC, 'tick'>,
+	data: StoreInput<TConfig, TStoreName> | StoreInput<TConfig, TStoreName>[],
+): Promise<void> {
+	if (Array.isArray(data)) {
+		return createMany(db, storeName, schema, hlc, data);
+	}
+	return createOne(db, storeName, schema, hlc, data);
+}
+
+export async function update<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+>(
+	db: TypedDatabase<TConfig>,
+	storeName: TStoreName,
+	schema: StoreSchema<TConfig, TStoreName>,
+	hlc: Pick<HLC, 'tick'>,
+	data:
+		| { id: string; data: Partial<StoreInput<TConfig, TStoreName>> }
+		| { id: string; data: Partial<StoreInput<TConfig, TStoreName>> }[],
+): Promise<void> {
+	if (Array.isArray(data)) {
+		return updateMany(db, storeName, schema, hlc, data);
+	}
+	return updateOne(db, storeName, schema, hlc, data.id, data.data);
+}
