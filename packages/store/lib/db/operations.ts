@@ -6,7 +6,7 @@ import type {
 	TypedDatabase,
 } from '../types';
 import {
-	type IoContext,
+	type StoreIOContext,
 	add,
 	addAll,
 	get,
@@ -30,7 +30,7 @@ export interface DbContext<
 function createIoContext<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
->(context: DbContext<TConfig, TStoreName>): IoContext {
+>(context: DbContext<TConfig, TStoreName>): StoreIOContext {
 	return {
 		db: context.db,
 		storeName: context.storeName,
@@ -40,7 +40,7 @@ function createIoContext<
 function createHlcIoContext<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
->(context: DbContext<TConfig, TStoreName>): IoContext {
+>(context: DbContext<TConfig, TStoreName>): StoreIOContext {
 	return {
 		db: context.db,
 		storeName: context.hlcStoreName,

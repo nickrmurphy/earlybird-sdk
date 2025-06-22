@@ -7,11 +7,11 @@ import {
 	putAll,
 	putWithKey,
 	query,
-	type IoContext,
+	type StoreIOContext,
 } from './store-io';
 
 export class StoreIO {
-	constructor(private context: IoContext) {}
+	constructor(private context: StoreIOContext) {}
 
 	async add<T>(item: T): Promise<void> {
 		await add<T>(this.context, item);

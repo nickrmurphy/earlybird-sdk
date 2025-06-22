@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { IoContext } from './store-io';
+import type { StoreIOContext } from './store-io';
 import {
 	add,
 	addAll,
@@ -20,7 +20,7 @@ interface TestItem {
 describe('io operations', () => {
 	let db: IDBDatabase;
 	let dbName: string;
-	let context: IoContext;
+	let context: StoreIOContext;
 
 	beforeEach(async () => {
 		dbName = `test-io-db-${Date.now()}-${Math.random()}`;
@@ -77,7 +77,10 @@ describe('io operations', () => {
 		});
 
 		it('should reject if store does not exist', async () => {
-			const invalidContext: IoContext = { db, storeName: 'nonexistent-store' };
+			const invalidContext: StoreIOContext = {
+				db,
+				storeName: 'nonexistent-store',
+			};
 			await expect(get<TestItem>(invalidContext, 'test-1')).rejects.toThrow();
 		});
 	});
@@ -111,7 +114,10 @@ describe('io operations', () => {
 		});
 
 		it('should reject if store does not exist', async () => {
-			const invalidContext: IoContext = { db, storeName: 'nonexistent-store' };
+			const invalidContext: StoreIOContext = {
+				db,
+				storeName: 'nonexistent-store',
+			};
 			await expect(getAll<TestItem>(invalidContext)).rejects.toThrow();
 		});
 	});
@@ -139,7 +145,10 @@ describe('io operations', () => {
 
 		it('should reject if store does not exist', async () => {
 			const item: TestItem = { id: 'put-3', name: 'No Store' };
-			const invalidContext: IoContext = { db, storeName: 'nonexistent-store' };
+			const invalidContext: StoreIOContext = {
+				db,
+				storeName: 'nonexistent-store',
+			};
 			await expect(put(invalidContext, item)).rejects.toThrow();
 		});
 	});
@@ -178,7 +187,10 @@ describe('io operations', () => {
 
 		it('should reject if store does not exist', async () => {
 			const items: TestItem[] = [{ id: 'put-all-5', name: 'No Store' }];
-			const invalidContext: IoContext = { db, storeName: 'nonexistent-store' };
+			const invalidContext: StoreIOContext = {
+				db,
+				storeName: 'nonexistent-store',
+			};
 			await expect(putAll(invalidContext, items)).rejects.toThrow();
 		});
 	});
@@ -203,7 +215,10 @@ describe('io operations', () => {
 
 		it('should reject if store does not exist', async () => {
 			const item: TestItem = { id: 'add-3', name: 'No Store' };
-			const invalidContext: IoContext = { db, storeName: 'nonexistent-store' };
+			const invalidContext: StoreIOContext = {
+				db,
+				storeName: 'nonexistent-store',
+			};
 			await expect(add(invalidContext, item)).rejects.toThrow();
 		});
 	});
@@ -235,7 +250,10 @@ describe('io operations', () => {
 
 		it('should reject if store does not exist', async () => {
 			const items: TestItem[] = [{ id: 'add-all-5', name: 'No Store' }];
-			const invalidContext: IoContext = { db, storeName: 'nonexistent-store' };
+			const invalidContext: StoreIOContext = {
+				db,
+				storeName: 'nonexistent-store',
+			};
 			await expect(addAll(invalidContext, items)).rejects.toThrow();
 		});
 	});
@@ -279,7 +297,10 @@ describe('io operations', () => {
 		});
 
 		it('should reject if store does not exist', async () => {
-			const invalidContext: IoContext = { db, storeName: 'nonexistent-store' };
+			const invalidContext: StoreIOContext = {
+				db,
+				storeName: 'nonexistent-store',
+			};
 			await expect(
 				query<TestItem>(invalidContext, () => true),
 			).rejects.toThrow();
@@ -287,7 +308,7 @@ describe('io operations', () => {
 	});
 
 	describe('putWithKey', () => {
-		let keyValueContext: IoContext;
+		let keyValueContext: StoreIOContext;
 		let keyValueDbName: string;
 
 		beforeEach(async () => {
@@ -335,7 +356,7 @@ describe('io operations', () => {
 		});
 
 		it('should reject if store does not exist', async () => {
-			const invalidContext: IoContext = {
+			const invalidContext: StoreIOContext = {
 				db: keyValueContext.db,
 				storeName: 'nonexistent-store',
 			};

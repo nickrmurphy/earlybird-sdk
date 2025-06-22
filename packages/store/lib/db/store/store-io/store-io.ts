@@ -1,10 +1,10 @@
-export interface IoContext {
+export interface StoreIOContext {
 	db: IDBDatabase;
 	storeName: string;
 }
 
 export async function get<T>(
-	context: IoContext,
+	context: StoreIOContext,
 	key: string,
 ): Promise<T | null> {
 	return new Promise((resolve, reject) => {
@@ -18,7 +18,7 @@ export async function get<T>(
 	});
 }
 
-export async function getAll<T>(context: IoContext): Promise<T[]> {
+export async function getAll<T>(context: StoreIOContext): Promise<T[]> {
 	return new Promise((resolve, reject) => {
 		const transaction = context.db.transaction(context.storeName, 'readonly');
 		const store = transaction.objectStore(context.storeName);
@@ -30,7 +30,7 @@ export async function getAll<T>(context: IoContext): Promise<T[]> {
 	});
 }
 
-export async function put<T>(context: IoContext, item: T): Promise<void> {
+export async function put<T>(context: StoreIOContext, item: T): Promise<void> {
 	return new Promise((resolve, reject) => {
 		const transaction = context.db.transaction(context.storeName, 'readwrite');
 		const store = transaction.objectStore(context.storeName);
@@ -42,7 +42,10 @@ export async function put<T>(context: IoContext, item: T): Promise<void> {
 	});
 }
 
-export async function putAll<T>(context: IoContext, items: T[]): Promise<void> {
+export async function putAll<T>(
+	context: StoreIOContext,
+	items: T[],
+): Promise<void> {
 	return new Promise((resolve, reject) => {
 		const transaction = context.db.transaction(context.storeName, 'readwrite');
 		const store = transaction.objectStore(context.storeName);
@@ -62,7 +65,7 @@ export async function putAll<T>(context: IoContext, items: T[]): Promise<void> {
 	});
 }
 
-export async function add<T>(context: IoContext, item: T): Promise<void> {
+export async function add<T>(context: StoreIOContext, item: T): Promise<void> {
 	return new Promise((resolve, reject) => {
 		const transaction = context.db.transaction(context.storeName, 'readwrite');
 		const store = transaction.objectStore(context.storeName);
@@ -74,7 +77,10 @@ export async function add<T>(context: IoContext, item: T): Promise<void> {
 	});
 }
 
-export async function addAll<T>(context: IoContext, items: T[]): Promise<void> {
+export async function addAll<T>(
+	context: StoreIOContext,
+	items: T[],
+): Promise<void> {
 	return new Promise((resolve, reject) => {
 		const transaction = context.db.transaction(context.storeName, 'readwrite');
 		const store = transaction.objectStore(context.storeName);
@@ -95,7 +101,7 @@ export async function addAll<T>(context: IoContext, items: T[]): Promise<void> {
 }
 
 export async function query<T>(
-	context: IoContext,
+	context: StoreIOContext,
 	predicate: (item: T) => boolean,
 ): Promise<T[]> {
 	return new Promise((resolve, reject) => {
@@ -121,7 +127,7 @@ export async function query<T>(
 }
 
 export async function putWithKey<T>(
-	context: IoContext,
+	context: StoreIOContext,
 	value: T,
 	key: string,
 ): Promise<void> {
