@@ -3,7 +3,7 @@ import {
 	createFixedNonceProvider,
 	createMockTimeProvider,
 } from '../../testing/providers';
-import { advanceHLC, generateHLC } from './functions';
+import { advanceHLC, generateHLC } from './core';
 
 describe('HLC functions', () => {
 	describe('generateHLC', () => {

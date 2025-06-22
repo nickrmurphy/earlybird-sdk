@@ -1,5 +1,5 @@
 import type { IHLC, INonceProvider, ITimeProvider } from './types';
-import { advanceHLC, generateHLC } from './functions';
+import { advanceHLC, generateHLC } from './core';
 import {
 	defaultNonceProvider,
 	defaultTimeProvider,
