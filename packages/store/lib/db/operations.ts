@@ -16,7 +16,7 @@ import {
 	putAll,
 	putWithKey,
 	query,
-} from './io';
+} from './store-io/store-io';
 
 export interface DbContext<
 	TConfig extends DatabaseConfig,
