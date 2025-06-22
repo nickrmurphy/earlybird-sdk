@@ -2,10 +2,10 @@
 export type { StandardSchemaV1 } from '../standard-schema.types';
 import type { StandardSchemaV1 } from '../standard-schema.types';
 
-export interface HLC {
+export interface IHLC {
 	current(): string;
 	tick(): string;
-	advance(timestamp: string): void;
+	advanceTo(timestamp: string): void;
 }
 
 export type Entity = { id: string };
@@ -68,7 +68,7 @@ export type WriteContext<
 	db: TypedDatabase<TConfig>;
 	storeName: TStoreName;
 	schema: StoreSchema<TConfig, TStoreName>;
-	hlc: Pick<HLC, 'tick'>;
+	hlc: Pick<IHLC, 'tick'>;
 };
 
 export type ReadContext<

@@ -998,10 +998,10 @@ describe('mergeDocuments', () => {
 
 		const allDocs = await getAllDocuments(db, 'users');
 		expect(allDocs).toHaveLength(2);
-		
-		const user1 = allDocs.find(doc => doc.$id === 'user-1');
-		const user2 = allDocs.find(doc => doc.$id === 'user-2');
-		
+
+		const user1 = allDocs.find((doc) => doc.$id === 'user-1');
+		const user2 = allDocs.find((doc) => doc.$id === 'user-2');
+
 		expect(user1?.$data.name).toBe('Alicia');
 		expect(user2?.$data.name).toBe('Bob');
 	});

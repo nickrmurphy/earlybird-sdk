@@ -1,4 +1,4 @@
-import { createClock, generateHLC } from '../crdt';
+import { HLC, generateHLC } from '../crdt';
 import type {
 	DatabaseConfig,
 	StoreData,
@@ -26,7 +26,7 @@ export function createDB<TConfig extends DatabaseConfig>(
 ): IDB<TConfig> {
 	const dbPromise = openDatabase(config);
 	let db: TypedDatabase<TConfig> | null = null;
-	const hlcCache = new Map<StoreKey<TConfig>, ReturnType<typeof createClock>>();
+	const hlcCache = new Map<StoreKey<TConfig>, HLC>();
 
 	const getDb = async (): Promise<TypedDatabase<TConfig>> => {
 		if (db) {
@@ -59,7 +59,7 @@ export function createDB<TConfig extends DatabaseConfig>(
 		if (!hlc) {
 			// Load from database or generate new one
 			const timestamp = (await getHLC(db, storeName)) || generateHLC();
-			hlc = createClock(timestamp);
+			hlc = new HLC(undefined, undefined, timestamp);
 			hlcCache.set(storeName, hlc);
 		}
 

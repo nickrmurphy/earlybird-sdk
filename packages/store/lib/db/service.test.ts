@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createClock } from '../crdt/hlc';
+import { HLC } from '../crdt/hlc';
 import {
 	createTestDatabaseConfig,
 	createTestUser,
@@ -26,13 +26,13 @@ import {
 describe('createOne', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -61,13 +61,13 @@ describe('createOne', () => {
 describe('createMany', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -168,13 +168,13 @@ describe('createMany', () => {
 describe('getOne', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -206,13 +206,13 @@ describe('getOne', () => {
 describe('getAll', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -245,13 +245,13 @@ describe('getAll', () => {
 describe('getWhere', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -313,13 +313,13 @@ describe('getWhere', () => {
 describe('updateOne', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -432,13 +432,13 @@ describe('updateOne', () => {
 describe('updateMany', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -601,13 +601,13 @@ describe('updateMany', () => {
 describe('getHashes', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -717,13 +717,13 @@ describe('getHashes', () => {
 describe('getDocumentsInBuckets', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -866,13 +866,13 @@ describe('getDocumentsInBuckets', () => {
 describe('$timestamp functionality', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -941,13 +941,13 @@ describe('$timestamp functionality', () => {
 describe('create ergonomic function', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -991,13 +991,13 @@ describe('create ergonomic function', () => {
 describe('update ergonomic function', () => {
 	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
 	let dbName: string;
-	let hlc: ReturnType<typeof createClock>;
+	let hlc: HLC;
 
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
 		db = await openDatabase(config);
-		hlc = createClock();
+		hlc = new HLC();
 	});
 
 	afterEach(async () => {
@@ -1074,7 +1074,7 @@ describe('merge', () => {
 
 	it('merges documents with CRDT conflict resolution', async () => {
 		// Add initial document
-		const hlc = createClock();
+		const hlc = new HLC();
 		const initialUser = createTestUser({ id: 'user-1', name: 'Alice' });
 		await createOne(
 			{ db, storeName: 'users', schema: testUserSchema, hlc },
@@ -1086,10 +1086,11 @@ describe('merge', () => {
 		expect(existingDoc).not.toBeNull();
 
 		// Wait a bit to ensure future timestamps
-		await new Promise(resolve => setTimeout(resolve, 10));
+		await new Promise((resolve) => setTimeout(resolve, 10));
 
 		// Create a future timestamp that's definitely newer than existing
-		const futureTimestamp = new Date(Date.now() + 1000 * 60 * 60).toISOString() + '-000000-z'; // 1 hour in future
+		const futureTimestamp =
+			new Date(Date.now() + 1000 * 60 * 60).toISOString() + '-000000-z'; // 1 hour in future
 		const pastTimestamp = '2020-01-01T00:00:00.000Z-000000-a'; // Definitely in the past
 
 		// Create document to merge with newer name timestamp but older id timestamp
@@ -1113,7 +1114,9 @@ describe('merge', () => {
 	});
 
 	it('handles empty document array', async () => {
-		await expect(merge({ db, storeName: 'users' }, [])).resolves.toBeUndefined();
+		await expect(
+			merge({ db, storeName: 'users' }, []),
+		).resolves.toBeUndefined();
 
 		const result = await getAll({ db, storeName: 'users' });
 		expect(result).toEqual([]);
@@ -1175,7 +1178,7 @@ describe('merge', () => {
 
 	it('does not update when merge document has older timestamps', async () => {
 		// Add initial document with newer timestamps
-		const hlc = createClock();
+		const hlc = new HLC();
 		const initialUser = createTestUser({ id: 'user-1', name: 'Alice' });
 		await createOne(
 			{ db, storeName: 'users', schema: testUserSchema, hlc },
@@ -1203,8 +1206,8 @@ describe('merge', () => {
 
 	it('handles mixed scenarios with some newer and some older fields', async () => {
 		// Add initial document
-		const hlc = createClock();
-		
+		const hlc = new HLC();
+
 		// Create initial user with specific timestamps
 		const initialUserData = createTestUser({ id: 'user-1', name: 'Alice' });
 		await createOne(
@@ -1217,10 +1220,11 @@ describe('merge', () => {
 		expect(existingDoc).not.toBeNull();
 
 		// Wait a bit to ensure future timestamps
-		await new Promise(resolve => setTimeout(resolve, 10));
+		await new Promise((resolve) => setTimeout(resolve, 10));
 
 		// Create a future timestamp that's definitely newer than existing
-		const futureTimestamp = new Date(Date.now() + 1000 * 60 * 60).toISOString() + '-000000-z'; // 1 hour in future
+		const futureTimestamp =
+			new Date(Date.now() + 1000 * 60 * 60).toISOString() + '-000000-z'; // 1 hour in future
 		const pastTimestamp = '2020-01-01T00:00:00.000Z-000000-a'; // Definitely in the past
 
 		// Create merge document with mixed timestamps - some newer, some older

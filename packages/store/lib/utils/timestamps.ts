@@ -1,7 +1,7 @@
-import type { HLC } from '../types';
+import type { IHLC } from '../types';
 
 export function makeTimestamps<T extends object>(
-	hlc: Pick<HLC, 'tick'>,
+	hlc: Pick<IHLC, 'tick'>,
 	data: T,
 ): { [K in keyof T]: string } {
 	return Object.fromEntries(

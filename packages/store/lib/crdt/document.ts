@@ -3,7 +3,7 @@ import type {
 	Document,
 	DocumentFromSchema,
 	Entity,
-	HLC,
+	IHLC,
 	StoreData,
 	StoreKey,
 } from '../types';
@@ -13,7 +13,7 @@ export function makeDocument<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	hlc: Pick<HLC, 'tick'>,
+	hlc: Pick<IHLC, 'tick'>,
 	data: StoreData<TConfig, TStoreName>,
 ): DocumentFromSchema<TConfig['stores'][TStoreName]> {
 	const timestamps = makeTimestamps(hlc, data);
@@ -28,7 +28,7 @@ export function makeDocument<
 }
 
 export function updateDocument<T extends Entity>(
-	hlc: Pick<HLC, 'tick'>,
+	hlc: Pick<IHLC, 'tick'>,
 	doc: Document<T>,
 	data: Partial<T>,
 ): Document<T> {
@@ -52,20 +52,25 @@ export function mergeDocuments<T extends Entity>(
 	source: Document<T>,
 ): Document<T> {
 	const mergedData: T = { ...target.$data };
-	const mergedTimestamps: { [K in keyof T]: string } = { ...target.$timestamps };
-	
+	const mergedTimestamps: { [K in keyof T]: string } = {
+		...target.$timestamps,
+	};
+
 	for (const key in source.$data) {
 		const sourceTimestamp = source.$timestamps[key];
 		const targetTimestamp = target.$timestamps[key];
-		
+
 		if (sourceTimestamp > targetTimestamp) {
 			mergedData[key] = source.$data[key];
 			mergedTimestamps[key] = sourceTimestamp;
 		}
 	}
-	
-	const finalTimestamp = source.$timestamp > target.$timestamp ? source.$timestamp : target.$timestamp;
-	
+
+	const finalTimestamp =
+		source.$timestamp > target.$timestamp
+			? source.$timestamp
+			: target.$timestamp;
+
 	return {
 		$id: target.$id,
 		$data: mergedData,

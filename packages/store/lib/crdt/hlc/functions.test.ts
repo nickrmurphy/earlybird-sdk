@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
 	createFixedNonceProvider,
 	createMockTimeProvider,
-} from '../testing/providers';
-import { advanceHLC, createClock, generateHLC } from './hlc';
+} from '../../testing/providers';
+import { advanceHLC, generateHLC } from './functions';
 
-describe('hlc', () => {
+describe('HLC functions', () => {
 	describe('generateHLC', () => {
 		it('should create HLC string with correct format', () => {
 			const timeProvider = createMockTimeProvider(
@@ -148,31 +148,6 @@ describe('hlc', () => {
 			const result = advanceHLC(hlc, timeProvider, nonceProvider);
 
 			expect(result).toBe('1970-01-01T00:00:00.000Z-000001-zero01');
-		});
-	});
-
-	describe('createClock', () => {
-		it('should set seed timestamp', () => {
-			const seed = '2023-01-01T00:00:00.000Z-000000-abcdef';
-			const clock = createClock(seed);
-
-			expect(clock.current()).toEqual(seed);
-		});
-
-		it('should advance clock', () => {
-			const timeProvider = createMockTimeProvider(
-				new Date('2023-01-01T00:00:01.000Z'),
-			);
-			const nonceProvider = createFixedNonceProvider('tick01');
-
-			const seed = '2023-01-01T00:00:00.000Z-000000-abcdef';
-			const clock = createClock(seed, timeProvider, nonceProvider);
-
-			const newHLC = clock.tick();
-			expect(newHLC).toBe('2023-01-01T00:00:01.000Z-000000-tick01');
-
-			expect(clock.current()).toBe('2023-01-01T00:00:01.000Z-000000-tick01');
-			expect(clock.current() > seed).toBeTruthy();
 		});
 	});
 });

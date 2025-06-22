@@ -1,15 +1,15 @@
-export interface TimeProvider {
+export interface ITimeProvider {
 	now(): Date;
 }
 
-export interface NonceProvider {
+export interface INonceProvider {
 	generate(): string;
 }
 
-export const defaultTimeProvider: TimeProvider = {
+export const defaultTimeProvider: ITimeProvider = {
 	now: () => new Date(),
 };
 
-export const defaultNonceProvider: NonceProvider = {
+export const defaultNonceProvider: INonceProvider = {
 	generate: () => Math.random().toString(36).substring(2, 8),
 };

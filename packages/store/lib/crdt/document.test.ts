@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { HLC } from '../types';
+import type { IHLC } from '../types';
 import { makeDocument, mergeDocuments, updateDocument } from './document';
 
 describe('makeDocument', () => {
 	it('creates a document with correct structure', () => {
-		const mockHLC: Pick<HLC, 'tick'> = {
+		const mockHLC: Pick<IHLC, 'tick'> = {
 			tick: vi.fn().mockReturnValue('timestamp-1'),
 		};
 
@@ -25,7 +25,7 @@ describe('makeDocument', () => {
 
 	it('calls tick for each property plus document timestamp', () => {
 		const mockTick = vi.fn().mockReturnValue('ts');
-		const mockHLC: Pick<HLC, 'tick'> = { tick: mockTick };
+		const mockHLC: Pick<IHLC, 'tick'> = { tick: mockTick };
 
 		const entity = { id: 'test', prop1: 'value1', prop2: 'value2' };
 		makeDocument(mockHLC, entity);
@@ -36,7 +36,7 @@ describe('makeDocument', () => {
 
 describe('updateDocument', () => {
 	it('updates document with new data', () => {
-		const mockHLC: Pick<HLC, 'tick'> = {
+		const mockHLC: Pick<IHLC, 'tick'> = {
 			tick: vi.fn().mockReturnValue('timestamp-2'),
 		};
 
@@ -71,7 +71,7 @@ describe('updateDocument', () => {
 	});
 
 	it('preserves unchanged fields and timestamps', () => {
-		const mockHLC: Pick<HLC, 'tick'> = {
+		const mockHLC: Pick<IHLC, 'tick'> = {
 			tick: vi.fn().mockReturnValue('timestamp-2'),
 		};
 

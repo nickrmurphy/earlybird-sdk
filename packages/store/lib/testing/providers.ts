@@ -1,8 +1,8 @@
-import type { NonceProvider, TimeProvider } from '../utils/providers';
+import type { INonceProvider, ITimeProvider } from '../utils/providers';
 
 export function createMockTimeProvider(
 	fixedDate: Date = new Date('2023-01-01T00:00:00.000Z'),
-): TimeProvider {
+): ITimeProvider {
 	let currentTime = fixedDate;
 
 	return {
@@ -11,18 +11,18 @@ export function createMockTimeProvider(
 		setTime: (newTime: Date) => {
 			currentTime = newTime;
 		},
-		advance: (milliseconds: number) => {
+		advanceTo: (milliseconds: number) => {
 			currentTime = new Date(currentTime.getTime() + milliseconds);
 		},
-	} as TimeProvider & {
+	} as ITimeProvider & {
 		setTime: (newTime: Date) => void;
-		advance: (milliseconds: number) => void;
+		advanceTo: (milliseconds: number) => void;
 	};
 }
 
 export function createMockNonceProvider(
 	sequence: string[] = ['abc123'],
-): NonceProvider {
+): INonceProvider {
 	let index = 0;
 
 	return {
@@ -35,14 +35,14 @@ export function createMockNonceProvider(
 		reset: () => {
 			index = 0;
 		},
-	} as NonceProvider & {
+	} as INonceProvider & {
 		reset: () => void;
 	};
 }
 
 export function createIncrementingNonceProvider(
 	prefix = 'nonce',
-): NonceProvider {
+): INonceProvider {
 	let counter = 0;
 
 	return {
@@ -50,12 +50,12 @@ export function createIncrementingNonceProvider(
 		reset: () => {
 			counter = 0;
 		},
-	} as NonceProvider & {
+	} as INonceProvider & {
 		reset: () => void;
 	};
 }
 
-export function createFixedNonceProvider(nonce = 'fixed123'): NonceProvider {
+export function createFixedNonceProvider(nonce = 'fixed123'): INonceProvider {
 	return {
 		generate: () => nonce,
 	};

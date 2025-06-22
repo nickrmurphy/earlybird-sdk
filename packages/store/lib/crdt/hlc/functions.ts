@@ -1,14 +1,16 @@
-import type { HLC } from '../types';
-import type { NonceProvider, TimeProvider } from '../utils/providers';
-import { defaultNonceProvider, defaultTimeProvider } from '../utils/providers';
+import type { INonceProvider, ITimeProvider } from './types';
+import {
+	defaultNonceProvider,
+	defaultTimeProvider,
+} from '../../utils/providers';
 
 const padLogical = (logical: number): string => {
 	return logical.toString().padStart(6, '0');
 };
 
 export const generateHLC = (
-	timeProvider: TimeProvider = defaultTimeProvider,
-	nonceProvider: NonceProvider = defaultNonceProvider,
+	timeProvider: ITimeProvider = defaultTimeProvider,
+	nonceProvider: INonceProvider = defaultNonceProvider,
 ): string => {
 	const timestamp = timeProvider.now().toISOString();
 	const logical = padLogical(0);
@@ -18,8 +20,8 @@ export const generateHLC = (
 
 export const advanceHLC = (
 	hlc: string,
-	timeProvider: TimeProvider = defaultTimeProvider,
-	nonceProvider: NonceProvider = defaultNonceProvider,
+	timeProvider: ITimeProvider = defaultTimeProvider,
+	nonceProvider: INonceProvider = defaultNonceProvider,
 ): string => {
 	const now = timeProvider.now();
 	const nowISO = now.toISOString();
@@ -54,29 +56,6 @@ export const advanceHLC = (
 	return `${newTimestamp}-${logical}-${nonce}`;
 };
 
-export const createClock = (
-	seedHLC?: string,
-	timeProvider: TimeProvider = defaultTimeProvider,
-	nonceProvider: NonceProvider = defaultNonceProvider,
-): HLC => {
-	let hlc = seedHLC ?? generateHLC(timeProvider, nonceProvider);
-
-	const tick = (): string => {
-		const newHLC = advanceHLC(hlc, timeProvider, nonceProvider);
-		hlc = newHLC;
-		return hlc;
-	};
-
-	const advance = (newHLC: string): void => {
-		if (newHLC === hlc) return;
-		if (newHLC < hlc) {
-			hlc = newHLC;
-		}
-	};
-
-	return {
-		current: () => hlc,
-		tick,
-		advance,
-	};
+export const compareHLC = (a: string, b: string): number => {
+	return a.localeCompare(b);
 };
