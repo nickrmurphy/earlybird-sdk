@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { IoContext } from './io';
-import { add, addAll, get, getAll, put, putAll, query } from './io';
+import { add, addAll, get, getAll, openDB, put, putAll, query } from './io';
 
 interface TestItem {
 	id: string;
@@ -265,6 +265,27 @@ describe('io operations', () => {
 		it('should reject if store does not exist', async () => {
 			const invalidContext: IoContext = { db, storeName: 'nonexistent-store' };
 			await expect(query<TestItem>(invalidContext, () => true)).rejects.toThrow();
+		});
+	});
+
+	describe('openDB', () => {
+		it('should open database with custom upgrade callback', async () => {
+			const testDbName = `test-opendb-${Date.now()}-${Math.random()}`;
+
+			const db = await openDB(testDbName, 1, (db) => {
+				db.createObjectStore('custom-store', { keyPath: 'id' });
+			});
+
+			expect(db.name).toBe(testDbName);
+			expect(db.version).toBe(1);
+			expect(db.objectStoreNames.contains('custom-store')).toBe(true);
+
+			db.close();
+			await new Promise<void>((resolve) => {
+				const deleteRequest = indexedDB.deleteDatabase(testDbName);
+				deleteRequest.onsuccess = () => resolve();
+				deleteRequest.onerror = () => resolve();
+			});
 		});
 	});
 });
