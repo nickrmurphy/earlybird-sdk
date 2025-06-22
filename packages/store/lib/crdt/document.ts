@@ -46,3 +46,31 @@ export function updateDocument<T extends Entity>(
 		$hash: hashObject(updatedData),
 	};
 }
+
+export function mergeDocuments<T extends Entity>(
+	target: Document<T>,
+	source: Document<T>,
+): Document<T> {
+	const mergedData: T = { ...target.$data };
+	const mergedTimestamps: { [K in keyof T]: string } = { ...target.$timestamps };
+	
+	for (const key in source.$data) {
+		const sourceTimestamp = source.$timestamps[key];
+		const targetTimestamp = target.$timestamps[key];
+		
+		if (sourceTimestamp > targetTimestamp) {
+			mergedData[key] = source.$data[key];
+			mergedTimestamps[key] = sourceTimestamp;
+		}
+	}
+	
+	const finalTimestamp = source.$timestamp > target.$timestamp ? source.$timestamp : target.$timestamp;
+	
+	return {
+		$id: target.$id,
+		$data: mergedData,
+		$timestamp: finalTimestamp,
+		$timestamps: mergedTimestamps,
+		$hash: hashObject(mergedData),
+	};
+}
