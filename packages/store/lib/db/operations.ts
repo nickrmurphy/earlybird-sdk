@@ -6,11 +6,19 @@ import type {
 } from '../types';
 import { mergeDocuments as mergeCRDTDocuments } from '../crdt/document/document';
 
-const HLC_STORE_NAME = 'hlc';
+export interface DbContext<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+> {
+	db: TypedDatabase<TConfig>;
+	storeName: TStoreName;
+	hlcStoreName: string;
+}
 
 export function setUpStores<TConfig extends DatabaseConfig>(
 	db: IDBDatabase,
 	stores: TConfig['stores'],
+	hlcStoreName: string,
 ): void {
 	// Create object stores for each schema
 	for (const [storeName] of Object.entries(stores)) {
@@ -28,13 +36,14 @@ export function setUpStores<TConfig extends DatabaseConfig>(
 		}
 	}
 
-	if (!db.objectStoreNames.contains(HLC_STORE_NAME)) {
-		db.createObjectStore(HLC_STORE_NAME);
+	if (!db.objectStoreNames.contains(hlcStoreName)) {
+		db.createObjectStore(hlcStoreName);
 	}
 }
 
 export async function openDatabase<TConfig extends DatabaseConfig>(
 	config: TConfig,
+	hlcStoreName: string,
 ): Promise<TypedDatabase<TConfig>> {
 	return new Promise((resolve, reject) => {
 		const request = indexedDB.open(config.name, config.version);
@@ -48,7 +57,7 @@ export async function openDatabase<TConfig extends DatabaseConfig>(
 			// Typecast is safe: IndexedDB spec guarantees this type
 			const db = (event.target as IDBOpenDBRequest).result;
 
-			setUpStores(db, config.stores);
+			setUpStores(db, config.stores, hlcStoreName);
 		};
 	});
 }
@@ -57,13 +66,12 @@ export async function addDocument<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	context: DbContext<TConfig, TStoreName>,
 	document: StoreDocument<TConfig, TStoreName>,
 ): Promise<void> {
 	return new Promise((resolve, reject) => {
-		const transaction = db.transaction(storeName, 'readwrite');
-		const store = transaction.objectStore(storeName);
+		const transaction = context.db.transaction(context.storeName, 'readwrite');
+		const store = transaction.objectStore(context.storeName);
 
 		const request = store.add(document);
 
@@ -76,13 +84,12 @@ export async function addDocuments<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	context: DbContext<TConfig, TStoreName>,
 	documents: StoreDocument<TConfig, TStoreName>[],
 ): Promise<void> {
 	return new Promise((resolve, reject) => {
-		const transaction = db.transaction(storeName, 'readwrite');
-		const store = transaction.objectStore(storeName);
+		const transaction = context.db.transaction(context.storeName, 'readwrite');
+		const store = transaction.objectStore(context.storeName);
 
 		Promise.all(
 			documents.map(
@@ -103,13 +110,12 @@ export async function getDocument<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	context: DbContext<TConfig, TStoreName>,
 	id: string,
 ): Promise<StoreDocument<TConfig, TStoreName> | null> {
 	return new Promise((resolve, reject) => {
-		const transaction = db.transaction(storeName, 'readonly');
-		const store = transaction.objectStore(storeName);
+		const transaction = context.db.transaction(context.storeName, 'readonly');
+		const store = transaction.objectStore(context.storeName);
 
 		const request = store.get(id);
 
@@ -122,12 +128,11 @@ export async function getAllDocuments<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	context: DbContext<TConfig, TStoreName>,
 ): Promise<StoreDocument<TConfig, TStoreName>[]> {
 	return new Promise((resolve, reject) => {
-		const transaction = db.transaction(storeName, 'readonly');
-		const store = transaction.objectStore(storeName);
+		const transaction = context.db.transaction(context.storeName, 'readonly');
+		const store = transaction.objectStore(context.storeName);
 
 		const request = store.getAll();
 
@@ -140,13 +145,12 @@ export async function putDocument<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	context: DbContext<TConfig, TStoreName>,
 	document: StoreDocument<TConfig, TStoreName>,
 ): Promise<void> {
 	return new Promise((resolve, reject) => {
-		const transaction = db.transaction(storeName, 'readwrite');
-		const store = transaction.objectStore(storeName);
+		const transaction = context.db.transaction(context.storeName, 'readwrite');
+		const store = transaction.objectStore(context.storeName);
 
 		const request = store.put(document);
 
@@ -159,13 +163,12 @@ export async function putDocuments<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	context: DbContext<TConfig, TStoreName>,
 	documents: StoreDocument<TConfig, TStoreName>[],
 ): Promise<void> {
 	return new Promise((resolve, reject) => {
-		const transaction = db.transaction(storeName, 'readwrite');
-		const store = transaction.objectStore(storeName);
+		const transaction = context.db.transaction(context.storeName, 'readwrite');
+		const store = transaction.objectStore(context.storeName);
 
 		Promise.all(
 			documents.map(
@@ -186,13 +189,12 @@ export async function queryDocuments<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	context: DbContext<TConfig, TStoreName>,
 	predicate: (data: StoreDocument<TConfig, TStoreName>['$data']) => boolean,
 ): Promise<StoreDocument<TConfig, TStoreName>[]> {
 	return new Promise((resolve, reject) => {
-		const transaction = db.transaction(storeName, 'readonly');
-		const store = transaction.objectStore(storeName);
+		const transaction = context.db.transaction(context.storeName, 'readonly');
+		const store = transaction.objectStore(context.storeName);
 		const results: StoreDocument<TConfig, TStoreName>[] = [];
 		const request = store.openCursor();
 
@@ -216,15 +218,14 @@ export async function putHLC<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	context: DbContext<TConfig, TStoreName>,
 	timestamp: string,
 ): Promise<void> {
 	return new Promise((resolve, reject) => {
-		const transaction = db.transaction(HLC_STORE_NAME, 'readwrite');
-		const store = transaction.objectStore(HLC_STORE_NAME);
+		const transaction = context.db.transaction(context.hlcStoreName, 'readwrite');
+		const store = transaction.objectStore(context.hlcStoreName);
 
-		const request = store.put(timestamp, storeName);
+		const request = store.put(timestamp, context.storeName);
 
 		request.onsuccess = () => resolve();
 		request.onerror = () => reject(request.error);
@@ -234,12 +235,14 @@ export async function putHLC<
 export async function getHLC<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
->(db: TypedDatabase<TConfig>, storeName: TStoreName): Promise<string | null> {
+>(
+	context: DbContext<TConfig, TStoreName>,
+): Promise<string | null> {
 	return new Promise((resolve, reject) => {
-		const transaction = db.transaction(HLC_STORE_NAME, 'readonly');
-		const store = transaction.objectStore(HLC_STORE_NAME);
+		const transaction = context.db.transaction(context.hlcStoreName, 'readonly');
+		const store = transaction.objectStore(context.hlcStoreName);
 
-		const request = store.get(storeName);
+		const request = store.get(context.storeName);
 
 		request.onsuccess = () => resolve(request.result || null);
 		request.onerror = () => reject(request.error);
@@ -250,13 +253,12 @@ export async function mergeDocuments<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
 >(
-	db: TypedDatabase<TConfig>,
-	storeName: TStoreName,
+	context: DbContext<TConfig, TStoreName>,
 	documents: StoreDocument<TConfig, TStoreName>[],
 ): Promise<void> {
 	return new Promise((resolve, reject) => {
-		const transaction = db.transaction(storeName, 'readwrite');
-		const store = transaction.objectStore(storeName);
+		const transaction = context.db.transaction(context.storeName, 'readwrite');
+		const store = transaction.objectStore(context.storeName);
 
 		let processedCount = 0;
 		const totalCount = documents.length;

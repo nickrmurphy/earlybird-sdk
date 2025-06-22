@@ -17,6 +17,7 @@ import {
 	putDocument,
 	putDocuments,
 	queryDocuments,
+	type DbContext,
 } from './operations';
 
 export async function createOne<
@@ -31,7 +32,7 @@ export async function createOne<
 	// Create a document from the validated data
 	const document = makeDocument(ctx.hlc, validated);
 	// Add the document to the store
-	await addDocument(ctx.db, ctx.storeName, document);
+	await addDocument({ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' }, document);
 }
 
 export async function createMany<
@@ -48,7 +49,7 @@ export async function createMany<
 	});
 	// Add all documents to the store
 	await Promise.all(
-		documents.map((doc) => addDocument(ctx.db, ctx.storeName, doc)),
+		documents.map((doc) => addDocument({ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' }, doc)),
 	);
 }
 
@@ -60,7 +61,7 @@ export async function getOne<
 	id: string,
 ): Promise<StoreData<TConfig, TStoreName> | null> {
 	// Fetch the document by ID from the store
-	const document = await getDocument(ctx.db, ctx.storeName, id);
+	const document = await getDocument({ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' }, id);
 	// If the document exists, return its data; otherwise, return null
 	return document ? document.$data : null;
 }
@@ -72,7 +73,7 @@ export async function getAll<
 	ctx: ReadContext<TConfig, TStoreName>,
 ): Promise<StoreData<TConfig, TStoreName>[]> {
 	// Fetch all documents from the store
-	const documents = await getAllDocuments(ctx.db, ctx.storeName);
+	const documents = await getAllDocuments({ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' });
 	// Return an array of document data
 	return documents.map((doc) => doc.$data);
 }
@@ -85,7 +86,7 @@ export async function getWhere<
 	predicate: (data: StoreData<TConfig, TStoreName>) => boolean,
 ): Promise<StoreData<TConfig, TStoreName>[]> {
 	// Fetch all documents from the store
-	const documents = await queryDocuments(ctx.db, ctx.storeName, predicate);
+	const documents = await queryDocuments({ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' }, predicate);
 	// Return an array of document data that match the predicate
 	return documents.map((doc) => doc.$data);
 }
@@ -98,7 +99,7 @@ export async function updateOne<
 	id: string,
 	data: Partial<StoreData<TConfig, TStoreName>>,
 ): Promise<void> {
-	const existingDocument = await getDocument(ctx.db, ctx.storeName, id);
+	const existingDocument = await getDocument({ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' }, id);
 	if (!existingDocument) {
 		throw new Error(
 			`Document with ID ${id} does not exist in store ${ctx.storeName}`,
@@ -111,7 +112,7 @@ export async function updateOne<
 	// Create a updated document, passing only the changed data
 	const document = updateDocument(ctx.hlc, existingDocument, data);
 	// Update the document in the store
-	await putDocument(ctx.db, ctx.storeName, document);
+	await putDocument({ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' }, document);
 }
 
 export async function updateMany<
@@ -125,8 +126,7 @@ export async function updateMany<
 	const existingDocuments = await Promise.all(
 		updates.map(async (update) => {
 			const existingDocument = await getDocument(
-				ctx.db,
-				ctx.storeName,
+				{ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' },
 				update.id,
 			);
 			if (!existingDocument) {
@@ -150,7 +150,7 @@ export async function updateMany<
 	);
 
 	// Update all documents in the store
-	await putDocuments(ctx.db, ctx.storeName, updatedDocuments);
+	await putDocuments({ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' }, updatedDocuments);
 }
 
 export async function getHashes<
@@ -160,7 +160,7 @@ export async function getHashes<
 	ctx: ReadContext<TConfig, TStoreName>,
 	bucketSize = 100,
 ): Promise<{ root: string; buckets: Record<number, string> }> {
-	const documents = (await getAllDocuments(ctx.db, ctx.storeName)).sort(
+	const documents = (await getAllDocuments({ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' })).sort(
 		(a, b) => a.$timestamp.localeCompare(b.$timestamp),
 	);
 	const allHashes = documents.map((doc) => doc.$hash);
@@ -185,7 +185,7 @@ export async function getDocumentsInBuckets<
 		}),
 	);
 
-	const documents = await getAllDocuments(ctx.db, ctx.storeName);
+	const documents = await getAllDocuments({ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' });
 	documents.sort((a, b) => a.$timestamp.localeCompare(b.$timestamp));
 	return documents.filter((_, index) => getIndices.has(index));
 }
@@ -225,5 +225,5 @@ export async function merge<
 	ctx: ReadContext<TConfig, TStoreName>,
 	documents: StoreDocument<TConfig, TStoreName>[],
 ): Promise<void> {
-	await mergeDocuments(ctx.db, ctx.storeName, documents);
+	await mergeDocuments({ db: ctx.db, storeName: ctx.storeName, hlcStoreName: 'hlc' }, documents);
 }

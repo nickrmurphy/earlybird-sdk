@@ -13,6 +13,7 @@ import {
 	putDocuments,
 	putHLC,
 	queryDocuments,
+	type DbContext,
 } from './operations';
 
 describe('openDatabase', () => {
@@ -40,7 +41,7 @@ describe('openDatabase', () => {
 			},
 		};
 
-		const db = await openDatabase(config);
+		const db = await openDatabase(config, 'hlc');
 
 		expect(db.name).toBe(dbName);
 		expect(db.version).toBe(1);
@@ -58,7 +59,7 @@ describe('openDatabase', () => {
 			},
 		};
 
-		const db = await openDatabase(config);
+		const db = await openDatabase(config, 'hlc');
 
 		expect(db.objectStoreNames.contains('users')).toBe(true);
 		expect(db.objectStoreNames.contains('posts')).toBe(true);
@@ -76,7 +77,7 @@ describe('openDatabase', () => {
 			},
 		};
 
-		const db = await openDatabase(config);
+		const db = await openDatabase(config, 'hlc');
 
 		const transaction = db.transaction(['users'], 'readonly');
 		const store = transaction.objectStore('users');
@@ -98,7 +99,7 @@ describe('openDatabase', () => {
 			},
 		};
 
-		const db = await openDatabase(config);
+		const db = await openDatabase(config, 'hlc');
 
 		expect(db.objectStoreNames.length).toBe(2);
 		expect(db.objectStoreNames.contains('users')).toBe(true);
@@ -126,7 +127,7 @@ describe('addDocument', () => {
 				users: testUserSchema,
 			},
 		};
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 	});
 
 	afterEach(async () => {
@@ -148,10 +149,10 @@ describe('addDocument', () => {
 		};
 
 		// Uncomment line below to test TypeScript error for invalid store name:
-		// await expect(addDocument(db, 'invalid_store_name', testDocument)).resolves.toBeUndefined();
+		// await expect(addDocument({ db, storeName: 'invalid_store_name', testDocument)).resolves.toBeUndefined();
 
 		await expect(
-			addDocument(db, 'users', testDocument),
+			addDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, testDocument),
 		).resolves.toBeUndefined();
 	});
 
@@ -164,7 +165,7 @@ describe('addDocument', () => {
 			$timestamps: { id: '2024-01-01T00:01:00Z', name: '2024-01-01T00:01:00Z' },
 		};
 
-		await addDocument(db, 'users', testDocument);
+		await addDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, testDocument);
 
 		// Verify document was stored correctly
 		const transaction = db.transaction('users', 'readonly');
@@ -191,7 +192,7 @@ describe('addDocument', () => {
 
 		await expect(
 			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-			addDocument(db, 'nonexistent-store' as any, testDocument),
+			addDocument({ db, storeName: 'nonexistent-store' as any, hlcStoreName: 'hlc' }, testDocument),
 		).rejects.toThrow();
 	});
 
@@ -212,10 +213,10 @@ describe('addDocument', () => {
 			$timestamps: { id: '2024-01-01T00:04:00Z', name: '2024-01-01T00:04:00Z' },
 		};
 
-		await addDocument(db, 'users' as const, firstDocument);
+		await addDocument({ db, storeName: 'users' as const, hlcStoreName: 'hlc' }, firstDocument);
 
 		await expect(
-			addDocument(db, 'users' as const, secondDocument),
+			addDocument({ db, storeName: 'users' as const, hlcStoreName: 'hlc' }, secondDocument),
 		).rejects.toThrow();
 	});
 
@@ -228,7 +229,7 @@ describe('addDocument', () => {
 			$timestamps: { id: '2024-01-01T00:05:00Z', name: '2024-01-01T00:05:00Z' },
 		};
 
-		await addDocument(db, 'users' as const, testDocument);
+		await addDocument({ db, storeName: 'users' as const, hlcStoreName: 'hlc' }, testDocument);
 
 		// Verify all fields are accessible via indexes
 		const transaction = db.transaction('users', 'readonly');
@@ -262,7 +263,7 @@ describe('addDocument', () => {
 					users: testUserSchema,
 				},
 			};
-			db = await openDatabase(config);
+			db = await openDatabase(config, 'hlc');
 		});
 
 		afterEach(async () => {
@@ -286,15 +287,15 @@ describe('addDocument', () => {
 				},
 			};
 
-			await addDocument(db, 'users', testDocument);
+			await addDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, testDocument);
 
-			const result = await getDocument(db, 'users', 'user-1');
+			const result = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
 
 			expect(result).toEqual(testDocument);
 		});
 
 		it('should return null if the document does not exist', async () => {
-			const result = await getDocument(db, 'users', 'nonexistent-id');
+			const result = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'nonexistent-id');
 
 			expect(result).toBeNull();
 		});
@@ -302,7 +303,7 @@ describe('addDocument', () => {
 		it('should reject if the store does not exist', async () => {
 			await expect(
 				// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-				getDocument(db, 'nonexistent-store' as any, 'user-1'),
+				getDocument({ db, storeName: 'nonexistent-store' as any, hlcStoreName: 'hlc' }, 'user-1'),
 			).rejects.toThrow();
 		});
 	});
@@ -326,7 +327,7 @@ describe('putDocument', () => {
 				users: testUserSchema,
 			},
 		};
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 	});
 
 	afterEach(async () => {
@@ -347,9 +348,9 @@ describe('putDocument', () => {
 			$timestamps: { id: '2024-01-01T00:10:00Z', name: '2024-01-01T00:10:00Z' },
 		};
 
-		await expect(putDocument(db, 'users', doc)).resolves.toBeUndefined();
+		await expect(putDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, doc)).resolves.toBeUndefined();
 
-		const stored = await getDocument(db, 'users', 'put-user-1');
+		const stored = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'put-user-1');
 		expect(stored).toEqual(doc);
 	});
 
@@ -361,16 +362,16 @@ describe('putDocument', () => {
 			$timestamp: '2024-01-01T00:11:00Z',
 			$timestamps: { id: '2024-01-01T00:11:00Z', name: '2024-01-01T00:11:00Z' },
 		};
-		await putDocument(db, 'users', doc);
+		await putDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, doc);
 
 		const updatedDoc: Document<{ id: string; name: string }> = {
 			...doc,
 			$data: { id: 'put-user-2', name: 'Updated Name' },
 			$hash: 'put-hash-2b',
 		};
-		await expect(putDocument(db, 'users', updatedDoc)).resolves.toBeUndefined();
+		await expect(putDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, updatedDoc)).resolves.toBeUndefined();
 
-		const stored = await getDocument(db, 'users', 'put-user-2');
+		const stored = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'put-user-2');
 		expect(stored).toEqual(updatedDoc);
 	});
 
@@ -384,7 +385,7 @@ describe('putDocument', () => {
 		};
 		await expect(
 			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-			putDocument(db, 'nonexistent-store' as any, doc),
+			putDocument({ db, storeName: 'nonexistent-store' as any, hlcStoreName: 'hlc' }, doc),
 		).rejects.toThrow();
 	});
 });
@@ -407,7 +408,7 @@ describe('getAllDocuments', () => {
 				users: testUserSchema,
 			},
 		};
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 	});
 
 	afterEach(async () => {
@@ -443,22 +444,22 @@ describe('getAllDocuments', () => {
 			},
 		];
 		for (const doc of docs) {
-			await addDocument(db, 'users', doc);
+			await addDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, doc);
 		}
-		const allDocs = await getAllDocuments(db, 'users');
+		const allDocs = await getAllDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' });
 		expect(allDocs).toHaveLength(2);
 		expect(allDocs).toEqual(expect.arrayContaining(docs));
 	});
 
 	it('should return an empty array if the store is empty', async () => {
-		const allDocs = await getAllDocuments(db, 'users');
+		const allDocs = await getAllDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' });
 		expect(allDocs).toEqual([]);
 	});
 
 	it('should reject if the store does not exist', async () => {
 		await expect(
 			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-			getAllDocuments(db, 'nonexistent-store' as any),
+			getAllDocuments({ db, storeName: 'nonexistent-store' as any, hlcStoreName: 'hlc' }),
 		).rejects.toThrow();
 	});
 });
@@ -481,7 +482,7 @@ describe('addDocuments', () => {
 				users: testUserSchema,
 			},
 		};
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 	});
 
 	afterEach(async () => {
@@ -516,8 +517,8 @@ describe('addDocuments', () => {
 				},
 			},
 		];
-		await expect(addDocuments(db, 'users', docs)).resolves.toBeUndefined();
-		const allDocs = await getAllDocuments(db, 'users');
+		await expect(addDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, docs)).resolves.toBeUndefined();
+		const allDocs = await getAllDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' });
 		expect(allDocs).toHaveLength(2);
 		expect(allDocs).toEqual(expect.arrayContaining(docs));
 	});
@@ -545,7 +546,7 @@ describe('addDocuments', () => {
 				},
 			},
 		];
-		await expect(addDocuments(db, 'users', docs)).rejects.toThrow();
+		await expect(addDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, docs)).rejects.toThrow();
 	});
 });
 
@@ -568,7 +569,7 @@ describe('putDocuments', () => {
 				users: testUserSchema,
 			},
 		};
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 	});
 
 	afterEach(async () => {
@@ -603,8 +604,8 @@ describe('putDocuments', () => {
 				},
 			},
 		];
-		await expect(putDocuments(db, 'users', docs)).resolves.toBeUndefined();
-		const allDocs = await getAllDocuments(db, 'users');
+		await expect(putDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, docs)).resolves.toBeUndefined();
+		const allDocs = await getAllDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' });
 		expect(allDocs).toHaveLength(2);
 		expect(allDocs).toEqual(expect.arrayContaining(docs));
 
@@ -622,9 +623,9 @@ describe('putDocuments', () => {
 			},
 		];
 		await expect(
-			putDocuments(db, 'users', updatedDocs),
+			putDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, updatedDocs),
 		).resolves.toBeUndefined();
-		const updatedAll = await getAllDocuments(db, 'users');
+		const updatedAll = await getAllDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' });
 		expect(updatedAll).toHaveLength(2);
 		expect(updatedAll).toEqual(expect.arrayContaining(updatedDocs));
 	});
@@ -645,7 +646,7 @@ describe('putDocuments', () => {
 
 		await expect(
 			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-			putDocuments(db, 'nonexistent-store' as any, docs),
+			putDocuments({ db, storeName: 'nonexistent-store' as any, hlcStoreName: 'hlc' }, docs),
 		).rejects.toThrow();
 	});
 });
@@ -668,7 +669,7 @@ describe('queryDocuments', () => {
 				users: testUserSchema,
 			},
 		};
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 	});
 
 	afterEach(async () => {
@@ -713,8 +714,8 @@ describe('queryDocuments', () => {
 				},
 			},
 		];
-		await addDocuments(db, 'users', docs);
-		const result = await queryDocuments(db, 'users', (data) =>
+		await addDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, docs);
+		const result = await queryDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, (data) =>
 			data.name.startsWith('A'),
 		);
 		expect(result).toHaveLength(1);
@@ -734,10 +735,9 @@ describe('queryDocuments', () => {
 				},
 			},
 		];
-		await addDocuments(db, 'users', docs);
+		await addDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, docs);
 		const result = await queryDocuments(
-			db,
-			'users',
+			{ db, storeName: 'users', hlcStoreName: 'hlc' },
 			(data) => data.name === 'Nonexistent',
 		);
 		expect(result).toEqual([]);
@@ -747,7 +747,7 @@ describe('queryDocuments', () => {
 		const predicate = () => true;
 		await expect(
 			// biome-ignore lint/suspicious/noExplicitAny: Intentionally using any to test error handling
-			queryDocuments(db, 'nonexistent-store' as any, predicate),
+			queryDocuments({ db, storeName: 'nonexistent-store' as any, hlcStoreName: 'hlc' }, predicate),
 		).rejects.toThrow();
 	});
 });
@@ -771,7 +771,7 @@ describe('HLC operations', () => {
 				users: testUserSchema,
 			},
 		};
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 	});
 
 	afterEach(async () => {
@@ -787,14 +787,14 @@ describe('HLC operations', () => {
 		it('should store and retrieve HLC timestamp for a store', async () => {
 			const timestamp = '2024-01-01T00:00:00.000Z';
 
-			await expect(putHLC(db, 'users', timestamp)).resolves.toBeUndefined();
+			await expect(putHLC({ db, storeName: 'users', hlcStoreName: 'hlc' }, timestamp)).resolves.toBeUndefined();
 
-			const retrieved = await getHLC(db, 'users');
+			const retrieved = await getHLC({ db, storeName: 'users', hlcStoreName: 'hlc' });
 			expect(retrieved).toBe(timestamp);
 		});
 
 		it('should return null if no HLC timestamp exists for a store', async () => {
-			const result = await getHLC(db, 'users');
+			const result = await getHLC({ db, storeName: 'users', hlcStoreName: 'hlc' });
 			expect(result).toBeNull();
 		});
 
@@ -802,10 +802,10 @@ describe('HLC operations', () => {
 			const initialTimestamp = '2024-01-01T00:00:00.000Z';
 			const updatedTimestamp = '2024-01-01T00:01:00.000Z';
 
-			await putHLC(db, 'users', initialTimestamp);
-			await putHLC(db, 'users', updatedTimestamp);
+			await putHLC({ db, storeName: 'users', hlcStoreName: 'hlc' }, initialTimestamp);
+			await putHLC({ db, storeName: 'users', hlcStoreName: 'hlc' }, updatedTimestamp);
 
-			const result = await getHLC(db, 'users');
+			const result = await getHLC({ db, storeName: 'users', hlcStoreName: 'hlc' });
 			expect(result).toBe(updatedTimestamp);
 		});
 
@@ -820,17 +820,17 @@ describe('HLC operations', () => {
 					posts: testPostSchema,
 				},
 			};
-			const db2 = await openDatabase(config2);
+			const db2 = await openDatabase(config2, 'hlc');
 
 			try {
 				const timestamp1 = '2024-01-01T00:00:00.000Z';
 				const timestamp2 = '2024-01-01T00:01:00.000Z';
 
-				await putHLC(db2, 'users', timestamp1);
-				await putHLC(db2, 'posts', timestamp2);
+				await putHLC({ db: db2, storeName: 'users', hlcStoreName: 'hlc' }, timestamp1);
+				await putHLC({ db: db2, storeName: 'posts', hlcStoreName: 'hlc' }, timestamp2);
 
-				const result1 = await getHLC(db2, 'users');
-				const result2 = await getHLC(db2, 'posts');
+				const result1 = await getHLC({ db: db2, storeName: 'users', hlcStoreName: 'hlc' });
+				const result2 = await getHLC({ db: db2, storeName: 'posts', hlcStoreName: 'hlc' });
 
 				expect(result1).toBe(timestamp1);
 				expect(result2).toBe(timestamp2);
@@ -865,7 +865,7 @@ describe('mergeDocuments', () => {
 				users: testUserSchema,
 			},
 		};
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 	});
 
 	afterEach(async () => {
@@ -901,9 +901,9 @@ describe('mergeDocuments', () => {
 			},
 		];
 
-		await mergeDocuments(db, 'users', docs);
+		await mergeDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, docs);
 
-		const allDocs = await getAllDocuments(db, 'users');
+		const allDocs = await getAllDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' });
 		expect(allDocs).toHaveLength(2);
 		expect(allDocs[0].$data.name).toBe('Alice');
 		expect(allDocs[1].$data.name).toBe('Bob');
@@ -923,7 +923,7 @@ describe('mergeDocuments', () => {
 			},
 		};
 		// biome-ignore lint/suspicious/noExplicitAny: Test needs to add extra field not in schema
-		await addDocument(db, 'users', initialDoc as any);
+		await addDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, initialDoc as any);
 
 		// Merge document with newer name, older age
 		const mergeDoc: Document<{ id: string; name: string; age?: number }> = {
@@ -939,9 +939,9 @@ describe('mergeDocuments', () => {
 		};
 
 		// biome-ignore lint/suspicious/noExplicitAny: Test needs to merge extra field not in schema
-		await mergeDocuments(db, 'users', [mergeDoc as any]);
+		await mergeDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, [mergeDoc as any]);
 
-		const result = await getDocument(db, 'users', 'user-1');
+		const result = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
 		expect(result).not.toBeNull();
 		expect(result?.$data.name).toBe('Alicia'); // Newer timestamp
 		// biome-ignore lint/suspicious/noExplicitAny: Test needs to access extra field not in schema
@@ -950,9 +950,9 @@ describe('mergeDocuments', () => {
 	});
 
 	it('should handle empty document array', async () => {
-		await expect(mergeDocuments(db, 'users', [])).resolves.toBeUndefined();
+		await expect(mergeDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, [])).resolves.toBeUndefined();
 
-		const allDocs = await getAllDocuments(db, 'users');
+		const allDocs = await getAllDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' });
 		expect(allDocs).toHaveLength(0);
 	});
 
@@ -968,7 +968,7 @@ describe('mergeDocuments', () => {
 				name: '2024-01-01T00:00:00.000Z-000000-a',
 			},
 		};
-		await addDocument(db, 'users', existingDoc);
+		await addDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, existingDoc);
 
 		// Merge with update to existing + new document
 		const mergeDocs: Document<{ id: string; name: string }>[] = [
@@ -994,9 +994,9 @@ describe('mergeDocuments', () => {
 			},
 		];
 
-		await mergeDocuments(db, 'users', mergeDocs);
+		await mergeDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, mergeDocs);
 
-		const allDocs = await getAllDocuments(db, 'users');
+		const allDocs = await getAllDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' });
 		expect(allDocs).toHaveLength(2);
 
 		const user1 = allDocs.find((doc) => doc.$id === 'user-1');
@@ -1035,11 +1035,11 @@ describe('mergeDocuments', () => {
 
 		// Run merges concurrently
 		await Promise.all([
-			mergeDocuments(db, 'users', docs1),
-			mergeDocuments(db, 'users', docs2),
+			mergeDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, docs1),
+			mergeDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, docs2),
 		]);
 
-		const allDocs = await getAllDocuments(db, 'users');
+		const allDocs = await getAllDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' });
 		expect(allDocs).toHaveLength(2);
 	});
 
@@ -1060,6 +1060,6 @@ describe('mergeDocuments', () => {
 			},
 		];
 
-		await expect(mergeDocuments(db, 'users', docs)).rejects.toThrow();
+		await expect(mergeDocuments({ db, storeName: 'users', hlcStoreName: 'hlc' }, docs)).rejects.toThrow();
 	});
 });

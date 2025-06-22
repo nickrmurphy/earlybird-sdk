@@ -31,7 +31,7 @@ describe('createOne', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -52,7 +52,7 @@ describe('createOne', () => {
 			userData,
 		);
 
-		const storedDoc = await getDocument(db, 'users', userData.id);
+		const storedDoc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, userData.id);
 		expect(storedDoc).not.toBeNull();
 		expect(storedDoc?.$data).toEqual(userData);
 	});
@@ -66,7 +66,7 @@ describe('createMany', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -88,7 +88,7 @@ describe('createMany', () => {
 		);
 
 		for (const user of userData) {
-			const storedDoc = await getDocument(db, 'users', user.id);
+			const storedDoc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, user.id);
 			expect(storedDoc).not.toBeNull();
 			expect(storedDoc?.$data).toEqual(user);
 		}
@@ -126,7 +126,7 @@ describe('createMany', () => {
 
 		// Verify no documents were created
 		for (const user of userData) {
-			const storedDoc = await getDocument(db, 'users', user.id);
+			const storedDoc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, user.id);
 			expect(storedDoc).toBeNull();
 		}
 	});
@@ -142,8 +142,8 @@ describe('createMany', () => {
 			userData,
 		);
 
-		const doc1 = await getDocument(db, 'users', 'user-1');
-		const doc2 = await getDocument(db, 'users', 'user-2');
+		const doc1 = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
+		const doc2 = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-2');
 
 		expect(doc1?.$timestamps).toBeDefined();
 		expect(doc2?.$timestamps).toBeDefined();
@@ -159,7 +159,7 @@ describe('createMany', () => {
 			userData,
 		);
 
-		const storedDoc = await getDocument(db, 'users', 'user-1');
+		const storedDoc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
 		expect(storedDoc).not.toBeNull();
 		expect(storedDoc?.$data).toEqual(userData[0]);
 	});
@@ -173,7 +173,7 @@ describe('getOne', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -211,7 +211,7 @@ describe('getAll', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -250,7 +250,7 @@ describe('getWhere', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -318,7 +318,7 @@ describe('updateOne', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -409,7 +409,7 @@ describe('updateOne', () => {
 			userData,
 		);
 
-		const originalDoc = await getDocument(db, 'users', 'user-1');
+		const originalDoc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
 		const originalTimestamp = originalDoc?.$timestamps;
 
 		// Wait a bit to ensure timestamp difference
@@ -423,7 +423,7 @@ describe('updateOne', () => {
 			},
 		);
 
-		const updatedDoc = await getDocument(db, 'users', 'user-1');
+		const updatedDoc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
 		expect(updatedDoc?.$timestamps).toBeDefined();
 		expect(updatedDoc?.$timestamps).not.toEqual(originalTimestamp);
 	});
@@ -437,7 +437,7 @@ describe('updateMany', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -573,8 +573,8 @@ describe('updateMany', () => {
 			userData,
 		);
 
-		const originalDoc1 = await getDocument(db, 'users', 'user-1');
-		const originalDoc2 = await getDocument(db, 'users', 'user-2');
+		const originalDoc1 = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
+		const originalDoc2 = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-2');
 
 		// Wait a bit to ensure timestamp difference
 		await new Promise((resolve) => setTimeout(resolve, 1));
@@ -588,8 +588,8 @@ describe('updateMany', () => {
 			updates,
 		);
 
-		const updatedDoc1 = await getDocument(db, 'users', 'user-1');
-		const updatedDoc2 = await getDocument(db, 'users', 'user-2');
+		const updatedDoc1 = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
+		const updatedDoc2 = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-2');
 
 		expect(updatedDoc1?.$timestamps).toBeDefined();
 		expect(updatedDoc2?.$timestamps).toBeDefined();
@@ -606,7 +606,7 @@ describe('getHashes', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -722,7 +722,7 @@ describe('getDocumentsInBuckets', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -871,7 +871,7 @@ describe('$timestamp functionality', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -891,7 +891,7 @@ describe('$timestamp functionality', () => {
 			userData,
 		);
 
-		const doc = await getDocument(db, 'users', 'user-1');
+		const doc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
 		expect(doc?.$timestamp).toBeDefined();
 		expect(typeof doc?.$timestamp).toBe('string');
 		expect(doc?.$timestamp.length).toBeGreaterThan(0);
@@ -904,7 +904,7 @@ describe('$timestamp functionality', () => {
 			userData,
 		);
 
-		const originalDoc = await getDocument(db, 'users', 'user-1');
+		const originalDoc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
 		const originalTimestamp = originalDoc?.$timestamp;
 
 		// Small delay to ensure different timestamps
@@ -918,7 +918,7 @@ describe('$timestamp functionality', () => {
 			},
 		);
 
-		const updatedDoc = await getDocument(db, 'users', 'user-1');
+		const updatedDoc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
 		expect(updatedDoc?.$timestamp).toBeDefined();
 		expect(updatedDoc?.$timestamp).not.toEqual(originalTimestamp);
 	});
@@ -930,7 +930,7 @@ describe('$timestamp functionality', () => {
 			userData,
 		);
 
-		const doc = await getDocument(db, 'users', 'user-1');
+		const doc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
 		expect(doc?.$timestamp).toBeDefined();
 
 		// The document timestamp should be a valid HLC timestamp
@@ -946,7 +946,7 @@ describe('create ergonomic function', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -996,7 +996,7 @@ describe('update ergonomic function', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 		hlc = new HLC();
 	});
 
@@ -1060,7 +1060,7 @@ describe('merge', () => {
 	beforeEach(async () => {
 		const config = createTestDatabaseConfig();
 		dbName = config.name;
-		db = await openDatabase(config);
+		db = await openDatabase(config, 'hlc');
 	});
 
 	afterEach(async () => {
@@ -1082,7 +1082,7 @@ describe('merge', () => {
 		);
 
 		// Get the existing document to use its timestamps as baseline
-		const existingDoc = await getDocument(db, 'users', 'user-1');
+		const existingDoc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
 		expect(existingDoc).not.toBeNull();
 
 		// Wait a bit to ensure future timestamps
@@ -1216,7 +1216,7 @@ describe('merge', () => {
 		);
 
 		// Get the created document to check its actual timestamps
-		const existingDoc = await getDocument(db, 'users', 'user-1');
+		const existingDoc = await getDocument({ db, storeName: 'users', hlcStoreName: 'hlc' }, 'user-1');
 		expect(existingDoc).not.toBeNull();
 
 		// Wait a bit to ensure future timestamps

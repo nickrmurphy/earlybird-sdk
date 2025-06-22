@@ -9,7 +9,7 @@ import type {
 } from '../types';
 
 import type { IDB } from './db.types';
-import { getHLC, openDatabase, putHLC } from './operations';
+import { getHLC, openDatabase, putHLC, type DbContext } from './operations';
 import {
 	create as baseCreate,
 	getHashes as baseGetHashes,
@@ -24,7 +24,7 @@ import {
 export function createDB<TConfig extends DatabaseConfig>(
 	config: TConfig,
 ): IDB<TConfig> {
-	const dbPromise = openDatabase(config);
+	const dbPromise = openDatabase(config, 'hlc');
 	let db: TypedDatabase<TConfig> | null = null;
 	const hlcCache = new Map<StoreKey<TConfig>, HLC>();
 
@@ -58,7 +58,7 @@ export function createDB<TConfig extends DatabaseConfig>(
 
 		if (!hlc) {
 			// Load from database or generate new one
-			const timestamp = (await getHLC(db, storeName)) || generateHLC();
+			const timestamp = (await getHLC({ db, storeName, hlcStoreName: 'hlc' })) || generateHLC();
 			hlc = new HLC(undefined, undefined, timestamp);
 			hlcCache.set(storeName, hlc);
 		}
@@ -117,7 +117,7 @@ export function createDB<TConfig extends DatabaseConfig>(
 				},
 				data,
 			);
-			await putHLC(db, storeName, hlc.current());
+			await putHLC({ db, storeName, hlcStoreName: 'hlc' }, hlc.current());
 		},
 		update: async <TStoreName extends StoreKey<TConfig>>(
 			storeName: TStoreName,
@@ -136,7 +136,7 @@ export function createDB<TConfig extends DatabaseConfig>(
 				},
 				data,
 			);
-			await putHLC(db, storeName, hlc.current());
+			await putHLC({ db, storeName, hlcStoreName: 'hlc' }, hlc.current());
 		},
 		getHashes: async <TStoreName extends StoreKey<TConfig>>(
 			storeName: TStoreName,
