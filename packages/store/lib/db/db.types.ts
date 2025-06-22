@@ -42,4 +42,9 @@ export interface IDB<TConfig extends DatabaseConfig> {
 		buckets: number[],
 		bucketSize?: number,
 	): Promise<StoreDocument<TConfig, TStoreName>[]>;
+
+	merge<TStoreName extends StoreKey<TConfig>>(
+		storeName: TStoreName,
+		documents: StoreDocument<TConfig, TStoreName>[],
+	): Promise<void>;
 }

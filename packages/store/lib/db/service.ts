@@ -13,6 +13,7 @@ import {
 	addDocument,
 	getAllDocuments,
 	getDocument,
+	mergeDocuments,
 	putDocument,
 	putDocuments,
 	queryDocuments,
@@ -215,4 +216,14 @@ export async function update<
 		return updateMany(ctx, data);
 	}
 	return updateOne(ctx, data.id, data.data);
+}
+
+export async function merge<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+>(
+	ctx: ReadContext<TConfig, TStoreName>,
+	documents: StoreDocument<TConfig, TStoreName>[],
+): Promise<void> {
+	await mergeDocuments(ctx.db, ctx.storeName, documents);
 }

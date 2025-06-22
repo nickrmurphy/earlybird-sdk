@@ -17,6 +17,7 @@ import {
 	getHashes,
 	getOne,
 	getWhere,
+	merge,
 	update,
 	updateMany,
 	updateOne,
@@ -1049,5 +1050,196 @@ describe('update ergonomic function', () => {
 				{ id: 'user-2', name: 'Jane Updated' },
 			]),
 		);
+	});
+});
+
+describe('merge', () => {
+	let db: TypedDatabase<ReturnType<typeof createTestDatabaseConfig>>;
+	let dbName: string;
+
+	beforeEach(async () => {
+		const config = createTestDatabaseConfig();
+		dbName = config.name;
+		db = await openDatabase(config);
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('merges documents with CRDT conflict resolution', async () => {
+		// Add initial document
+		const hlc = createClock();
+		const initialUser = createTestUser({ id: 'user-1', name: 'Alice' });
+		await createOne(
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
+			initialUser,
+		);
+
+		// Get the existing document to use its timestamps as baseline
+		const existingDoc = await getDocument(db, 'users', 'user-1');
+		expect(existingDoc).not.toBeNull();
+
+		// Wait a bit to ensure future timestamps
+		await new Promise(resolve => setTimeout(resolve, 10));
+
+		// Create a future timestamp that's definitely newer than existing
+		const futureTimestamp = new Date(Date.now() + 1000 * 60 * 60).toISOString() + '-000000-z'; // 1 hour in future
+		const pastTimestamp = '2020-01-01T00:00:00.000Z-000000-a'; // Definitely in the past
+
+		// Create document to merge with newer name timestamp but older id timestamp
+		const mergeDoc = {
+			$id: 'user-1',
+			$data: { id: 'user-1', name: 'Alicia' },
+			$hash: 'merge-hash',
+			$timestamp: futureTimestamp,
+			$timestamps: {
+				id: pastTimestamp, // Much older than existing
+				name: futureTimestamp, // Much newer than existing
+			},
+		};
+
+		await merge({ db, storeName: 'users' }, [mergeDoc]);
+
+		const result = await getOne({ db, storeName: 'users' }, 'user-1');
+		expect(result).not.toBeNull();
+		expect(result?.name).toBe('Alicia'); // Should be updated (newer timestamp)
+		expect(result?.id).toBe('user-1'); // Should remain the same (older timestamp in merge doc)
+	});
+
+	it('handles empty document array', async () => {
+		await expect(merge({ db, storeName: 'users' }, [])).resolves.toBeUndefined();
+
+		const result = await getAll({ db, storeName: 'users' });
+		expect(result).toEqual([]);
+	});
+
+	it('merges multiple documents in single operation', async () => {
+		const docs = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alice' },
+				$hash: 'hash-1',
+				$timestamp: '2024-01-01T00:00:00.000Z-000000-a',
+				$timestamps: {
+					id: '2024-01-01T00:00:00.000Z-000000-a',
+					name: '2024-01-01T00:00:00.000Z-000000-a',
+				},
+			},
+			{
+				$id: 'user-2',
+				$data: { id: 'user-2', name: 'Bob' },
+				$hash: 'hash-2',
+				$timestamp: '2024-01-01T00:01:00.000Z-000000-b',
+				$timestamps: {
+					id: '2024-01-01T00:01:00.000Z-000000-b',
+					name: '2024-01-01T00:01:00.000Z-000000-b',
+				},
+			},
+		];
+
+		await merge({ db, storeName: 'users' }, docs);
+
+		const result = await getAll({ db, storeName: 'users' });
+		expect(result).toHaveLength(2);
+		expect(result).toEqual(
+			expect.arrayContaining([
+				{ id: 'user-1', name: 'Alice' },
+				{ id: 'user-2', name: 'Bob' },
+			]),
+		);
+	});
+
+	it('merges documents that do not exist in database', async () => {
+		const newDoc = {
+			$id: 'user-new',
+			$data: { id: 'user-new', name: 'New User' },
+			$hash: 'new-hash',
+			$timestamp: '2024-01-01T00:00:00.000Z-000000-a',
+			$timestamps: {
+				id: '2024-01-01T00:00:00.000Z-000000-a',
+				name: '2024-01-01T00:00:00.000Z-000000-a',
+			},
+		};
+
+		await merge({ db, storeName: 'users' }, [newDoc]);
+
+		const result = await getOne({ db, storeName: 'users' }, 'user-new');
+		expect(result).toEqual({ id: 'user-new', name: 'New User' });
+	});
+
+	it('does not update when merge document has older timestamps', async () => {
+		// Add initial document with newer timestamps
+		const hlc = createClock();
+		const initialUser = createTestUser({ id: 'user-1', name: 'Alice' });
+		await createOne(
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
+			initialUser,
+		);
+
+		// Create document with older timestamps
+		const olderDoc = {
+			$id: 'user-1',
+			$data: { id: 'user-1', name: 'Old Name' },
+			$hash: 'old-hash',
+			$timestamp: '2020-01-01T00:00:00.000Z-000000-a',
+			$timestamps: {
+				id: '2020-01-01T00:00:00.000Z-000000-a',
+				name: '2020-01-01T00:00:00.000Z-000000-a',
+			},
+		};
+
+		await merge({ db, storeName: 'users' }, [olderDoc]);
+
+		const result = await getOne({ db, storeName: 'users' }, 'user-1');
+		expect(result).not.toBeNull();
+		expect(result?.name).toBe('Alice'); // Should remain unchanged
+	});
+
+	it('handles mixed scenarios with some newer and some older fields', async () => {
+		// Add initial document
+		const hlc = createClock();
+		
+		// Create initial user with specific timestamps
+		const initialUserData = createTestUser({ id: 'user-1', name: 'Alice' });
+		await createOne(
+			{ db, storeName: 'users', schema: testUserSchema, hlc },
+			initialUserData,
+		);
+
+		// Get the created document to check its actual timestamps
+		const existingDoc = await getDocument(db, 'users', 'user-1');
+		expect(existingDoc).not.toBeNull();
+
+		// Wait a bit to ensure future timestamps
+		await new Promise(resolve => setTimeout(resolve, 10));
+
+		// Create a future timestamp that's definitely newer than existing
+		const futureTimestamp = new Date(Date.now() + 1000 * 60 * 60).toISOString() + '-000000-z'; // 1 hour in future
+		const pastTimestamp = '2020-01-01T00:00:00.000Z-000000-a'; // Definitely in the past
+
+		// Create merge document with mixed timestamps - some newer, some older
+		const mergeDoc = {
+			$id: 'user-1',
+			$data: { id: 'user-1', name: 'Alicia Updated' },
+			$hash: 'merge-hash',
+			$timestamp: futureTimestamp,
+			$timestamps: {
+				id: pastTimestamp, // Much older than existing
+				name: futureTimestamp, // Much newer than existing
+			},
+		};
+
+		await merge({ db, storeName: 'users' }, [mergeDoc]);
+
+		const result = await getOne({ db, storeName: 'users' }, 'user-1');
+		expect(result).not.toBeNull();
+		expect(result?.id).toBe('user-1'); // Should keep original (merge doc has older timestamp)
+		expect(result?.name).toBe('Alicia Updated'); // Should be updated (merge doc has newer timestamp)
 	});
 });

@@ -2,6 +2,7 @@ import { createClock, generateHLC } from '../crdt';
 import type {
 	DatabaseConfig,
 	StoreData,
+	StoreDocument,
 	StoreKey,
 	StoreSchema,
 	TypedDatabase,
@@ -12,6 +13,7 @@ import { getHLC, openDatabase, putHLC } from './operations';
 import {
 	create as baseCreate,
 	getHashes as baseGetHashes,
+	merge as baseMerge,
 	update as baseUpdate,
 	getAll,
 	getDocumentsInBuckets,
@@ -162,6 +164,19 @@ export function createDB<TConfig extends DatabaseConfig>(
 				},
 				buckets,
 				bucketSize,
+			);
+		},
+		merge: async <TStoreName extends StoreKey<TConfig>>(
+			storeName: TStoreName,
+			documents: StoreDocument<TConfig, TStoreName>[],
+		) => {
+			const db = await getDb();
+			await baseMerge(
+				{
+					db,
+					storeName,
+				},
+				documents,
 			);
 		},
 	};
