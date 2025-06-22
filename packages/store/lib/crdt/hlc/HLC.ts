@@ -1,4 +1,4 @@
-import type { IHLC, INonceProvider, ITimeProvider } from './types';
+import type { IHLC, NonceProvider, ITimeProvider } from './types';
 import { advanceHLC, generateHLC } from './functions';
 import {
 	defaultNonceProvider,
@@ -10,7 +10,7 @@ export class HLC implements IHLC {
 
 	constructor(
 		private timeProvider: ITimeProvider = defaultTimeProvider,
-		private nonceProvider: INonceProvider = defaultNonceProvider,
+		private nonceProvider: NonceProvider = defaultNonceProvider,
 		seedHLC?: string,
 	) {
 		this.currentValue = seedHLC ?? generateHLC(timeProvider, nonceProvider);

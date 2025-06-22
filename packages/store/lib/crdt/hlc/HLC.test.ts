@@ -77,11 +77,11 @@ describe('HLC', () => {
 			const seed = '2023-01-01T00:00:00.000Z-000000-abcdef';
 
 			const clock = new HLC(timeProvider, nonceProvider, seed);
-			const olderTimestamp = '2022-12-31T00:00:00.000Z-000000-older1';
+			const newerTimestamp = '2023-01-02T00:00:00.000Z-000000-newer1';
 
-			clock.advanceTo(olderTimestamp);
+			clock.advanceTo(newerTimestamp);
 
-			expect(clock.current()).toBe(olderTimestamp);
+			expect(clock.current()).toBe(newerTimestamp);
 		});
 
 		it('should not change when advanceTo() is called with same timestamp', () => {
@@ -99,7 +99,7 @@ describe('HLC', () => {
 			expect(clock.current()).toBe(original);
 		});
 
-		it('should not advance when advanceTo() is called with newer timestamp', () => {
+		it('should not advance when advanceTo() is called with older timestamp', () => {
 			const timeProvider = createMockTimeProvider(
 				new Date('2023-01-01T00:00:00.000Z'),
 			);
@@ -108,9 +108,9 @@ describe('HLC', () => {
 
 			const clock = new HLC(timeProvider, nonceProvider, seed);
 			const original = clock.current();
-			const newerTimestamp = '2023-01-02T00:00:00.000Z-000000-newer1';
+			const olderTimestamp = '2022-12-31T00:00:00.000Z-000000-older1';
 
-			clock.advanceTo(newerTimestamp);
+			clock.advanceTo(olderTimestamp);
 
 			expect(clock.current()).toBe(original);
 		});
