@@ -10,7 +10,7 @@ import {
 	putWithKey,
 	query,
 } from './store-io';
-import { openDB } from '../db-io';
+import { openDB } from '../../db-io';
 
 interface TestItem {
 	id: string;
