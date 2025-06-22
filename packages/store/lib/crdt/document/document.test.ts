@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { IHLC } from '../types';
+import type { IHLC } from '../../types';
 import { makeDocument, mergeDocuments, updateDocument } from './document';
 
 describe('makeDocument', () => {

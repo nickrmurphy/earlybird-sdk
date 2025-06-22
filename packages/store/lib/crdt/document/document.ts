@@ -6,8 +6,8 @@ import type {
 	IHLC,
 	StoreData,
 	StoreKey,
-} from '../types';
-import { hashObject, makeTimestamps } from '../utils';
+} from '../../types';
+import { hashObject, makeTimestamps } from '../../utils';
 
 export function makeDocument<
 	TConfig extends DatabaseConfig,

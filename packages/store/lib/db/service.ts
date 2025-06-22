@@ -1,4 +1,4 @@
-import { makeDocument, updateDocument } from '../crdt/document';
+import { makeDocument, updateDocument } from '../crdt/document/document';
 import type {
 	DatabaseConfig,
 	ReadContext,
