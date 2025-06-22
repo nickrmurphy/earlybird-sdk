@@ -60,10 +60,7 @@ export async function put<T>(context: IoContext, item: T): Promise<void> {
 	});
 }
 
-export async function putAll<T>(
-	context: IoContext,
-	items: T[],
-): Promise<void> {
+export async function putAll<T>(context: IoContext, items: T[]): Promise<void> {
 	return new Promise((resolve, reject) => {
 		const transaction = context.db.transaction(context.storeName, 'readwrite');
 		const store = transaction.objectStore(context.storeName);
@@ -95,10 +92,7 @@ export async function add<T>(context: IoContext, item: T): Promise<void> {
 	});
 }
 
-export async function addAll<T>(
-	context: IoContext,
-	items: T[],
-): Promise<void> {
+export async function addAll<T>(context: IoContext, items: T[]): Promise<void> {
 	return new Promise((resolve, reject) => {
 		const transaction = context.db.transaction(context.storeName, 'readwrite');
 		const store = transaction.objectStore(context.storeName);
@@ -140,6 +134,22 @@ export async function query<T>(
 				resolve(results);
 			}
 		};
+		request.onerror = () => reject(request.error);
+	});
+}
+
+export async function putWithKey<T>(
+	context: IoContext,
+	value: T,
+	key: string,
+): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const transaction = context.db.transaction(context.storeName, 'readwrite');
+		const store = transaction.objectStore(context.storeName);
+
+		const request = store.put(value, key);
+
+		request.onsuccess = () => resolve();
 		request.onerror = () => reject(request.error);
 	});
 }

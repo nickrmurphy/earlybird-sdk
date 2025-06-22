@@ -1,10 +1,22 @@
+import { mergeDocuments as mergeCRDTDocuments } from '../crdt/document/document';
 import type {
 	DatabaseConfig,
 	StoreDocument,
 	StoreKey,
 	TypedDatabase,
 } from '../types';
-import { mergeDocuments as mergeCRDTDocuments } from '../crdt/document/document';
+import {
+	type IoContext,
+	add,
+	addAll,
+	get,
+	getAll,
+	openDB,
+	put,
+	putAll,
+	putWithKey,
+	query,
+} from './io';
 
 export interface DbContext<
 	TConfig extends DatabaseConfig,
@@ -13,6 +25,26 @@ export interface DbContext<
 	db: TypedDatabase<TConfig>;
 	storeName: TStoreName;
 	hlcStoreName: string;
+}
+
+function createIoContext<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+>(context: DbContext<TConfig, TStoreName>): IoContext {
+	return {
+		db: context.db,
+		storeName: context.storeName,
+	};
+}
+
+function createHlcIoContext<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+>(context: DbContext<TConfig, TStoreName>): IoContext {
+	return {
+		db: context.db,
+		storeName: context.hlcStoreName,
+	};
 }
 
 export function setUpStores<TConfig extends DatabaseConfig>(
@@ -45,21 +77,10 @@ export async function openDatabase<TConfig extends DatabaseConfig>(
 	config: TConfig,
 	hlcStoreName: string,
 ): Promise<TypedDatabase<TConfig>> {
-	return new Promise((resolve, reject) => {
-		const request = indexedDB.open(config.name, config.version);
-
-		request.onerror = () => reject(request.error);
-		request.onsuccess = () => {
-			resolve(request.result as TypedDatabase<TConfig>);
-		};
-
-		request.onupgradeneeded = (event) => {
-			// Typecast is safe: IndexedDB spec guarantees this type
-			const db = (event.target as IDBOpenDBRequest).result;
-
-			setUpStores(db, config.stores, hlcStoreName);
-		};
+	const db = await openDB(config.name, config.version, (db) => {
+		setUpStores(db, config.stores, hlcStoreName);
 	});
+	return db as TypedDatabase<TConfig>;
 }
 
 export async function addDocument<
@@ -69,15 +90,7 @@ export async function addDocument<
 	context: DbContext<TConfig, TStoreName>,
 	document: StoreDocument<TConfig, TStoreName>,
 ): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const transaction = context.db.transaction(context.storeName, 'readwrite');
-		const store = transaction.objectStore(context.storeName);
-
-		const request = store.add(document);
-
-		request.onsuccess = () => resolve();
-		request.onerror = () => reject(request.error);
-	});
+	return add(createIoContext(context), document);
 }
 
 export async function addDocuments<
@@ -87,23 +100,7 @@ export async function addDocuments<
 	context: DbContext<TConfig, TStoreName>,
 	documents: StoreDocument<TConfig, TStoreName>[],
 ): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const transaction = context.db.transaction(context.storeName, 'readwrite');
-		const store = transaction.objectStore(context.storeName);
-
-		Promise.all(
-			documents.map(
-				(doc) =>
-					new Promise<void>((res, rej) => {
-						const request = store.add(doc);
-						request.onsuccess = () => res();
-						request.onerror = () => rej(request.error);
-					}),
-			),
-		)
-			.then(() => resolve())
-			.catch(reject);
-	});
+	return addAll(createIoContext(context), documents);
 }
 
 export async function getDocument<
@@ -113,15 +110,7 @@ export async function getDocument<
 	context: DbContext<TConfig, TStoreName>,
 	id: string,
 ): Promise<StoreDocument<TConfig, TStoreName> | null> {
-	return new Promise((resolve, reject) => {
-		const transaction = context.db.transaction(context.storeName, 'readonly');
-		const store = transaction.objectStore(context.storeName);
-
-		const request = store.get(id);
-
-		request.onsuccess = () => resolve(request.result || null);
-		request.onerror = () => reject(request.error);
-	});
+	return get<StoreDocument<TConfig, TStoreName>>(createIoContext(context), id);
 }
 
 export async function getAllDocuments<
@@ -130,15 +119,7 @@ export async function getAllDocuments<
 >(
 	context: DbContext<TConfig, TStoreName>,
 ): Promise<StoreDocument<TConfig, TStoreName>[]> {
-	return new Promise((resolve, reject) => {
-		const transaction = context.db.transaction(context.storeName, 'readonly');
-		const store = transaction.objectStore(context.storeName);
-
-		const request = store.getAll();
-
-		request.onsuccess = () => resolve(request.result);
-		request.onerror = () => reject(request.error);
-	});
+	return getAll<StoreDocument<TConfig, TStoreName>>(createIoContext(context));
 }
 
 export async function putDocument<
@@ -148,15 +129,7 @@ export async function putDocument<
 	context: DbContext<TConfig, TStoreName>,
 	document: StoreDocument<TConfig, TStoreName>,
 ): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const transaction = context.db.transaction(context.storeName, 'readwrite');
-		const store = transaction.objectStore(context.storeName);
-
-		const request = store.put(document);
-
-		request.onsuccess = () => resolve();
-		request.onerror = () => reject(request.error);
-	});
+	return put(createIoContext(context), document);
 }
 
 export async function putDocuments<
@@ -166,23 +139,7 @@ export async function putDocuments<
 	context: DbContext<TConfig, TStoreName>,
 	documents: StoreDocument<TConfig, TStoreName>[],
 ): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const transaction = context.db.transaction(context.storeName, 'readwrite');
-		const store = transaction.objectStore(context.storeName);
-
-		Promise.all(
-			documents.map(
-				(doc) =>
-					new Promise<void>((res, rej) => {
-						const request = store.put(doc);
-						request.onsuccess = () => res();
-						request.onerror = () => rej(request.error);
-					}),
-			),
-		)
-			.then(() => resolve())
-			.catch(reject);
-	});
+	return putAll(createIoContext(context), documents);
 }
 
 export async function queryDocuments<
@@ -192,61 +149,24 @@ export async function queryDocuments<
 	context: DbContext<TConfig, TStoreName>,
 	predicate: (data: StoreDocument<TConfig, TStoreName>['$data']) => boolean,
 ): Promise<StoreDocument<TConfig, TStoreName>[]> {
-	return new Promise((resolve, reject) => {
-		const transaction = context.db.transaction(context.storeName, 'readonly');
-		const store = transaction.objectStore(context.storeName);
-		const results: StoreDocument<TConfig, TStoreName>[] = [];
-		const request = store.openCursor();
-
-		request.onsuccess = (event) => {
-			const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-			if (cursor) {
-				const doc = cursor.value as StoreDocument<TConfig, TStoreName>;
-				if (predicate(doc.$data)) {
-					results.push(doc);
-				}
-				cursor.continue();
-			} else {
-				resolve(results);
-			}
-		};
-		request.onerror = () => reject(request.error);
-	});
+	return query<StoreDocument<TConfig, TStoreName>>(
+		createIoContext(context),
+		(doc) => predicate(doc.$data),
+	);
 }
 
 export async function putHLC<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
->(
-	context: DbContext<TConfig, TStoreName>,
-	timestamp: string,
-): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const transaction = context.db.transaction(context.hlcStoreName, 'readwrite');
-		const store = transaction.objectStore(context.hlcStoreName);
-
-		const request = store.put(timestamp, context.storeName);
-
-		request.onsuccess = () => resolve();
-		request.onerror = () => reject(request.error);
-	});
+>(context: DbContext<TConfig, TStoreName>, timestamp: string): Promise<void> {
+	return putWithKey(createHlcIoContext(context), timestamp, context.storeName);
 }
 
 export async function getHLC<
 	TConfig extends DatabaseConfig,
 	TStoreName extends StoreKey<TConfig>,
->(
-	context: DbContext<TConfig, TStoreName>,
-): Promise<string | null> {
-	return new Promise((resolve, reject) => {
-		const transaction = context.db.transaction(context.hlcStoreName, 'readonly');
-		const store = transaction.objectStore(context.hlcStoreName);
-
-		const request = store.get(context.storeName);
-
-		request.onsuccess = () => resolve(request.result || null);
-		request.onerror = () => reject(request.error);
-	});
+>(context: DbContext<TConfig, TStoreName>): Promise<string | null> {
+	return get<string>(createHlcIoContext(context), context.storeName);
 }
 
 export async function mergeDocuments<
@@ -256,49 +176,31 @@ export async function mergeDocuments<
 	context: DbContext<TConfig, TStoreName>,
 	documents: StoreDocument<TConfig, TStoreName>[],
 ): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const transaction = context.db.transaction(context.storeName, 'readwrite');
-		const store = transaction.objectStore(context.storeName);
+	if (documents.length === 0) {
+		return;
+	}
 
-		let processedCount = 0;
-		const totalCount = documents.length;
+	const ioContext = createIoContext(context);
+	const mergedDocs: StoreDocument<TConfig, TStoreName>[] = [];
 
-		if (totalCount === 0) {
-			resolve();
-			return;
+	for (const doc of documents) {
+		const existingDoc = await get<StoreDocument<TConfig, TStoreName>>(
+			ioContext,
+			doc.$id,
+		);
+		let finalDoc: StoreDocument<TConfig, TStoreName>;
+
+		if (existingDoc) {
+			finalDoc = mergeCRDTDocuments(existingDoc, doc) as StoreDocument<
+				TConfig,
+				TStoreName
+			>;
+		} else {
+			finalDoc = doc;
 		}
 
-		const processDocument = (doc: StoreDocument<TConfig, TStoreName>) => {
-			const getRequest = store.get(doc.$id);
+		mergedDocs.push(finalDoc);
+	}
 
-			getRequest.onsuccess = () => {
-				const existingDoc = getRequest.result;
-				let finalDoc: StoreDocument<TConfig, TStoreName>;
-
-				if (existingDoc) {
-					finalDoc = mergeCRDTDocuments(existingDoc, doc) as StoreDocument<
-						TConfig,
-						TStoreName
-					>;
-				} else {
-					finalDoc = doc;
-				}
-
-				const putRequest = store.put(finalDoc);
-
-				putRequest.onsuccess = () => {
-					processedCount++;
-					if (processedCount === totalCount) {
-						resolve();
-					}
-				};
-
-				putRequest.onerror = () => reject(putRequest.error);
-			};
-
-			getRequest.onerror = () => reject(getRequest.error);
-		};
-
-		documents.forEach(processDocument);
-	});
+	await putAll(ioContext, mergedDocs);
 }

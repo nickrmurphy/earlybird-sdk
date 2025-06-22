@@ -1,6 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { IoContext } from './io';
-import { add, addAll, get, getAll, openDB, put, putAll, query } from './io';
+import {
+	add,
+	addAll,
+	get,
+	getAll,
+	openDB,
+	put,
+	putAll,
+	putWithKey,
+	query,
+} from './io';
 
 interface TestItem {
 	id: string;
@@ -240,9 +250,13 @@ describe('io operations', () => {
 
 			await addAll(context, items);
 
-			const result = await query<TestItem>(context, (item) => item.name.startsWith('A'));
+			const result = await query<TestItem>(context, (item) =>
+				item.name.startsWith('A'),
+			);
 			expect(result).toHaveLength(2);
-			expect(result.map((item) => item.name)).toEqual(expect.arrayContaining(['Alice', 'Amanda']));
+			expect(result.map((item) => item.name)).toEqual(
+				expect.arrayContaining(['Alice', 'Amanda']),
+			);
 		});
 
 		it('should return empty array if no items match', async () => {
@@ -253,7 +267,9 @@ describe('io operations', () => {
 
 			await addAll(context, items);
 
-			const result = await query<TestItem>(context, (item) => item.name.startsWith('Z'));
+			const result = await query<TestItem>(context, (item) =>
+				item.name.startsWith('Z'),
+			);
 			expect(result).toEqual([]);
 		});
 
@@ -264,7 +280,9 @@ describe('io operations', () => {
 
 		it('should reject if store does not exist', async () => {
 			const invalidContext: IoContext = { db, storeName: 'nonexistent-store' };
-			await expect(query<TestItem>(invalidContext, () => true)).rejects.toThrow();
+			await expect(
+				query<TestItem>(invalidContext, () => true),
+			).rejects.toThrow();
 		});
 	});
 
@@ -286,6 +304,66 @@ describe('io operations', () => {
 				deleteRequest.onsuccess = () => resolve();
 				deleteRequest.onerror = () => resolve();
 			});
+		});
+	});
+
+	describe('putWithKey', () => {
+		let keyValueContext: IoContext;
+		let keyValueDbName: string;
+
+		beforeEach(async () => {
+			keyValueDbName = `test-kv-db-${Date.now()}-${Math.random()}`;
+			const db = await openDB(keyValueDbName, 1, (db) => {
+				db.createObjectStore('keyvalue');
+			});
+			keyValueContext = {
+				db,
+				storeName: 'keyvalue',
+			};
+		});
+
+		afterEach(async () => {
+			keyValueContext.db.close();
+			const deleteRequest = indexedDB.deleteDatabase(keyValueDbName);
+			await new Promise<void>((resolve) => {
+				deleteRequest.onsuccess = () => resolve();
+				deleteRequest.onerror = () => resolve();
+			});
+		});
+
+		it('should store and retrieve values with explicit keys', async () => {
+			const value = 'test-timestamp-value';
+			const key = 'test-key';
+
+			await expect(
+				putWithKey(keyValueContext, value, key),
+			).resolves.toBeUndefined();
+
+			const result = await get<string>(keyValueContext, key);
+			expect(result).toBe(value);
+		});
+
+		it('should update existing values', async () => {
+			const key = 'update-key';
+			const originalValue = 'original';
+			const updatedValue = 'updated';
+
+			await putWithKey(keyValueContext, originalValue, key);
+			await putWithKey(keyValueContext, updatedValue, key);
+
+			const result = await get<string>(keyValueContext, key);
+			expect(result).toBe(updatedValue);
+		});
+
+		it('should reject if store does not exist', async () => {
+			const invalidContext: IoContext = {
+				db: keyValueContext.db,
+				storeName: 'nonexistent-store',
+			};
+			await expect(
+				putWithKey(invalidContext, 'value', 'key'),
+			).rejects.toThrow();
+			await expect(get<string>(invalidContext, 'key')).rejects.toThrow();
 		});
 	});
 });
