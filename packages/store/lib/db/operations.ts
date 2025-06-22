@@ -4,6 +4,7 @@ import type {
 	StoreKey,
 	TypedDatabase,
 } from '../types';
+import { mergeDocuments as mergeCRDTDocuments } from '../crdt/document';
 
 const HLC_STORE_NAME = 'hlc';
 
@@ -242,5 +243,57 @@ export async function getHLC<
 
 		request.onsuccess = () => resolve(request.result || null);
 		request.onerror = () => reject(request.error);
+	});
+}
+
+export async function mergeDocuments<
+	TConfig extends DatabaseConfig,
+	TStoreName extends StoreKey<TConfig>,
+>(
+	db: TypedDatabase<TConfig>,
+	storeName: TStoreName,
+	documents: StoreDocument<TConfig, TStoreName>[],
+): Promise<void> {
+	return new Promise((resolve, reject) => {
+		const transaction = db.transaction(storeName, 'readwrite');
+		const store = transaction.objectStore(storeName);
+		
+		let processedCount = 0;
+		const totalCount = documents.length;
+		
+		if (totalCount === 0) {
+			resolve();
+			return;
+		}
+		
+		const processDocument = (doc: StoreDocument<TConfig, TStoreName>) => {
+			const getRequest = store.get(doc.$id);
+			
+			getRequest.onsuccess = () => {
+				const existingDoc = getRequest.result;
+				let finalDoc: StoreDocument<TConfig, TStoreName>;
+				
+				if (existingDoc) {
+					finalDoc = mergeCRDTDocuments(existingDoc, doc) as StoreDocument<TConfig, TStoreName>;
+				} else {
+					finalDoc = doc;
+				}
+				
+				const putRequest = store.put(finalDoc);
+				
+				putRequest.onsuccess = () => {
+					processedCount++;
+					if (processedCount === totalCount) {
+						resolve();
+					}
+				};
+				
+				putRequest.onerror = () => reject(putRequest.error);
+			};
+			
+			getRequest.onerror = () => reject(getRequest.error);
+		};
+		
+		documents.forEach(processDocument);
 	});
 }

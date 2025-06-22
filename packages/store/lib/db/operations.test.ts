@@ -1,9 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-	createTestDatabaseConfig,
-	testPostSchema,
-	testUserSchema,
-} from '../testing/factories';
+import { testPostSchema, testUserSchema } from '../testing/factories';
 import type { DatabaseConfig, Document, TypedDatabase } from '../types';
 import {
 	addDocument,
@@ -11,6 +7,7 @@ import {
 	getAllDocuments,
 	getDocument,
 	getHLC,
+	mergeDocuments,
 	openDatabase,
 	putDocument,
 	putDocuments,
@@ -846,5 +843,223 @@ describe('HLC operations', () => {
 				});
 			}
 		});
+	});
+});
+
+describe('mergeDocuments', () => {
+	let db: TypedDatabase<{
+		name: string;
+		version: 1;
+		stores: {
+			users: typeof testUserSchema;
+		};
+	}>;
+	let dbName: string;
+
+	beforeEach(async () => {
+		dbName = `test-db-${Date.now()}-${Math.random()}`;
+		const config = {
+			name: dbName,
+			version: 1 as const,
+			stores: {
+				users: testUserSchema,
+			},
+		};
+		db = await openDatabase(config);
+	});
+
+	afterEach(async () => {
+		db.close();
+		const deleteRequest = indexedDB.deleteDatabase(dbName);
+		await new Promise<void>((resolve) => {
+			deleteRequest.onsuccess = () => resolve();
+			deleteRequest.onerror = () => resolve();
+		});
+	});
+
+	it('should merge new documents when no existing documents exist', async () => {
+		const docs: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alice' },
+				$hash: 'hash-1',
+				$timestamp: '2024-01-01T00:00:00.000Z-000000-a',
+				$timestamps: {
+					id: '2024-01-01T00:00:00.000Z-000000-a',
+					name: '2024-01-01T00:00:00.000Z-000000-a',
+				},
+			},
+			{
+				$id: 'user-2',
+				$data: { id: 'user-2', name: 'Bob' },
+				$hash: 'hash-2',
+				$timestamp: '2024-01-01T00:01:00.000Z-000000-b',
+				$timestamps: {
+					id: '2024-01-01T00:01:00.000Z-000000-b',
+					name: '2024-01-01T00:01:00.000Z-000000-b',
+				},
+			},
+		];
+
+		await mergeDocuments(db, 'users', docs);
+
+		const allDocs = await getAllDocuments(db, 'users');
+		expect(allDocs).toHaveLength(2);
+		expect(allDocs[0].$data.name).toBe('Alice');
+		expect(allDocs[1].$data.name).toBe('Bob');
+	});
+
+	it('should merge documents with existing documents using CRDT logic', async () => {
+		// Add initial document
+		const initialDoc: Document<{ id: string; name: string; age?: number }> = {
+			$id: 'user-1',
+			$data: { id: 'user-1', name: 'Alice', age: 30 },
+			$hash: 'initial-hash',
+			$timestamp: '2024-01-01T00:00:00.000Z-000000-a',
+			$timestamps: {
+				id: '2024-01-01T00:00:00.000Z-000000-a',
+				name: '2024-01-01T00:00:00.000Z-000000-a',
+				age: '2024-01-01T00:00:00.000Z-000000-a',
+			},
+		};
+		// biome-ignore lint/suspicious/noExplicitAny: Test needs to add extra field not in schema
+		await addDocument(db, 'users', initialDoc as any);
+
+		// Merge document with newer name, older age
+		const mergeDoc: Document<{ id: string; name: string; age?: number }> = {
+			$id: 'user-1',
+			$data: { id: 'user-1', name: 'Alicia', age: 25 },
+			$hash: 'merge-hash',
+			$timestamp: '2024-01-01T00:01:00.000Z-000000-b',
+			$timestamps: {
+				id: '2024-01-01T00:00:00.000Z-000000-a',
+				name: '2024-01-01T00:01:00.000Z-000000-b',
+				age: '2023-12-31T23:59:00.000Z-000000-z',
+			},
+		};
+
+		// biome-ignore lint/suspicious/noExplicitAny: Test needs to merge extra field not in schema
+		await mergeDocuments(db, 'users', [mergeDoc as any]);
+
+		const result = await getDocument(db, 'users', 'user-1');
+		expect(result).not.toBeNull();
+		expect(result?.$data.name).toBe('Alicia'); // Newer timestamp
+		// biome-ignore lint/suspicious/noExplicitAny: Test needs to access extra field not in schema
+		expect((result?.$data as any).age).toBe(30); // Older timestamp, should keep original
+		expect(result?.$timestamp).toBe('2024-01-01T00:01:00.000Z-000000-b');
+	});
+
+	it('should handle empty document array', async () => {
+		await expect(mergeDocuments(db, 'users', [])).resolves.toBeUndefined();
+
+		const allDocs = await getAllDocuments(db, 'users');
+		expect(allDocs).toHaveLength(0);
+	});
+
+	it('should merge multiple documents with mixed existing/new scenario', async () => {
+		// Add one existing document
+		const existingDoc: Document<{ id: string; name: string }> = {
+			$id: 'user-1',
+			$data: { id: 'user-1', name: 'Alice' },
+			$hash: 'existing-hash',
+			$timestamp: '2024-01-01T00:00:00.000Z-000000-a',
+			$timestamps: {
+				id: '2024-01-01T00:00:00.000Z-000000-a',
+				name: '2024-01-01T00:00:00.000Z-000000-a',
+			},
+		};
+		await addDocument(db, 'users', existingDoc);
+
+		// Merge with update to existing + new document
+		const mergeDocs: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alicia' },
+				$hash: 'updated-hash',
+				$timestamp: '2024-01-01T00:01:00.000Z-000000-b',
+				$timestamps: {
+					id: '2024-01-01T00:00:00.000Z-000000-a',
+					name: '2024-01-01T00:01:00.000Z-000000-b',
+				},
+			},
+			{
+				$id: 'user-2',
+				$data: { id: 'user-2', name: 'Bob' },
+				$hash: 'new-hash',
+				$timestamp: '2024-01-01T00:02:00.000Z-000000-c',
+				$timestamps: {
+					id: '2024-01-01T00:02:00.000Z-000000-c',
+					name: '2024-01-01T00:02:00.000Z-000000-c',
+				},
+			},
+		];
+
+		await mergeDocuments(db, 'users', mergeDocs);
+
+		const allDocs = await getAllDocuments(db, 'users');
+		expect(allDocs).toHaveLength(2);
+		
+		const user1 = allDocs.find(doc => doc.$id === 'user-1');
+		const user2 = allDocs.find(doc => doc.$id === 'user-2');
+		
+		expect(user1?.$data.name).toBe('Alicia');
+		expect(user2?.$data.name).toBe('Bob');
+	});
+
+	it('should handle concurrent merges properly', async () => {
+		const docs1: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alice' },
+				$hash: 'hash-1',
+				$timestamp: '2024-01-01T00:00:00.000Z-000000-a',
+				$timestamps: {
+					id: '2024-01-01T00:00:00.000Z-000000-a',
+					name: '2024-01-01T00:00:00.000Z-000000-a',
+				},
+			},
+		];
+
+		const docs2: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-2',
+				$data: { id: 'user-2', name: 'Bob' },
+				$hash: 'hash-2',
+				$timestamp: '2024-01-01T00:01:00.000Z-000000-b',
+				$timestamps: {
+					id: '2024-01-01T00:01:00.000Z-000000-b',
+					name: '2024-01-01T00:01:00.000Z-000000-b',
+				},
+			},
+		];
+
+		// Run merges concurrently
+		await Promise.all([
+			mergeDocuments(db, 'users', docs1),
+			mergeDocuments(db, 'users', docs2),
+		]);
+
+		const allDocs = await getAllDocuments(db, 'users');
+		expect(allDocs).toHaveLength(2);
+	});
+
+	it('should reject on transaction errors', async () => {
+		// Close the database to simulate an error condition
+		db.close();
+
+		const docs: Document<{ id: string; name: string }>[] = [
+			{
+				$id: 'user-1',
+				$data: { id: 'user-1', name: 'Alice' },
+				$hash: 'hash-1',
+				$timestamp: '2024-01-01T00:00:00.000Z-000000-a',
+				$timestamps: {
+					id: '2024-01-01T00:00:00.000Z-000000-a',
+					name: '2024-01-01T00:00:00.000Z-000000-a',
+				},
+			},
+		];
+
+		await expect(mergeDocuments(db, 'users', docs)).rejects.toThrow();
 	});
 });
