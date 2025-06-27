@@ -1,0 +1,69 @@
+{
+  "name": "@byearlybird/store",
+  "version": "0.0.4",
+  "description": "Local-first data storage SDK for TypeScript",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./index.ts",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "development": "./index.ts",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./capacitor-adapter": {
+      "development": "./lib/storage/capacitor-adapter.ts",
+      "import": "./dist/capacitor-adapter.js",
+      "types": "./dist/capacitor-adapter.d.ts"
+    },
+    "./memory-adapter": {
+      "development": "./lib/storage/memory-adapter.ts",
+      "import": "./dist/memory-adapter.js",
+      "types": "./dist/memory-adapter.d.ts"
+    },
+    "./libsql-adapter": {
+      "development": "./lib/storage/libsql-adapter.ts",
+      "import": "./dist/libsql-adapter.js",
+      "types": "./dist/libsql-adapter.d.ts"
+    },
+    "./indexeddb-adapter": {
+      "development": "./lib/storage/indexeddb-adapter.ts",
+      "import": "./dist/indexeddb-adapter.js",
+      "types": "./dist/indexeddb-adapter.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "storage",
+    "typescript",
+    "cross-platform",
+    "sdk"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@libsql/client": "^0.15.0"
+  },
+  "peerDependenciesMeta": {
+    "@libsql/client": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@libsql/client": "^0.15.9",
+    "@types/node": "^24.0.0",
+    "@vitest/browser": "^3.2.3",
+    "@vitest/coverage-v8": "^3.2.3",
+    "playwright": "^1.53.0",
+    "vite": "^6.3.5",
+    "vite-plugin-dts": "^4.5.4"
+  },
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest --config=vitest.browser.config.ts && vitest run --config=vitest.node.config.ts",
+    "test:coverage": "vitest run --coverage --config=vitest.browser.config.ts && vitest run --coverage --config=vitest.node.config.ts",
+    "bench": "vitest bench --config=vitest.browser.config.ts"
+  }
+}
