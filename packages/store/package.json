@@ -1,6 +1,6 @@
 {
 	"name": "@byearlybird/store",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "Local-first data storage SDK for TypeScript",
 	"type": "module",
 	"main": "./dist/index.js",
@@ -33,11 +33,19 @@
 			"types": "./dist/indexeddb-adapter.d.ts"
 		}
 	},
-	"files": ["dist"],
-	"keywords": ["storage", "typescript", "cross-platform", "sdk"],
+	"files": [
+		"dist"
+	],
+	"keywords": [
+		"storage",
+		"typescript",
+		"cross-platform",
+		"sdk"
+	],
 	"license": "MIT",
 	"scripts": {
 		"build": "vite build",
+		"prepublishOnly": "pnpm build",
 		"test": "vitest --config=vitest.browser.config.ts && vitest run --config=vitest.node.config.ts",
 		"test:coverage": "vitest run --coverage --config=vitest.browser.config.ts && vitest run --coverage --config=vitest.node.config.ts",
 		"bench": "vitest bench --config=vitest.browser.config.ts"
