@@ -1,6 +1,6 @@
 {
 	"name": "@byearlybird/store",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"description": "Local-first data storage SDK for TypeScript",
 	"type": "module",
 	"main": "./dist/index.js",
@@ -9,39 +9,67 @@
 	"exports": {
 		".": {
 			"development": "./index.ts",
+			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js",
-			"types": "./dist/index.d.ts"
+			"default": "./dist/index.js"
 		},
 		"./capacitor-adapter": {
 			"development": "./lib/storage/capacitor-adapter.ts",
+			"types": "./dist/capacitor-adapter.d.ts",
 			"import": "./dist/capacitor-adapter.js",
-			"types": "./dist/capacitor-adapter.d.ts"
+			"default": "./dist/capacitor-adapter.js"
 		},
 		"./memory-adapter": {
 			"development": "./lib/storage/memory-adapter.ts",
+			"types": "./dist/memory-adapter.d.ts",
 			"import": "./dist/memory-adapter.js",
-			"types": "./dist/memory-adapter.d.ts"
+			"default": "./dist/memory-adapter.js"
 		},
 		"./libsql-adapter": {
 			"development": "./lib/storage/libsql-adapter.ts",
+			"types": "./dist/libsql-adapter.d.ts",
 			"import": "./dist/libsql-adapter.js",
-			"types": "./dist/libsql-adapter.d.ts"
+			"default": "./dist/libsql-adapter.js"
 		},
 		"./indexeddb-adapter": {
 			"development": "./lib/storage/indexeddb-adapter.ts",
+			"types": "./dist/indexeddb-adapter.d.ts",
 			"import": "./dist/indexeddb-adapter.js",
-			"types": "./dist/indexeddb-adapter.d.ts"
+			"default": "./dist/indexeddb-adapter.js"
 		}
 	},
-	"files": [
-		"dist"
-	],
-	"keywords": [
-		"storage",
-		"typescript",
-		"cross-platform",
-		"sdk"
-	],
+	"publishConfig": {
+		"access": "public",
+		"exports": {
+			".": {
+				"types": "./dist/index.d.ts",
+				"import": "./dist/index.js",
+				"default": "./dist/index.js"
+			},
+			"./capacitor-adapter": {
+				"types": "./dist/capacitor-adapter.d.ts",
+				"import": "./dist/capacitor-adapter.js",
+				"default": "./dist/capacitor-adapter.js"
+			},
+			"./memory-adapter": {
+				"types": "./dist/memory-adapter.d.ts",
+				"import": "./dist/memory-adapter.js",
+				"default": "./dist/memory-adapter.js"
+			},
+			"./libsql-adapter": {
+				"types": "./dist/libsql-adapter.d.ts",
+				"import": "./dist/libsql-adapter.js",
+				"default": "./dist/libsql-adapter.js"
+			},
+			"./indexeddb-adapter": {
+				"types": "./dist/indexeddb-adapter.d.ts",
+				"import": "./dist/indexeddb-adapter.js",
+				"default": "./dist/indexeddb-adapter.js"
+			}
+		}
+	},
+	"files": ["dist"],
+	"keywords": ["storage", "typescript", "cross-platform", "sdk"],
 	"license": "MIT",
 	"scripts": {
 		"build": "vite build",
