@@ -4,7 +4,7 @@
 	"description": "Local-first data storage SDK for TypeScript",
 	"type": "module",
 	"main": "./dist/index.js",
-	"module": "./index.ts",
+	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
