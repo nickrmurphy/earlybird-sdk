@@ -1,6 +1,6 @@
 {
 	"name": "@byearlybird/store",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"description": "Local-first data storage SDK for TypeScript",
 	"type": "module",
 	"main": "./dist/index.js",
