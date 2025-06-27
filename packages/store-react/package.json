@@ -1,6 +1,6 @@
 {
 	"name": "@byearlybird/store-react",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"description": "React hooks and components for @byearlybird/store",
 	"type": "module",
 	"main": "./dist/index.js",
@@ -13,9 +13,12 @@
 			"types": "./dist/index.d.ts"
 		}
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"build": "vite build",
+		"prepublishOnly": "pnpm build",
 		"test:coverage": "vitest run --coverage --passWithNoTests"
 	},
 	"devDependencies": {
@@ -35,5 +38,11 @@
 		}
 	},
 	"license": "MIT",
-	"keywords": ["react", "hooks", "storage", "typescript", "store"]
+	"keywords": [
+		"react",
+		"hooks",
+		"storage",
+		"typescript",
+		"store"
+	]
 }
